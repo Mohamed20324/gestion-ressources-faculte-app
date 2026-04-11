@@ -19,16 +19,11 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // Désactive la protection CSRF (car nous faisons une API REST)
                 .csrf(AbstractHttpConfigurer::disable)
-                // Active la configuration CORS (pour que React puisse nous parler)
                 .cors(cors -> cors.configure(http))
-                // Règle les permissions
                 .authorizeHttpRequests(auth -> auth
-                        // On laisse l'accès libre aux routes de login/logout
-                        .requestMatchers("/api/auth/**").permitAll()
-                        // Tout le reste est bloqué si on n'est pas connecté
-                        .anyRequest().authenticated()
+                        // Remplace tout par permitAll() pour tester tranquillement
+                        .anyRequest().permitAll()
                 );
 
         return http.build();
