@@ -4,6 +4,7 @@ import ma.faculte.gestion_ressources_backend.dto.utilisateurs.*;
 import ma.faculte.gestion_ressources_backend.services.interfaces.IUtilisateurService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -49,6 +50,7 @@ public class UtilisateurController {
     // =====================
 
     @PostMapping("/enseignant")
+    @PreAuthorize("hasRole('RESPONSABLE')")
     public ResponseEntity<?> creerEnseignant(
             @RequestBody EnseignantDTO dto) {
         try {
@@ -61,6 +63,7 @@ public class UtilisateurController {
     }
 
     @PostMapping("/chef")
+    @PreAuthorize("hasRole('RESPONSABLE')")
     public ResponseEntity<?> creerChef(
             @RequestBody EnseignantDTO dto) {
         try {
@@ -73,6 +76,7 @@ public class UtilisateurController {
     }
 
     @PostMapping("/responsable")
+    @PreAuthorize("hasRole('RESPONSABLE')")
     public ResponseEntity<?> creerResponsable(
             @RequestBody EnseignantDTO dto) {
         try {
@@ -85,6 +89,7 @@ public class UtilisateurController {
     }
 
     @PostMapping("/technicien")
+    @PreAuthorize("hasRole('RESPONSABLE')")
     public ResponseEntity<?> creerTechnicien(
             @RequestBody EnseignantDTO dto) {
         try {
@@ -126,6 +131,7 @@ public class UtilisateurController {
     // =====================
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('RESPONSABLE')")
     public ResponseEntity<?> modifier(
             @PathVariable Long id,
             @RequestBody EnseignantDTO dto) {
@@ -146,6 +152,7 @@ public class UtilisateurController {
      * lieu, adresse, siteInternet, gerant
      */
     @PutMapping("/fournisseur/{id}/completer")
+    @PreAuthorize("hasAnyRole('RESPONSABLE','FOURNISSEUR')")
     public ResponseEntity<?> completerInfosFournisseur(
             @PathVariable Long id,
             @RequestBody FournisseurDTO dto) {
@@ -164,6 +171,7 @@ public class UtilisateurController {
     // =====================
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('RESPONSABLE')")
     public ResponseEntity<?> supprimer(@PathVariable Long id) {
         try {
             utilisateurService.supprimerUtilisateur(id);

@@ -1,9 +1,10 @@
 package ma.faculte.gestion_ressources_backend.controllers;
 
-import ma.faculte.gestion_ressources_backend.dto.TypeRessourceDTO;
+import ma.faculte.gestion_ressources_backend.dto.appel_offre.TypeRessourceDTO;
 import ma.faculte.gestion_ressources_backend.services.interfaces.ITypeRessourceService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -37,6 +38,7 @@ public class TypeRessourceController {
     private ITypeRessourceService typeRessourceService;
 
     @PostMapping
+    @PreAuthorize("hasRole('RESPONSABLE')")
     public ResponseEntity<?> creer(@RequestBody TypeRessourceDTO dto) {
         try {
             TypeRessourceDTO result = typeRessourceService.creerType(dto);

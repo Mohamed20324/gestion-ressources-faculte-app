@@ -1,6 +1,6 @@
 package ma.faculte.gestion_ressources_backend.services.interfaces;
 
-import ma.faculte.gestion_ressources_backend.dto.TypeRessourceDTO;
+import ma.faculte.gestion_ressources_backend.dto.appel_offre.TypeRessourceDTO;
 import java.util.List;
 
 /*

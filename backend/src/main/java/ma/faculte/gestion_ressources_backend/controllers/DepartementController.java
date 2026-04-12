@@ -4,6 +4,7 @@ import ma.faculte.gestion_ressources_backend.dto.departement.DepartementDTO;
 import ma.faculte.gestion_ressources_backend.services.interfaces.IDepartementService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -37,6 +38,7 @@ public class DepartementController {
     private IDepartementService departementService;
 
     @PostMapping
+    @PreAuthorize("hasRole('RESPONSABLE')")
     public ResponseEntity<?> creer(@RequestBody DepartementDTO dto) {
         try {
             DepartementDTO result = departementService.creerDepartement(dto);
@@ -63,6 +65,7 @@ public class DepartementController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('RESPONSABLE')")
     public ResponseEntity<?> modifier(
             @PathVariable Long id,
             @RequestBody DepartementDTO dto) {

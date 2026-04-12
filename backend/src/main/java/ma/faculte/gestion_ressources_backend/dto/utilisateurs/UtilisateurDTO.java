@@ -21,6 +21,15 @@ public class UtilisateurDTO {
     private LocalDate dateCreation;
     private boolean actif;
 
+    /*
+     * Champs optionnels pour creerUtilisateur() (jamais exposés en réponse standard)
+     */
+    private String motDePasse;
+    private String matricule;
+    private String specialite;
+    private Long departementId;
+    private String nomSociete;
+
     public UtilisateurDTO() {}
 
     public UtilisateurDTO(Long id, String nom, String prenom,
@@ -57,4 +66,19 @@ public class UtilisateurDTO {
 
     public boolean isActif() { return actif; }
     public void setActif(boolean actif) { this.actif = actif; }
+
+    public String getMotDePasse() { return motDePasse; }
+    public void setMotDePasse(String motDePasse) { this.motDePasse = motDePasse; }
+
+    public String getMatricule() { return matricule; }
+    public void setMatricule(String matricule) { this.matricule = matricule; }
+
+    public String getSpecialite() { return specialite; }
+    public void setSpecialite(String specialite) { this.specialite = specialite; }
+
+    public Long getDepartementId() { return departementId; }
+    public void setDepartementId(Long departementId) { this.departementId = departementId; }
+
+    public String getNomSociete() { return nomSociete; }
+    public void setNomSociete(String nomSociete) { this.nomSociete = nomSociete; }
 }

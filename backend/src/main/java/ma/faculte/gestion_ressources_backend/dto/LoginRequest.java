@@ -1,5 +1,8 @@
 package ma.faculte.gestion_ressources_backend.dto;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+
 /*
  * DTO LOGIN REQUEST
  * Utilisé par AuthController pour le login
@@ -12,7 +15,11 @@ package ma.faculte.gestion_ressources_backend.dto;
 
 public class LoginRequest {
 
+    @NotBlank(message = "L'email est obligatoire")
+    @Email(message = "Email invalide")
     private String email;
+
+    @NotBlank(message = "Le mot de passe est obligatoire")
     private String password;
 
     public LoginRequest() {}

@@ -1,6 +1,6 @@
 package ma.faculte.gestion_ressources_backend.services.impl;
 
-import ma.faculte.gestion_ressources_backend.dto.TypeRessourceDTO;
+import ma.faculte.gestion_ressources_backend.dto.appel_offre.TypeRessourceDTO;
 import ma.faculte.gestion_ressources_backend.entities.referentiel.TypeRessource;
 import ma.faculte.gestion_ressources_backend.repositories.interfaces.ITypeRessourceRepository;
 import ma.faculte.gestion_ressources_backend.services.interfaces.ITypeRessourceService;

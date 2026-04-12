@@ -2,45 +2,24 @@ package ma.faculte.gestion_ressources_backend.controllers;
 
 import ma.faculte.gestion_ressources_backend.dto.utilisateurs.FournisseurDTO;
 import ma.faculte.gestion_ressources_backend.dto.utilisateurs.InscriptionFournisseurDTO;
+import jakarta.validation.Valid;
 import ma.faculte.gestion_ressources_backend.dto.LoginRequest;
 import ma.faculte.gestion_ressources_backend.entities.utilisateurs.Utilisateur;
 import ma.faculte.gestion_ressources_backend.repositories.interfaces.IUtilisateurRepository;
+import ma.faculte.gestion_ressources_backend.security.JwtService;
 import ma.faculte.gestion_ressources_backend.services.interfaces.IUtilisateurService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-/*
- * AUTH CONTROLLER
- * Gère la connexion et l'inscription
- *
- * Endpoints :
- * POST /api/auth/login      → connexion tous les utilisateurs
- * POST /api/auth/register   → inscription fournisseur uniquement
- *
- * IMPORTANT :
- * Pour l'instant le login est basique sans JWT
- * Spring Security JWT sera ajouté à la fin
- * avec tout le groupe
- *
- * LIEN FRONTEND MEMBRES 1 et 2 :
- * Page de login utilise POST /api/auth/login
- * Page d'inscription fournisseur utilise POST /api/auth/register
- */
-
 @RestController
 @RequestMapping("/api/auth")
 @CrossOrigin(origins = "*")
-/*
- * @CrossOrigin permet au frontend React
- * de communiquer avec ce backend
- * origins = "*" accepte toutes les origines
- * en production on restreindra à l'URL du frontend
- */
 public class AuthController {
 
     @Autowired
@@ -49,17 +28,15 @@ public class AuthController {
     @Autowired
     private IUtilisateurService utilisateurService;
 
-    // =====================
-    // LOGIN
-    // =====================
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JwtService jwtService;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request) {
 
-        /*
-         * chercher l'utilisateur par email
-         * si non trouvé retourner 401
-         */
         Optional<Utilisateur> utilisateurOpt = utilisateurRepository
                 .findByEmail(request.getEmail());
 
@@ -70,31 +47,25 @@ public class AuthController {
 
         Utilisateur utilisateur = utilisateurOpt.get();
 
-        /*
-         * vérifier mot de passe
-         * pour l'instant comparaison simple
-         * avec BCrypt plus tard dans Spring Security
-         */
-        if (!utilisateur.getMotDePasse().equals(request.getPassword())) {
+        if (!verifierMotDePasse(request.getPassword(), utilisateur)) {
             return ResponseEntity.status(401)
                     .body(creerErreur("Email ou mot de passe incorrect"));
         }
 
-        /*
-         * vérifier que le compte est actif
-         */
         if (!utilisateur.isActif()) {
             return ResponseEntity.status(403)
                     .body(creerErreur("Compte désactivé contacter le responsable"));
         }
 
-        /*
-         * retourner les infos de l'utilisateur connecté
-         * sans le mot de passe
-         * plus tard on retournera un token JWT ici
-         */
+        String token = jwtService.generateToken(
+                utilisateur.getId(),
+                utilisateur.getEmail(),
+                utilisateur.getRole());
+
         Map<String, Object> reponse = new HashMap<>();
         reponse.put("message", "Connexion réussie");
+        reponse.put("accessToken", token);
+        reponse.put("tokenType", "Bearer");
         reponse.put("id", utilisateur.getId());
         reponse.put("nom", utilisateur.getNom());
         reponse.put("prenom", utilisateur.getPrenom());
@@ -104,19 +75,29 @@ public class AuthController {
         return ResponseEntity.ok(reponse);
     }
 
-    // =====================
-    // INSCRIPTION FOURNISSEUR
-    // =====================
+    /**
+     * Accepte les mots de passe BCrypt ou, pour migration, l'ancien texte en clair
+     * (ré-encodé automatiquement en BCrypt après succès).
+     */
+    private boolean verifierMotDePasse(String brut, Utilisateur utilisateur) {
+        String stocke = utilisateur.getMotDePasse();
+        if (stocke == null) {
+            return false;
+        }
+        if (stocke.startsWith("$2a$") || stocke.startsWith("$2b$")) {
+            return passwordEncoder.matches(brut, stocke);
+        }
+        if (brut != null && brut.equals(stocke)) {
+            utilisateur.setMotDePasse(passwordEncoder.encode(brut));
+            utilisateurRepository.save(utilisateur);
+            return true;
+        }
+        return false;
+    }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(
             @RequestBody InscriptionFournisseurDTO dto) {
-
-        /*
-         * seul le fournisseur peut s'inscrire seul
-         * les utilisateurs internes sont créés par le responsable
-         * via UtilisateurController
-         */
         try {
             FournisseurDTO fournisseur =
                     utilisateurService.inscrireFournisseur(dto);
@@ -126,10 +107,6 @@ public class AuthController {
                     .body(creerErreur(e.getMessage()));
         }
     }
-
-    // =====================
-    // MÉTHODE PRIVÉE
-    // =====================
 
     private Map<String, String> creerErreur(String message) {
         Map<String, String> erreur = new HashMap<>();

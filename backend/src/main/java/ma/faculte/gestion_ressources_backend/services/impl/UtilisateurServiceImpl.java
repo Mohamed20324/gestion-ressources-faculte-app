@@ -6,6 +6,7 @@ import ma.faculte.gestion_ressources_backend.entities.utilisateurs.*;
 import ma.faculte.gestion_ressources_backend.repositories.interfaces.*;
 import ma.faculte.gestion_ressources_backend.services.interfaces.IUtilisateurService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -47,6 +48,75 @@ public class UtilisateurServiceImpl implements IUtilisateurService {
     @Autowired
     private IDepartementRepository departementRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
+    // =====================
+    // CRÉATION (DTO générique)
+    // =====================
+
+    @Override
+    public UtilisateurDTO creerUtilisateur(UtilisateurDTO dto) {
+        if (dto.getRole() == null || dto.getRole().isBlank()) {
+            throw new RuntimeException("Le rôle est obligatoire");
+        }
+        String role = dto.getRole().trim();
+        switch (role) {
+            case "ENSEIGNANT":
+                return creerEnseignant(versEnseignantDTO(dto));
+            case "CHEF_DEPARTEMENT":
+                return creerChefDepartement(versEnseignantDTO(dto));
+            case "RESPONSABLE":
+                return creerResponsable(versEnseignantDTO(dto));
+            case "TECHNICIEN":
+                return creerTechnicien(versEnseignantDTO(dto));
+            case "FOURNISSEUR":
+                if (dto.getNomSociete() == null || dto.getEmail() == null
+                        || dto.getMotDePasse() == null) {
+                    throw new RuntimeException(
+                            "nomSociete, email et motDePasse sont obligatoires pour un fournisseur");
+                }
+                InscriptionFournisseurDTO ins = new InscriptionFournisseurDTO();
+                ins.setNomSociete(dto.getNomSociete());
+                ins.setEmail(dto.getEmail());
+                ins.setMotDePasse(dto.getMotDePasse());
+                FournisseurDTO f = inscrireFournisseur(ins);
+                return getById(f.getId());
+            default:
+                throw new RuntimeException("Rôle non pris en charge : " + role);
+        }
+    }
+
+    @Override
+    public UtilisateurDTO modifierUtilisateur(Long id, UtilisateurDTO dto) {
+        Utilisateur utilisateur = utilisateurRepository
+                .findById(id)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé : " + id));
+        if (dto.getNom() != null) {
+            utilisateur.setNom(dto.getNom());
+        }
+        if (dto.getPrenom() != null) {
+            utilisateur.setPrenom(dto.getPrenom());
+        }
+        if (dto.getEmail() != null) {
+            utilisateur.setEmail(dto.getEmail());
+        }
+        utilisateurRepository.save(utilisateur);
+        return convertirEnDTO(utilisateur);
+    }
+
+    private EnseignantDTO versEnseignantDTO(UtilisateurDTO u) {
+        EnseignantDTO e = new EnseignantDTO();
+        e.setNom(u.getNom());
+        e.setPrenom(u.getPrenom());
+        e.setEmail(u.getEmail());
+        e.setMotDePasse(u.getMotDePasse());
+        e.setMatricule(u.getMatricule());
+        e.setSpecialite(u.getSpecialite());
+        e.setDepartementId(u.getDepartementId());
+        return e;
+    }
+
     // =====================
     // CRÉATION
     // =====================
@@ -75,7 +145,7 @@ public class UtilisateurServiceImpl implements IUtilisateurService {
                 dto.getNom(),
                 dto.getPrenom(),
                 dto.getEmail(),
-                dto.getMotDePasse(),
+                encoderMotDePasse(dto.getMotDePasse()),
                 dto.getMatricule(),
                 dto.getSpecialite(),
                 departement
@@ -96,7 +166,7 @@ public class UtilisateurServiceImpl implements IUtilisateurService {
                 dto.getNom(),
                 dto.getPrenom(),
                 dto.getEmail(),
-                dto.getMotDePasse(),
+                encoderMotDePasse(dto.getMotDePasse()),
                 dto.getMatricule(),
                 dto.getSpecialite()
         );
@@ -121,7 +191,7 @@ public class UtilisateurServiceImpl implements IUtilisateurService {
                 dto.getNom(),
                 dto.getPrenom(),
                 dto.getEmail(),
-                dto.getMotDePasse(),
+                encoderMotDePasse(dto.getMotDePasse()),
                 dto.getMatricule(),
                 dto.getSpecialite(),
                 departement
@@ -142,7 +212,7 @@ public class UtilisateurServiceImpl implements IUtilisateurService {
                 dto.getNom(),
                 dto.getPrenom(),
                 dto.getEmail(),
-                dto.getMotDePasse(),
+                encoderMotDePasse(dto.getMotDePasse()),
                 dto.getMatricule(),
                 dto.getSpecialite()
         );
@@ -304,10 +374,17 @@ public class UtilisateurServiceImpl implements IUtilisateurService {
         Fournisseur fournisseur = new Fournisseur(
                 dto.getNomSociete(),
                 dto.getEmail(),
-                dto.getMotDePasse()
+                encoderMotDePasse(dto.getMotDePasse())
         );
 
         fournisseurRepository.save(fournisseur);
         return convertirFournisseurEnDTO(fournisseur);
+    }
+
+    private String encoderMotDePasse(String brut) {
+        if (brut == null || brut.isBlank()) {
+            throw new RuntimeException("Le mot de passe est obligatoire");
+        }
+        return passwordEncoder.encode(brut);
     }
 }
