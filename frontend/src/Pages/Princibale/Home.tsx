@@ -21,11 +21,23 @@ const Home = () => {
       const user = await login(email, password);
       if (user.role === 'ADMIN' || user.role === 'RESPONSABLE') {
         navigate('/responsable/dashboard');
+      } else if (user.role === 'ENSEIGNANT') {
+        navigate('/enseignant/dashboard');
+      } else if (user.role === 'CHEF_DEPARTEMENT') {
+        navigate('/chef-departement/dashboard');
+      } else if (user.role === 'TECHNICIEN') {
+        navigate('/technicien/dashboard');
+      } else if (user.role === 'FOURNISSEUR') {
+        navigate('/fournisseur/dashboard');
       } else {
         navigate('/dashboard');
       }
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Email ou mot de passe incorrect');
+      if (err.response?.status === 403 && err.response?.data?.message?.includes('désactivé')) {
+        navigate('/inactive-account');
+      } else {
+        setError(err.response?.data?.message || 'Email ou mot de passe incorrect');
+      }
     } finally {
       setIsSubmitting(false);
     }
