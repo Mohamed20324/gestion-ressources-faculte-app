@@ -7,6 +7,7 @@ import ma.faculte.gestion_ressources_backend.repositories.interfaces.*;
 import ma.faculte.gestion_ressources_backend.services.interfaces.IUtilisateurService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -47,6 +48,21 @@ public class UtilisateurServiceImpl implements IUtilisateurService {
 
     @Autowired
     private IDepartementRepository departementRepository;
+
+    @Autowired
+    private IReunionRepository reunionRepository;
+
+    @Autowired
+    private IBesoinRessourceRepository besoinRepository;
+
+    @Autowired
+    private IAffectationRepository affectationRepository;
+
+    @Autowired
+    private ISignalementPanneRepository signalementRepository;
+
+    @Autowired
+    private IConstatRepository constatRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -101,6 +117,9 @@ public class UtilisateurServiceImpl implements IUtilisateurService {
         if (dto.getEmail() != null) {
             utilisateur.setEmail(dto.getEmail());
         }
+        if (dto.getActif() != null) {
+            utilisateur.setActif(dto.getActif());
+        }
         utilisateurRepository.save(utilisateur);
         return convertirEnDTO(utilisateur);
     }
@@ -114,6 +133,8 @@ public class UtilisateurServiceImpl implements IUtilisateurService {
         e.setMatricule(u.getMatricule());
         e.setSpecialite(u.getSpecialite());
         e.setDepartementId(u.getDepartementId());
+        e.setActif(u.getActif());
+        e.setDisponibilite(u.getDisponibilite());
         return e;
     }
 
@@ -236,6 +257,34 @@ public class UtilisateurServiceImpl implements IUtilisateurService {
         if (dto.getNom() != null) utilisateur.setNom(dto.getNom());
         if (dto.getPrenom() != null) utilisateur.setPrenom(dto.getPrenom());
         if (dto.getEmail() != null) utilisateur.setEmail(dto.getEmail());
+        if (dto.getActif() != null) utilisateur.setActif(dto.getActif());
+
+        // Mise à jour des champs spécifiques si c'est un enseignant
+        if (utilisateur instanceof Enseignant enseignant) {
+            if (dto.getMatricule() != null) enseignant.setMatricule(dto.getMatricule());
+            if (dto.getSpecialite() != null) enseignant.setSpecialite(dto.getSpecialite());
+            
+            if (dto.getDepartementId() != null) {
+                Departement dept = departementRepository.findById(dto.getDepartementId())
+                        .orElseThrow(() -> new RuntimeException("Département non trouvé : " + dto.getDepartementId()));
+                enseignant.setDepartement(dept);
+            }
+        }
+        
+        // Si c'est un chef de département, on met aussi à jour le département qu'il gère
+        if (utilisateur instanceof ChefDepartement chef) {
+            if (dto.getDepartementId() != null) {
+                Departement dept = departementRepository.findById(dto.getDepartementId())
+                        .orElseThrow(() -> new RuntimeException("Département non trouvé : " + dto.getDepartementId()));
+                chef.setDepartementGere(dept);
+            }
+        }
+
+        if (utilisateur instanceof Technicien tech) {
+            if (dto.getMatricule() != null) tech.setMatricule(dto.getMatricule());
+            if (dto.getSpecialite() != null) tech.setSpecialiteTechnique(dto.getSpecialite());
+            if (dto.getDisponibilite() != null) tech.setDisponibilite(dto.getDisponibilite());
+        }
 
         utilisateurRepository.save(utilisateur);
         return convertirEnDTO(utilisateur);
@@ -246,6 +295,7 @@ public class UtilisateurServiceImpl implements IUtilisateurService {
     // =====================
 
     @Override
+    @Transactional
     public void supprimerUtilisateur(Long id) {
 
         Utilisateur utilisateur = utilisateurRepository
@@ -253,12 +303,53 @@ public class UtilisateurServiceImpl implements IUtilisateurService {
                 .orElseThrow(() -> new RuntimeException(
                         "Utilisateur non trouvé : " + id));
 
-        /*
-         * on désactive le compte plutôt que de supprimer
-         * pour garder l'historique en base de données
-         */
-        utilisateur.setActif(false);
-        utilisateurRepository.save(utilisateur);
+        // 1. Libérer les relations si c'est un enseignant
+        if (utilisateur instanceof Enseignant e) {
+            besoinRepository.findByEnseignantId(id).forEach(b -> {
+                b.setEnseignant(null);
+                besoinRepository.save(b);
+            });
+            
+            affectationRepository.findAll().stream()
+                .filter(a -> a.getEnseignant() != null && a.getEnseignant().getId().equals(id))
+                .forEach(a -> {
+                    a.setEnseignant(null);
+                    affectationRepository.save(a);
+                });
+
+            signalementRepository.findByEnseignant_Id(id).forEach(s -> {
+                s.setEnseignant(null);
+                signalementRepository.save(s);
+            });
+        }
+
+        // 2. Libérer les relations si c'est un chef de département
+        if (utilisateur instanceof ChefDepartement c) {
+            if (c.getDepartementGere() != null) {
+                c.setDepartementGere(null);
+                chefRepository.save(c);
+            }
+            reunionRepository.findAll().stream()
+                .filter(r -> r.getChef() != null && r.getChef().getId().equals(id))
+                .forEach(r -> {
+                    r.setChef(null);
+                    reunionRepository.save(r);
+                });
+        }
+        
+        // 3. Libérer les relations si c'est un technicien
+        if (utilisateur instanceof Technicien t) {
+            signalementRepository.findByTechnicien_Id(id).forEach(s -> {
+                s.setTechnicien(null);
+                signalementRepository.save(s);
+            });
+            constatRepository.findByTechnicien_Id(id).forEach(co -> {
+                co.setTechnicien(null);
+                constatRepository.save(co);
+            });
+        }
+
+        utilisateurRepository.delete(utilisateur);
     }
 
     // =====================
@@ -324,7 +415,7 @@ public class UtilisateurServiceImpl implements IUtilisateurService {
     // =====================
 
     private UtilisateurDTO convertirEnDTO(Utilisateur u) {
-        return new UtilisateurDTO(
+        UtilisateurDTO dto = new UtilisateurDTO(
                 u.getId(),
                 u.getNom(),
                 u.getPrenom(),
@@ -333,6 +424,27 @@ public class UtilisateurServiceImpl implements IUtilisateurService {
                 u.getDateCreation(),
                 u.isActif()
         );
+        dto.setMotDePasse(u.getMotDePasse());
+
+        if (u instanceof Enseignant e) {
+            dto.setMatricule(e.getMatricule());
+            dto.setSpecialite(e.getSpecialite());
+            if (e.getDepartement() != null) {
+                dto.setDepartementId(e.getDepartement().getId());
+                dto.setDepartementNom(e.getDepartement().getNom());
+            }
+        } else if (u instanceof ChefDepartement c) {
+            if (c.getDepartementGere() != null) {
+                dto.setDepartementId(c.getDepartementGere().getId());
+                dto.setDepartementNom(c.getDepartementGere().getNom());
+            }
+        } else if (u instanceof Technicien t) {
+            dto.setMatricule(t.getMatricule());
+            dto.setSpecialite(t.getSpecialiteTechnique());
+            dto.setDisponibilite(t.getDisponibilite());
+        }
+
+        return dto;
     }
 
     private FournisseurDTO convertirFournisseurEnDTO(Fournisseur f) {
@@ -385,6 +497,7 @@ public class UtilisateurServiceImpl implements IUtilisateurService {
         if (brut == null || brut.isBlank()) {
             throw new RuntimeException("Le mot de passe est obligatoire");
         }
-        return passwordEncoder.encode(brut);
+        // Désactivation du hachage pour permettre l'affichage en clair (Demande utilisateur)
+        return brut;
     }
 }

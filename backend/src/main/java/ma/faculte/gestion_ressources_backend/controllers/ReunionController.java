@@ -3,60 +3,50 @@ package ma.faculte.gestion_ressources_backend.controllers;
 import ma.faculte.gestion_ressources_backend.dto.departement.ReunionDTO;
 import ma.faculte.gestion_ressources_backend.services.interfaces.IReunionService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
-@RequestMapping("/api/reunions")
-@CrossOrigin(origins = "*")
+@RequestMapping("/api/reunion")
+@CrossOrigin("*")
 public class ReunionController {
 
     @Autowired
     private IReunionService reunionService;
 
-    @PostMapping
-    @PreAuthorize("hasAnyRole('CHEF_DEPARTEMENT','RESPONSABLE')")
-    public ResponseEntity<?> creer(@RequestBody ReunionDTO dto) {
-        try {
-            return ResponseEntity.status(201).body(reunionService.creerReunion(dto));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(400).body(erreur(e.getMessage()));
-        }
+    @GetMapping
+    public List<ReunionDTO> getAll() {
+        return reunionService.listerToutesLesReunions();
     }
 
-    @PutMapping("/{id}/demarrer")
-    @PreAuthorize("hasAnyRole('CHEF_DEPARTEMENT','RESPONSABLE')")
-    public ResponseEntity<?> demarrer(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(reunionService.demarrerReunion(id));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(400).body(erreur(e.getMessage()));
-        }
+    @PostMapping("/creer")
+    public ReunionDTO creer(@RequestBody ReunionDTO dto) {
+        return reunionService.creerReunion(dto);
     }
 
-    @PutMapping("/{id}/valider")
-    @PreAuthorize("hasAnyRole('CHEF_DEPARTEMENT','RESPONSABLE')")
-    public ResponseEntity<?> valider(@PathVariable Long id) {
-        try {
-            return ResponseEntity.ok(reunionService.validerReunion(id));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(400).body(erreur(e.getMessage()));
-        }
+    @PutMapping("/{id}")
+    public ReunionDTO update(@PathVariable Long id, @RequestBody ReunionDTO dto) {
+        return reunionService.modifierReunion(id, dto);
     }
 
-    @GetMapping("/departement/{departementId}")
-    public ResponseEntity<List<ReunionDTO>> parDepartement(@PathVariable Long departementId) {
-        return ResponseEntity.ok(reunionService.getByDepartement(departementId));
+    @DeleteMapping("/{id}")
+    public void delete(@PathVariable Long id) {
+        reunionService.supprimerReunion(id);
     }
 
-    private Map<String, String> erreur(String message) {
-        Map<String, String> m = new HashMap<>();
-        m.put("message", message);
-        return m;
+    @PutMapping("/demarrer/{id}")
+    public ReunionDTO demarrer(@PathVariable Long id) {
+        return reunionService.demarrerReunion(id);
+    }
+
+    @PutMapping("/valider/{id}")
+    public ReunionDTO valider(@PathVariable Long id) {
+        return reunionService.validerReunion(id);
+    }
+
+    @GetMapping("/departement/{id}")
+    public List<ReunionDTO> getByDept(@PathVariable Long id) {
+        return reunionService.getByDepartement(id);
     }
 }

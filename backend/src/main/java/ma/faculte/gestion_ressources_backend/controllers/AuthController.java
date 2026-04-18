@@ -52,7 +52,7 @@ public class AuthController {
                     .body(creerErreur("Email ou mot de passe incorrect"));
         }
 
-        if (!utilisateur.isActif()) {
+        if (!utilisateur.isActif() && !utilisateur.getRole().equals("RESPONSABLE")) {
             return ResponseEntity.status(403)
                     .body(creerErreur("Compte désactivé contacter le responsable"));
         }
@@ -88,8 +88,6 @@ public class AuthController {
             return passwordEncoder.matches(brut, stocke);
         }
         if (brut != null && brut.equals(stocke)) {
-            utilisateur.setMotDePasse(passwordEncoder.encode(brut));
-            utilisateurRepository.save(utilisateur);
             return true;
         }
         return false;

@@ -19,7 +19,7 @@ public class UtilisateurDTO {
     private String email;
     private String role;
     private LocalDate dateCreation;
-    private boolean actif;
+    private Boolean actif;
 
     /*
      * Champs optionnels pour creerUtilisateur() (jamais exposés en réponse standard)
@@ -28,13 +28,15 @@ public class UtilisateurDTO {
     private String matricule;
     private String specialite;
     private Long departementId;
+    private String departementNom;
     private String nomSociete;
+    private String disponibilite;
 
     public UtilisateurDTO() {}
 
     public UtilisateurDTO(Long id, String nom, String prenom,
                           String email, String role,
-                          LocalDate dateCreation, boolean actif) {
+                          LocalDate dateCreation, Boolean actif) {
         this.id = id;
         this.nom = nom;
         this.prenom = prenom;
@@ -64,8 +66,8 @@ public class UtilisateurDTO {
         this.dateCreation = dateCreation;
     }
 
-    public boolean isActif() { return actif; }
-    public void setActif(boolean actif) { this.actif = actif; }
+    public Boolean getActif() { return actif; }
+    public void setActif(Boolean actif) { this.actif = actif; }
 
     public String getMotDePasse() { return motDePasse; }
     public void setMotDePasse(String motDePasse) { this.motDePasse = motDePasse; }
@@ -79,6 +81,12 @@ public class UtilisateurDTO {
     public Long getDepartementId() { return departementId; }
     public void setDepartementId(Long departementId) { this.departementId = departementId; }
 
+    public String getDepartementNom() { return departementNom; }
+    public void setDepartementNom(String departementNom) { this.departementNom = departementNom; }
+
     public String getNomSociete() { return nomSociete; }
     public void setNomSociete(String nomSociete) { this.nomSociete = nomSociete; }
+
+    public String getDisponibilite() { return disponibilite; }
+    public void setDisponibilite(String disponibilite) { this.disponibilite = disponibilite; }
 }

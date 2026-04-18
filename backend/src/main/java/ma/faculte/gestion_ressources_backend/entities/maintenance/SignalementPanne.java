@@ -27,8 +27,8 @@ public class SignalementPanne {
     private Ressource ressource;
 
     @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "enseignant_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "enseignant_id", nullable = true)
     private Enseignant enseignant;
 
     @JsonIgnore

@@ -10,4 +10,5 @@ import java.util.Optional;
 public interface IConstatRepository extends JpaRepository<Constat, Long> {
 
     Optional<Constat> findBySignalement_Id(Long signalementId);
+    java.util.List<Constat> findByTechnicien_Id(Long technicienId);
 }

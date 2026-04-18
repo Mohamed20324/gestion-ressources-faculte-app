@@ -79,6 +79,20 @@ public class DepartementController {
         }
     }
 
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('RESPONSABLE')")
+    public ResponseEntity<?> supprimer(@PathVariable Long id) {
+        try {
+            departementService.supprimerDepartement(id);
+            Map<String, String> reponse = new HashMap<>();
+            reponse.put("message", "Département supprimé avec succès");
+            return ResponseEntity.ok(reponse);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400)
+                    .body(creerErreur(e.getMessage()));
+        }
+    }
+
     private Map<String, String> creerErreur(String message) {
         Map<String, String> erreur = new HashMap<>();
         erreur.put("message", message);

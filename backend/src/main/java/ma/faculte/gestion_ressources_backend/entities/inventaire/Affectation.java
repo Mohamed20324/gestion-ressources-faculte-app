@@ -21,8 +21,8 @@ public class Affectation {
     private Ressource ressource;
 
     @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "departement_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "departement_id", nullable = true)
     private Departement departement;
 
     @JsonIgnore

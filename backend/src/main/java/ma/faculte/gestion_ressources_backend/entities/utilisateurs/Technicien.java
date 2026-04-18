@@ -31,6 +31,9 @@ public class Technicien extends Utilisateur {
     @Column(nullable = true)
     private String specialiteTechnique;
 
+    @Column(nullable = true)
+    private String disponibilite = "Disponible";
+
     // =====================
     // CONSTRUCTEURS
     // =====================
@@ -43,6 +46,7 @@ public class Technicien extends Utilisateur {
         super(nom, prenom, email, motDePasse, "TECHNICIEN");
         this.matricule = matricule;
         this.specialiteTechnique = specialiteTechnique;
+        this.disponibilite = "Disponible";
     }
 
     // =====================
@@ -54,4 +58,7 @@ public class Technicien extends Utilisateur {
 
     public String getSpecialiteTechnique() { return specialiteTechnique; }
     public void setSpecialiteTechnique(String s) { this.specialiteTechnique = s; }
+
+    public String getDisponibilite() { return disponibilite; }
+    public void setDisponibilite(String d) { this.disponibilite = d; }
 }

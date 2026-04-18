@@ -2,10 +2,11 @@ package ma.faculte.gestion_ressources_backend.services.impl;
 
 import ma.faculte.gestion_ressources_backend.dto.departement.DepartementDTO;
 import ma.faculte.gestion_ressources_backend.entities.departement.Departement;
-import ma.faculte.gestion_ressources_backend.repositories.interfaces.IDepartementRepository;
+import ma.faculte.gestion_ressources_backend.repositories.interfaces.*;
 import ma.faculte.gestion_ressources_backend.services.interfaces.IDepartementService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -14,6 +15,21 @@ public class DepartementServiceImpl implements IDepartementService {
 
     @Autowired
     private IDepartementRepository departementRepository;
+
+    @Autowired
+    private IEnseignantRepository enseignantRepository;
+
+    @Autowired
+    private IChefDepartementRepository chefRepository;
+
+    @Autowired
+    private IAffectationRepository affectationRepository;
+
+    @Autowired
+    private IReunionRepository reunionRepository;
+
+    @Autowired
+    private IBesoinRessourceRepository besoinRepository;
 
     @Override
     public DepartementDTO creerDepartement(DepartementDTO dto) {
@@ -62,16 +78,52 @@ public class DepartementServiceImpl implements IDepartementService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional
+    public void supprimerDepartement(Long id) {
+        Departement departement = departementRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Département non trouvé : " + id));
+
+        // 1. Libérer les enseignants (relation nullable)
+        enseignantRepository.findByDepartementId(id).forEach(e -> {
+            e.setDepartement(null);
+            enseignantRepository.save(e);
+        });
+
+        // 2. Libérer le chef (relation nullable)
+        if (departement.getChef() != null) {
+            departement.getChef().setDepartementGere(null);
+            chefRepository.save(departement.getChef());
+        }
+
+        // 3. Libérer les affectations (relation rendue nullable)
+        affectationRepository.findByDepartement_Id(id).forEach(a -> {
+            a.setDepartement(null);
+            affectationRepository.save(a);
+        });
+
+        // 4. Libérer les réunions (relation rendue nullable)
+        reunionRepository.findByDepartementId(id).forEach(r -> {
+            r.setDepartement(null);
+            reunionRepository.save(r);
+        });
+
+        // 5. Libérer les besoins (relation rendue nullable)
+        besoinRepository.findByDepartementId(id).forEach(b -> {
+            b.setDepartement(null);
+            besoinRepository.save(b);
+        });
+
+        // Enfin, supprimer le département
+        departementRepository.delete(departement);
+    }
+
     private DepartementDTO convertirEnDTO(Departement d) {
         DepartementDTO dto = new DepartementDTO();
         dto.setId(d.getId());
         dto.setNom(d.getNom());
         dto.setBudget(d.getBudget());
 
-        /*
-         * on récupère le nom du chef si existant
-         * sans charger l'objet complet
-         */
         if (d.getChef() != null) {
             dto.setChefId(d.getChef().getId());
             dto.setNomChef(d.getChef().getNom()

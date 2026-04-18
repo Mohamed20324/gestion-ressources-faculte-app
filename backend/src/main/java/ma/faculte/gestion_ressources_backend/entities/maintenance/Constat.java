@@ -27,8 +27,8 @@ public class Constat {
     private SignalementPanne signalement;
 
     @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "technicien_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "technicien_id", nullable = true)
     private Technicien technicien;
 
     @Column(nullable = false, length = 4000)

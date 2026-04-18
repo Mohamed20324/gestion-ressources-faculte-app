@@ -1,0 +1,15 @@
+.secondary-menu-fixed {
+  width: 180px !important;      /* Largeur fixe à 180px */
+  min-width: 180px !important;  /* Ne peut pas être plus petit */
+  max-width: 180px !important;  /* Ne peut pas être plus grand */
+  flex-shrink: 0 !important;    /* Ne rétrécit pas */
+  flex-grow: 0 !important;      /* Ne grandit pas */
+}
+
+.main-sidebar-fixed {
+  width: 48px !important;       /* Sidebar principale 48px */
+  min-width: 48px !important;
+  max-width: 48px !important;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+}

@@ -56,6 +56,50 @@ public class ReunionServiceImpl implements IReunionService {
 
     @Override
     @Transactional
+    public ReunionDTO modifierReunion(Long id, ReunionDTO dto) {
+        Reunion r = reunionRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Réunion introuvable"));
+        if (dto.getDate() != null) r.setDate(dto.getDate());
+        if (dto.getHeure() != null) r.setHeure(dto.getHeure());
+        if (dto.getStatut() != null) r.setStatut(dto.getStatut());
+        
+        if (dto.getDepartementId() != null) {
+            Departement dep = departementRepository.findById(dto.getDepartementId()).orElse(null);
+            r.setDepartement(dep);
+        }
+        if (dto.getChefId() != null) {
+            ChefDepartement chef = chefDepartementRepository.findById(dto.getChefId()).orElse(null);
+            r.setChef(chef);
+        }
+        return versDto(reunionRepository.save(r));
+    }
+
+    @Override
+    @Transactional
+    public void supprimerReunion(Long id) {
+        reunionRepository.deleteById(id);
+    }
+
+    @Override
+    @Transactional
+    public List<ReunionDTO> listerToutesLesReunions() {
+        java.time.LocalDate today = java.time.LocalDate.now();
+        List<Reunion> all = reunionRepository.findAll();
+        
+        for (Reunion r : all) {
+            if (r.getDate().isBefore(today) && Reunion.STATUT_PLANIFIEE.equals(r.getStatut())) {
+                r.setStatut(Reunion.STATUT_VALIDEE);
+                reunionRepository.save(r);
+            }
+        }
+        
+        return all.stream()
+                .map(this::versDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
     public ReunionDTO demarrerReunion(Long id) {
         Reunion r = reunionRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Réunion introuvable"));

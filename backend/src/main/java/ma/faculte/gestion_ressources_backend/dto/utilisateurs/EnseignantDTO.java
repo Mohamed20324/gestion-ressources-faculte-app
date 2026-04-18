@@ -32,6 +32,8 @@ public class EnseignantDTO {
      * pas l'objet complet pour éviter la complexité
      */
     private Long departementId;
+    private Boolean actif;
+    private String disponibilite;
 
     public EnseignantDTO() {}
 
@@ -60,4 +62,10 @@ public class EnseignantDTO {
     public void setDepartementId(Long departementId) {
         this.departementId = departementId;
     }
+
+    public Boolean getActif() { return actif; }
+    public void setActif(Boolean actif) { this.actif = actif; }
+
+    public String getDisponibilite() { return disponibilite; }
+    public void setDisponibilite(String disponibilite) { this.disponibilite = disponibilite; }
 }

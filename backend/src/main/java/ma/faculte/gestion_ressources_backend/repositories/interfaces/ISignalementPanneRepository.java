@@ -14,4 +14,5 @@ public interface ISignalementPanneRepository extends JpaRepository<SignalementPa
     List<SignalementPanne> findByTechnicien_Id(Long technicienId);
 
     List<SignalementPanne> findByStatut(String statut);
+    List<SignalementPanne> findByEnseignant_Id(Long enseignantId);
 }

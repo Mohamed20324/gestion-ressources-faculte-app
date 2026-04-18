@@ -7,10 +7,10 @@ import java.util.List;
 public interface IReunionService {
 
     ReunionDTO creerReunion(ReunionDTO dto);
-
+    ReunionDTO modifierReunion(Long id, ReunionDTO dto);
+    void supprimerReunion(Long id);
     ReunionDTO demarrerReunion(Long id);
-
     ReunionDTO validerReunion(Long id);
-
     List<ReunionDTO> getByDepartement(Long departementId);
+    List<ReunionDTO> listerToutesLesReunions();
 }
