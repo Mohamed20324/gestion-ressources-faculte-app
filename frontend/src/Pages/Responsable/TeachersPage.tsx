@@ -9,7 +9,6 @@ interface Enseignant {
   nom: string;
   prenom: string;
   email: string;
-  telephone?: string;
   matricule?: string;
   specialite?: string;
   departementId?: number;
@@ -543,17 +542,17 @@ const TeacherModal = ({ isOpen, onClose, onSave, formData, setFormData, editing,
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl w-full max-w-lg p-8 relative shadow-2xl animate-in fade-in zoom-in duration-200">
+      <div className="bg-white rounded-3xl w-full max-w-md p-6 relative shadow-2xl animate-in fade-in zoom-in duration-200">
         <button onClick={onClose} className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors">
           <X size={24} />
         </button>
         
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold text-gray-900">{editing ? 'Modifier' : 'Nouveau'} Enseignant</h2>
-          <p className="text-gray-500 mt-1 text-sm">Remplissez les informations professionnelles de l'enseignant</p>
+        <div className="mb-5">
+          <h2 className="text-xl font-bold text-gray-900">{editing ? 'Modifier' : 'Nouveau'} Enseignant</h2>
+          <p className="text-gray-500 mt-0.5 text-xs">Gérez les informations de l'enseignant</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 mb-6">
+        <div className="grid grid-cols-2 gap-3 mb-4">
           <div className="col-span-1">
             <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Nom</label>
             <input type="text" value={formData.nom} onChange={(e) => setFormData({ ...formData, nom: e.target.value })} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" />

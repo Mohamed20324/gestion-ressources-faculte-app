@@ -1,15 +1,11 @@
 import { useState, useEffect } from 'react';
 import { 
-  Video, 
-  Search, 
+  Video,  
   Plus, 
   Calendar as CalendarIcon, 
   Clock, 
   Edit, 
-  Trash2, 
-  ChevronLeft, 
-  ChevronRight,
-  CheckCircle2,
+  Trash2,
   Clock3,
   X,
   Loader,
