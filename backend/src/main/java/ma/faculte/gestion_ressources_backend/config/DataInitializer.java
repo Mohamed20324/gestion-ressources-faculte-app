@@ -1,6 +1,7 @@
 package ma.faculte.gestion_ressources_backend.config;
 
 import ma.faculte.gestion_ressources_backend.entities.departement.Departement;
+import ma.faculte.gestion_ressources_backend.entities.referentiel.TypeRessource;
 import ma.faculte.gestion_ressources_backend.entities.utilisateurs.*;
 import ma.faculte.gestion_ressources_backend.repositories.interfaces.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,9 @@ public class DataInitializer implements CommandLineRunner {
 
     @Autowired
     private IUtilisateurRepository utilisateurRepository;
+
+    @Autowired
+    private ITypeRessourceRepository typeRessourceRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -85,6 +89,13 @@ public class DataInitializer implements CommandLineRunner {
         );
         responsableRepository.save(resp);
 
-        System.out.println(">>> Données initialisées : 5 Départements, 8 Chefs, 8 Enseignants, 8 Techniciens.");
+        // 6. Création des types de ressources
+        typeRessourceRepository.save(new TypeRessource("ORDINATEUR", "Ordinateur", true));
+        typeRessourceRepository.save(new TypeRessource("IMPRIMANTE", "Imprimante", true));
+        typeRessourceRepository.save(new TypeRessource("PROJECTEUR", "Projecteur", false));
+        typeRessourceRepository.save(new TypeRessource("SCANNER", "Scanner", false));
+        typeRessourceRepository.save(new TypeRessource("SERVEUR", "Serveur", false));
+
+        System.out.println(">>> Données initialisées : 5 Départements, 8 Chefs, 8 Enseignants, 8 Techniciens, 5 Types Ressources.");
     }
 }

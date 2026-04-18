@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Package, Calendar, FileText, Users } from 'lucide-react';
+import { LayoutDashboard, Package, Calendar, FileText, Users, Settings } from 'lucide-react';
 
 interface SidebarProps {
   role: string;
@@ -22,12 +22,15 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
   const getLinks = () => {
     const baseLinks = [
       { to: `${baseUrl}/dashboard`, icon: LayoutDashboard, label: 'Tableau de bord' },
-      { to: `${baseUrl}/demandes`, icon: FileText, label: 'Mes Demandes' },
+      { to: `${baseUrl}/besoins`, icon: FileText, label: 'Mes Besoins' },
     ];
 
-    if (role === 'ChefDepartement') {
-      baseLinks.splice(1, 0, { to: `${baseUrl}/enseignants`, icon: Users, label: 'Enseignants' });
-      baseLinks.splice(2, 0, { to: `${baseUrl}/meetings`, icon: Calendar, label: 'Réunions' });
+    if (role === 'ChefDepartement' || role === 'Enseignant') {
+      if (role === 'ChefDepartement') {
+        baseLinks.splice(1, 0, { to: `${baseUrl}/enseignants`, icon: Users, label: 'Enseignants' });
+        baseLinks.splice(2, 0, { to: `${baseUrl}/types-ressources`, icon: Settings, label: 'Types Ressources' });
+      }
+      baseLinks.splice(role === 'ChefDepartement' ? 3 : 1, 0, { to: `${baseUrl}/meetings`, icon: Calendar, label: 'Réunions' });
     }
 
     return baseLinks;

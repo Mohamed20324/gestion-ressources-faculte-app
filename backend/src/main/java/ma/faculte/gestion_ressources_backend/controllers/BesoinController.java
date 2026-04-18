@@ -61,6 +61,11 @@ public class BesoinController {
         return ResponseEntity.ok(besoinService.getBesoinsByStatut(statut));
     }
 
+    @GetMapping
+    public ResponseEntity<List<BesoinRessourceDTO>> getAll() {
+        return ResponseEntity.ok(besoinService.getAllBesoins());
+    }
+
     @GetMapping("/enseignant/{enseignantId}")
     public ResponseEntity<List<BesoinRessourceDTO>> parEnseignant(@PathVariable Long enseignantId) {
         return ResponseEntity.ok(besoinService.getBesoinsByEnseignant(enseignantId));

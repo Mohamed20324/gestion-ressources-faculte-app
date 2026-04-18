@@ -58,6 +58,27 @@ public class TypeRessourceServiceImpl implements ITypeRessourceService {
         return convertirEnDTO(type);
     }
 
+    @Override
+    public TypeRessourceDTO modifierType(Long id, TypeRessourceDTO dto) {
+        TypeRessource type = typeRessourceRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Type non trouvé"));
+        
+        type.setLibelle(dto.getLibelle());
+        type.setCode(dto.getCode());
+        type.setActif(dto.isActif());
+        type.setEstStandard(dto.isEstStandard());
+        
+        return convertirEnDTO(typeRessourceRepository.save(type));
+    }
+
+    @Override
+    public void supprimerType(Long id) {
+        if (!typeRessourceRepository.existsById(id)) {
+            throw new RuntimeException("Type non trouvé");
+        }
+        typeRessourceRepository.deleteById(id);
+    }
+
     private TypeRessourceDTO convertirEnDTO(TypeRessource t) {
         TypeRessourceDTO dto = new TypeRessourceDTO();
         dto.setId(t.getId());

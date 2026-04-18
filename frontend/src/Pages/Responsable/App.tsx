@@ -10,6 +10,7 @@ import ResourcesPage from './ResourcesPage';
 import AppelsOffresPage from './AppelsOffresPage';
 import MeetingsPage from './MeetingsPage';
 import MeetingCalendarPage from './MeetingCalendarPage';
+import BesoinsGlobalPage from './BesoinsGlobalPage';
 
 const AppContent = () => {
   return (
@@ -17,7 +18,7 @@ const AppContent = () => {
       <Header />
       <div className="flex flex-1 bg-white text-sm text-gray-700 font-sans overflow-hidden">
         <Sidebar />
-        <div className="flex-1 flex flex-col h-screen overflow-auto">
+        <div className="flex-1 flex flex-col h-screen overflow-auto pb-20">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
@@ -26,6 +27,7 @@ const AppContent = () => {
             <Route path="/technicians" element={<TechniciansPage />} />
             <Route path="/department-heads" element={<DepartmentHeadPage />} />
             <Route path="/resources" element={<ResourcesPage />} />
+            <Route path="/needs" element={<BesoinsGlobalPage />} />
             <Route path="/tenders" element={<AppelsOffresPage />} />
             
             {/* Routes Réunions */}

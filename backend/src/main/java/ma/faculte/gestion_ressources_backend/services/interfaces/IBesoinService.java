@@ -17,4 +17,5 @@ public interface IBesoinService {
     List<BesoinRessourceDTO> getBesoinsByStatut(String statut);
 
     List<BesoinRessourceDTO> getBesoinsByEnseignant(Long enseignantId);
+    List<BesoinRessourceDTO> getAllBesoins();
 }

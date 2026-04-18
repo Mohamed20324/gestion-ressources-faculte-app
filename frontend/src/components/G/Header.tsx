@@ -191,7 +191,11 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
               
               <div className="p-3 border-t border-gray-50 bg-gray-50/30 text-center">
                 <button 
-                  onClick={() => { navigate(user.role === 'CHEF_DEPARTEMENT' ? '/chef-departement/meetings' : '/dashboard/meetings'); setIsNotificationsOpen(false); }}
+                  onClick={() => { 
+                    const path = user.role === 'CHEF_DEPARTEMENT' ? '/chef-departement/meetings' : '/enseignant/meetings';
+                    navigate(path); 
+                    setIsNotificationsOpen(false); 
+                  }}
                   className="text-[10px] font-bold text-purple-600 hover:text-purple-700 uppercase tracking-wider"
                 >
                   Voir tout l'agenda

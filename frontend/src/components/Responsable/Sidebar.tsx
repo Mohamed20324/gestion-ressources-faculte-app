@@ -7,7 +7,7 @@ import {
   FileText, LayoutDashboard,
   UserPlus, Plus, Sparkles, MoreHorizontal,
   Crown, GraduationCap, Wrench, Package, Video, CalendarCheck,
-  Moon, Sun
+  Moon, Sun, ClipboardList
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -76,7 +76,6 @@ const secondaryMenus: Record<string, MenuType> = {
       {
         type: "nav",
         items: [
-          { icon: <Sparkles size={16} />, text: "Nouveau besoin", path: "/responsable/needs/new" },
           { icon: <LayoutDashboard size={16} />, text: "Signalements", path: "/responsable/reports" }
         ]
       }
@@ -88,12 +87,13 @@ const secondaryMenus: Record<string, MenuType> = {
     sections: [
       {
         type: "header",
-        title: "Inventaire & Stocks"
+        title: "Inventaire & Besoins"
       },
       {
         type: "nav",
         items: [
-          { icon: <Package size={16} />, text: "Gestion des ressources", path: "/responsable/resources" },
+          { icon: <Package size={16} />, text: "Inventaire", path: "/responsable/resources" },
+          { icon: <ClipboardList size={16} />, text: "Besoins Départements", path: "/responsable/needs" },
           { icon: <FileText size={16} />, text: "Marchés & Appels d'offres", path: "/responsable/tenders" }
         ]
       }

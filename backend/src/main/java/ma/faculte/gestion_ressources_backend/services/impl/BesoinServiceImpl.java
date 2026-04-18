@@ -167,6 +167,14 @@ public class BesoinServiceImpl implements IBesoinService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<BesoinRessourceDTO> getAllBesoins() {
+        return besoinRessourceRepository.findAll().stream()
+                .map(this::versDto)
+                .collect(Collectors.toList());
+    }
+
     private BesoinRessourceDTO versDto(BesoinRessource b) {
         BesoinRessourceDTO d = new BesoinRessourceDTO();
         d.setId(b.getId());

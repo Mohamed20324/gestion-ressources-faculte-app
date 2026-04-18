@@ -93,6 +93,23 @@ export const api = {
     getBesoinsByDepartement: (id) => fetch(`${API_BASE_URL}/besoins/departement/${id}`, { 
         headers: getHeaders() 
     }),
+
+    createBesoin: (data) => fetch(`${API_BASE_URL}/besoins`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data)
+    }),
+
+    updateBesoin: (id, data) => fetch(`${API_BASE_URL}/besoins/${id}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(data)
+    }),
+
+    deleteBesoin: (id) => fetch(`${API_BASE_URL}/besoins/${id}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+    }),
     
     // Ressources
     getAllRessources: (statut = '') => {
@@ -117,6 +134,12 @@ export const api = {
         body: JSON.stringify(data)
     }),
 
+    addBesoinsToAppelOffre: (id, besoinIds) => fetch(`${API_BASE_URL}/appels-offres/${id}/besoins`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(besoinIds)
+    }),
+
     // Réunions
     getAllReunions: () => fetch(`${API_BASE_URL}/reunion`, { headers: getHeaders() }),
     
@@ -137,6 +160,25 @@ export const api = {
     }),
     
     deleteReunion: (id) => fetch(`${API_BASE_URL}/reunion/${id}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+    }),
+
+    // Types de Ressources
+    getAllTypesRessources: () => fetch(`${API_BASE_URL}/types-ressources`, { 
+        headers: getHeaders() 
+    }),
+    createTypeRessource: (data) => fetch(`${API_BASE_URL}/types-ressources`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data)
+    }),
+    updateTypeRessource: (id, data) => fetch(`${API_BASE_URL}/types-ressources/${id}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(data)
+    }),
+    deleteTypeRessource: (id) => fetch(`${API_BASE_URL}/types-ressources/${id}`, {
         method: 'DELETE',
         headers: getHeaders()
     }),

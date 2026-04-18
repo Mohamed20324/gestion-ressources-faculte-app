@@ -38,7 +38,7 @@ public class TypeRessourceController {
     private ITypeRessourceService typeRessourceService;
 
     @PostMapping
-    @PreAuthorize("hasRole('RESPONSABLE')")
+    @PreAuthorize("hasAnyRole('RESPONSABLE', 'CHEF_DEPARTEMENT')")
     public ResponseEntity<?> creer(@RequestBody TypeRessourceDTO dto) {
         try {
             TypeRessourceDTO result = typeRessourceService.creerType(dto);
@@ -46,6 +46,27 @@ public class TypeRessourceController {
         } catch (RuntimeException e) {
             return ResponseEntity.status(400)
                     .body(creerErreur(e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('RESPONSABLE', 'CHEF_DEPARTEMENT')")
+    public ResponseEntity<?> modifier(@PathVariable Long id, @RequestBody TypeRessourceDTO dto) {
+        try {
+            return ResponseEntity.ok(typeRessourceService.modifierType(id, dto));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body(creerErreur(e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('RESPONSABLE', 'CHEF_DEPARTEMENT')")
+    public ResponseEntity<?> supprimer(@PathVariable Long id) {
+        try {
+            typeRessourceService.supprimerType(id);
+            return ResponseEntity.ok(Map.of("message", "Type supprimé"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body(creerErreur(e.getMessage()));
         }
     }
 
