@@ -1,16 +1,10 @@
 import { useState, useEffect } from 'react';
 import {
   Video,
-  Plus,
   Calendar as CalendarIcon,
   Clock,
-  Edit,
-  Trash2,
   Clock3,
-  X,
   Loader,
-  AlertTriangle,
-  CalendarCheck,
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
@@ -28,6 +22,67 @@ interface Reunion {
   chefId?: number;
 }
 
+const MeetingTimer = ({ date, heure }: { date: any; heure: string }) => {
+  const [timeLeft, setTimeLeft] = useState<{ days: number, hours: number, minutes: number, seconds: number } | null>(null);
+  const [status, setStatus] = useState<'upcoming' | 'ongoing' | 'finished'>('upcoming');
+
+  useEffect(() => {
+    const calculateTime = () => {
+      let targetDate: Date;
+      
+      if (Array.isArray(date)) {
+        const [y, m, d] = date;
+        targetDate = new Date(y, m - 1, d);
+      } else {
+        targetDate = new Date(date);
+      }
+
+      const [h, min] = heure.split(':').map(Number);
+      targetDate.setHours(h, min, 0, 0);
+
+      const now = new Date().getTime();
+      const distance = targetDate.getTime() - now;
+
+      if (distance < 0) {
+        // Assume meeting lasts 2 hours for "ongoing" status check, or just mark as finished
+        if (distance > -7200000) { // 2 hours
+          setStatus('ongoing');
+        } else {
+          setStatus('finished');
+        }
+        setTimeLeft(null);
+        return;
+      }
+
+      setStatus('upcoming');
+      setTimeLeft({
+        days: Math.floor(distance / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((distance % (1000 * 60)) / 1000)
+      });
+    };
+
+    calculateTime();
+    const interval = setInterval(calculateTime, 1000);
+    return () => clearInterval(interval);
+  }, [date, heure]);
+
+  if (status === 'finished') return <span className="text-red-500 font-bold text-[10px] uppercase">Terminée</span>;
+  if (status === 'ongoing') return <span className="text-green-500 font-bold text-[10px] uppercase animate-pulse">En cours...</span>;
+  if (!timeLeft) return null;
+
+  return (
+    <div className="flex items-center gap-1 font-mono text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-md border border-purple-100">
+      <Clock size={10} className="animate-pulse" />
+      <span>
+        {timeLeft.days > 0 ? `${timeLeft.days}j ` : ''}
+        {String(timeLeft.hours).padStart(2, '0')}:{String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
+      </span>
+    </div>
+  );
+};
+
 const MeetingsPage = () => {
   const { user } = useAuth();
   const { notifications, showNotification, removeNotification } = useNotifications();
@@ -35,21 +90,6 @@ const MeetingsPage = () => {
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState<any>(null);
 
-  // Modal states
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [editingMeeting, setEditingMeeting] = useState<Reunion | null>(null);
-  const [meetingToDelete, setMeetingToDelete] = useState<number | null>(null);
-  const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-
-  // Form state
-  const [formData, setFormData] = useState({
-    date: '',
-    heure: '',
-    statut: 'PLANIFIEE'
-  });
-  
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 3;
 
@@ -89,86 +129,6 @@ const MeetingsPage = () => {
   useEffect(() => {
     fetchData();
   }, [user]);
-
-  const handleOpenCreate = () => {
-    const today = new Date().toISOString().split('T')[0];
-    const now = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }).replace('h', ':');
-    setEditingMeeting(null);
-    setFormData({ date: today, heure: now, statut: 'PLANIFIEE' });
-    setIsModalOpen(true);
-  };
-
-  const handleOpenEdit = (meeting: Reunion) => {
-    setEditingMeeting(meeting);
-    let dateStr = meeting.date;
-    if (Array.isArray(meeting.date)) {
-      const [y, m, d] = meeting.date;
-      dateStr = `${y}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
-    }
-    setFormData({
-      date: dateStr,
-      heure: meeting.heure,
-      statut: meeting.statut
-    });
-    setIsModalOpen(true);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.date || !formData.heure || !userData?.departementId) {
-      showNotification('error', 'Veuillez remplir tous les champs obligatoires');
-      return;
-    }
-
-    setSaving(true);
-    try {
-      let response;
-      const payload = {
-        ...formData,
-        departementId: userData.departementId,
-        chefId: user.id
-      };
-
-      if (editingMeeting) {
-        response = await api.updateReunion(editingMeeting.id, payload);
-      } else {
-        response = await api.createReunion(payload);
-      }
-
-      if (response.ok) {
-        showNotification('success', editingMeeting ? 'Réunion modifiée' : 'Réunion programmée');
-        setIsModalOpen(false);
-        fetchData();
-      } else {
-        const error = await response.json();
-        showNotification('error', error.message || 'Erreur lors de l\'enregistrement');
-      }
-    } catch (error) {
-      showNotification('error', 'Erreur de connexion');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!meetingToDelete) return;
-    setDeleting(true);
-    try {
-      const response = await api.deleteReunion(meetingToDelete);
-      if (response.ok) {
-        showNotification('success', 'Réunion supprimée avec succès');
-        setIsDeleteModalOpen(false);
-        fetchData();
-      } else {
-        showNotification('error', 'Erreur lors de la suppression');
-      }
-    } catch (error) {
-      showNotification('error', 'Erreur de connexion');
-    } finally {
-      setDeleting(false);
-      setMeetingToDelete(null);
-    }
-  };
 
   const currentMeetings = meetings.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalPages = Math.ceil(meetings.length / itemsPerPage);
@@ -210,19 +170,8 @@ const MeetingsPage = () => {
             <Video className="text-purple-600" size={32} />
             Mes Réunions de Département
           </h1>
-          <p className="text-gray-500 mt-1">Planifiez et gérez les réunions pour valider les besoins de votre département.</p>
+          <p className="text-gray-500 mt-1">Consultez les réunions programmées pour votre département.</p>
         </div>
-
-        <button
-          onClick={handleOpenCreate}
-          className="fixed bottom-8 right-8 w-12 h-12 bg-purple-600 text-white rounded-full shadow-2xl hover:bg-purple-700 hover:scale-110 transition-all flex items-center justify-center z-[50] group"
-          title="Programmer une réunion"
-        >
-          <Plus size={24} />
-          <span className="absolute right-full mr-3 px-3 py-1 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-            Programmer Réunion
-          </span>
-        </button>
       </div>
 
       {/* Grid */}
@@ -239,7 +188,10 @@ const MeetingsPage = () => {
                   {meeting.statut === 'EN_COURS' ? <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" /> : <Clock3 size={14} />}
                   {meeting.statut}
                 </span>
-                <span className="text-[10px] font-bold text-gray-400">ID: #{meeting.id}</span>
+                <div className="flex flex-col items-end gap-1">
+                  <span className="text-[10px] font-bold text-gray-400">ID: #{meeting.id}</span>
+                  <MeetingTimer date={meeting.date} heure={meeting.heure} />
+                </div>
               </div>
 
               <h3 className="text-lg font-bold text-gray-900 mb-6 group-hover:text-purple-600 transition-colors">
@@ -267,21 +219,8 @@ const MeetingsPage = () => {
                   </div>
                 </div>
               </div>
-
-              <div className="flex items-center justify-end pt-6 border-t border-gray-50 gap-2">
-                <button
-                  onClick={() => handleOpenEdit(meeting)}
-                  className="p-2 text-purple-600 hover:bg-purple-50 rounded-xl transition-colors"
-                >
-                  <Edit size={16} />
-                </button>
-                <button
-                  className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
-                  onClick={() => { setMeetingToDelete(meeting.id); setIsDeleteModalOpen(true); }}
-                >
-                  <Trash2 size={16} />
-                </button>
-              </div>
+              
+              {/* Note: Read-only view for ChefDepartement */}
             </div>
           ))}
           {!loading && currentMeetings.length === 0 && (
@@ -330,94 +269,6 @@ const MeetingsPage = () => {
               >
                 <ChevronRight size={20} />
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-                {editingMeeting ? 'Modifier la Réunion' : 'Programmer une Réunion'}
-              </h2>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                <X size={20} />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-gray-700 ml-1">Date</label>
-                  <div className="relative">
-                    <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
-                    <input
-                      type="date"
-                      value={formData.date}
-                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                      onClick={(e) => (e.target as any).showPicker?.()}
-                      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition-all cursor-pointer"
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="space-y-1.5">
-                  <label className="text-sm font-bold text-gray-700 ml-1">Heure</label>
-                  <div className="relative">
-                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
-                    <input
-                      type="time"
-                      value={formData.heure}
-                      onChange={(e) => setFormData({ ...formData, heure: e.target.value })}
-                      onClick={(e) => (e.target as any).showPicker?.()}
-                      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition-all cursor-pointer"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-sm font-bold text-gray-700 ml-1">Statut</label>
-                <select
-                  value={formData.statut}
-                  onChange={(e) => setFormData({ ...formData, statut: e.target.value })}
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition-all"
-                >
-                  <option value="PLANIFIEE">Planifiée</option>
-                  <option value="EN_COURS">En cours</option>
-                  <option value="VALIDEE">Validée</option>
-                </select>
-              </div>
-
-              <div className="pt-4 flex gap-3">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-3 px-4 border border-gray-200 rounded-xl font-bold text-gray-600 hover:bg-gray-50 transition-colors">
-                  Annuler
-                </button>
-                <button type="submit" disabled={saving} className="flex-1 py-3 px-4 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50">
-                  {saving ? <Loader className="animate-spin" size={18} /> : 'Enregistrer'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {isDeleteModalOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl p-8 text-center">
-            <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 text-red-600">
-              <AlertTriangle size={32} />
-            </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">Supprimer la réunion ?</h2>
-            <p className="text-gray-500 mb-8 text-sm">Cette action supprimera définitivement la réunion programmée.</p>
-            <div className="flex gap-3">
-              <button onClick={() => setIsDeleteModalOpen(false)} className="flex-1 py-3 px-4 bg-gray-100 rounded-xl font-bold text-gray-600 hover:bg-gray-200 transition-colors">Annuler</button>
-              <button onClick={handleConfirmDelete} disabled={deleting} className="flex-1 py-3 px-4 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all">Supprimer</button>
             </div>
           </div>
         </div>
