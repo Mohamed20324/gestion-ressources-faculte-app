@@ -2,6 +2,7 @@ import React from 'react';
 import { LogOut, Bell, Settings } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
+import DepartmentReunionCountdown from './DepartmentReunionCountdown';
 
 interface HeaderProps {
   title: string;
@@ -28,6 +29,7 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
       </div>
 
       <div className="flex items-center gap-3">
+        <DepartmentReunionCountdown />
         <div className="hidden sm:flex items-center gap-2 border-r border-gray-100 pr-3 mr-1">
           <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-lg transition-colors">
             <Bell size={18} />

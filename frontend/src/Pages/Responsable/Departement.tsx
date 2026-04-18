@@ -179,10 +179,13 @@ const DepartmentsPage = () => {
                     </div>
                     <button
                         onClick={() => { setEditingDept(null); setFormData({ nom: '', budget: 0, chefId: undefined }); setIsModalOpen(true); }}
-                        className="fixed bottom-8 right-8 w-16 h-16 bg-blue-600 text-white rounded-full shadow-2xl shadow-blue-200 hover:bg-blue-700 hover:scale-110 transition-all flex items-center justify-center z-[50]"
+                        className="fixed bottom-8 right-8 w-12 h-12 bg-blue-600 text-white rounded-full shadow-2xl hover:bg-blue-700 hover:scale-110 transition-all flex items-center justify-center z-[50] group"
                         title="Nouveau Département"
                     >
-                        <Plus size={32} />
+                        <Plus size={24} />
+                        <span className="absolute right-full mr-3 px-3 py-1 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                            Nouveau Département
+                        </span>
                     </button>
                 </div>
             </div>

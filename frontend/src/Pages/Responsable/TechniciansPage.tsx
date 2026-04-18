@@ -168,13 +168,16 @@ const TechniciansPage = () => {
               className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all"
             />
           </div>
-          <button 
-            onClick={() => { setEditingTech(null); setIsModalOpen(true); }}
-            className="bg-green-600 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-green-100 hover:bg-green-700 transition-all flex items-center gap-2 font-semibold whitespace-nowrap"
-          >
-            <Plus size={20} />
-            Nouveau
-          </button>
+      <button 
+        onClick={() => { setEditingTech(null); setIsModalOpen(true); }}
+        className="fixed bottom-8 right-8 w-12 h-12 bg-green-600 text-white rounded-full shadow-2xl hover:scale-110 transition-all flex items-center justify-center z-[50] group"
+        title="Nouveau technicien"
+      >
+        <Plus size={24} />
+        <span className="absolute right-full mr-3 px-3 py-1 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+          Nouveau Technicien
+        </span>
+      </button>
         </div>
       </div>
 

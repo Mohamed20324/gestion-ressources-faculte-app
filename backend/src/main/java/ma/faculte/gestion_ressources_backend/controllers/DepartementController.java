@@ -93,6 +93,22 @@ public class DepartementController {
         }
     }
 
+    @PutMapping("/{id}/affecter-chef/{chefId}")
+    @PreAuthorize("hasRole('RESPONSABLE')")
+    public ResponseEntity<?> affecterChef(
+            @PathVariable Long id,
+            @PathVariable Long chefId) {
+        try {
+            DepartementDTO dto = new DepartementDTO();
+            dto.setChefId(chefId);
+            DepartementDTO result = departementService.modifierDepartement(id, dto);
+            return ResponseEntity.ok(result);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400)
+                    .body(creerErreur(e.getMessage()));
+        }
+    }
+
     private Map<String, String> creerErreur(String message) {
         Map<String, String> erreur = new HashMap<>();
         erreur.put("message", message);

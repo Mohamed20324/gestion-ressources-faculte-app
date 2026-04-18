@@ -59,6 +59,22 @@ const AppelsOffresPage = () => {
     );
   }
 
+  const formatDate = (dateStr: any) => {
+    if (!dateStr) return 'N/A';
+    try {
+      if (Array.isArray(dateStr)) {
+        return `${dateStr[2].toString().padStart(2, '0')}/${dateStr[1].toString().padStart(2, '0')}/${dateStr[0]}`;
+      }
+      const parts = dateStr.split('-');
+      if (parts.length === 3) {
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
+      return new Date(dateStr).toLocaleDateString();
+    } catch (e) {
+      return dateStr;
+    }
+  };
+
   return (
     <div className="p-6 bg-white min-h-screen">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
@@ -81,10 +97,15 @@ const AppelsOffresPage = () => {
               className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition-all"
             />
           </div>
-          <button className="bg-purple-600 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-purple-100 hover:bg-purple-700 transition-all flex items-center gap-2 font-semibold whitespace-nowrap">
-            <Plus size={20} />
-            Nouveau
-          </button>
+      <button 
+        className="fixed bottom-8 right-8 w-12 h-12 bg-purple-600 text-white rounded-full shadow-2xl hover:bg-purple-700 hover:scale-110 transition-all flex items-center justify-center z-[50] group"
+        title="Nouvel appel d'offre"
+      >
+        <Plus size={24} />
+        <span className="absolute right-full mr-3 px-3 py-1 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+          Nouveau Appel d'Offre
+        </span>
+      </button>
         </div>
       </div>
 
@@ -117,13 +138,13 @@ const AppelsOffresPage = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Calendar size={14} className="text-gray-400" />
-                      {new Date(appel.dateDebut).toLocaleDateString()}
+                      {formatDate(appel.dateDebut)}
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <Clock size={14} className="text-gray-400" />
-                      {new Date(appel.dateFin).toLocaleDateString()}
+                      {formatDate(appel.dateFin)}
                     </div>
                   </td>
                   <td className="px-6 py-4">

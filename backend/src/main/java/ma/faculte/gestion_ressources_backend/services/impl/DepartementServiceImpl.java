@@ -45,6 +45,7 @@ public class DepartementServiceImpl implements IDepartementService {
     }
 
     @Override
+    @Transactional
     public DepartementDTO modifierDepartement(Long id, DepartementDTO dto) {
 
         Departement departement = departementRepository
@@ -55,8 +56,32 @@ public class DepartementServiceImpl implements IDepartementService {
         if (dto.getNom() != null) departement.setNom(dto.getNom());
         if (dto.getBudget() != null) departement.setBudget(dto.getBudget());
 
+        // Gestion de l'affectation du chef
+        if (dto.getChefId() != null) {
+            // 1. Désaffecter l'ancien chef de ce département (si existant)
+            chefRepository.findByDepartementGereId(id).ifPresent(ancienChef -> {
+                ancienChef.setDepartementGere(null);
+                chefRepository.save(ancienChef);
+            });
+
+            // 2. Si le nouveau chef gérait un autre département → le libérer
+            var nouveauChef = chefRepository.findById(dto.getChefId())
+                    .orElseThrow(() -> new RuntimeException(
+                            "Chef non trouvé : " + dto.getChefId()));
+
+            if (nouveauChef.getDepartementGere() != null
+                    && !nouveauChef.getDepartementGere().getId().equals(id)) {
+                nouveauChef.setDepartementGere(null);
+                chefRepository.save(nouveauChef);
+            }
+
+            // 3. Affecter le nouveau chef à ce département
+            nouveauChef.setDepartementGere(departement);
+            chefRepository.save(nouveauChef);
+        }
+
         departementRepository.save(departement);
-        return convertirEnDTO(departement);
+        return convertirEnDTO(id);
     }
 
     @Override
@@ -91,10 +116,10 @@ public class DepartementServiceImpl implements IDepartementService {
         });
 
         // 2. Libérer le chef (relation nullable)
-        if (departement.getChef() != null) {
-            departement.getChef().setDepartementGere(null);
-            chefRepository.save(departement.getChef());
-        }
+        chefRepository.findByDepartementGereId(id).ifPresent(chef -> {
+            chef.setDepartementGere(null);
+            chefRepository.save(chef);
+        });
 
         // 3. Libérer les affectations (relation rendue nullable)
         affectationRepository.findByDepartement_Id(id).forEach(a -> {
@@ -118,17 +143,23 @@ public class DepartementServiceImpl implements IDepartementService {
         departementRepository.delete(departement);
     }
 
+    private DepartementDTO convertirEnDTO(Long departementId) {
+        Departement d = departementRepository.findById(departementId)
+                .orElseThrow(() -> new RuntimeException("Département non trouvé : " + departementId));
+        return convertirEnDTO(d);
+    }
+
     private DepartementDTO convertirEnDTO(Departement d) {
         DepartementDTO dto = new DepartementDTO();
         dto.setId(d.getId());
         dto.setNom(d.getNom());
         dto.setBudget(d.getBudget());
 
-        if (d.getChef() != null) {
-            dto.setChefId(d.getChef().getId());
-            dto.setNomChef(d.getChef().getNom()
-                    + " " + d.getChef().getPrenom());
-        }
+        // Chercher le chef via chefRepository (sens unique, FK côté chef)
+        chefRepository.findByDepartementGereId(d.getId()).ifPresent(chef -> {
+            dto.setChefId(chef.getId());
+            dto.setNomChef(chef.getNom() + " " + chef.getPrenom());
+        });
 
         return dto;
     }

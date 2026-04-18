@@ -2,6 +2,8 @@ import { Routes, Route } from 'react-router-dom';
 import Header from '../../components/G/Header';
 import Sidebar from '../../components/G/Sidebar';
 import Dashboard from './Dashboard';
+import EnseignantsPage from './EnseignantsPage';
+import MeetingsPage from './MeetingsPage';
 
 const AppContent = () => {
   return (
@@ -13,6 +15,8 @@ const AppContent = () => {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/enseignants" element={<EnseignantsPage />} />
+            <Route path="/meetings" element={<MeetingsPage />} />
           </Routes>
         </div>
       </div>

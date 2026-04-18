@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Video, Calendar as CalendarIcon, ChevronLeft, ChevronRight, Loader, Clock, Building2 } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Loader, Clock } from 'lucide-react';
 import { api } from '../../services/api';
 
 interface Reunion {
   id: number;
-  date: any; // Can be string or array [y, m, d]
+  date: any; 
   heure: string;
   statut: string;
   departementId?: number;
@@ -58,6 +58,9 @@ const MeetingCalendarPage = () => {
     let mDate: Date;
     if (Array.isArray(meetingDate)) {
       mDate = new Date(meetingDate[0], meetingDate[1] - 1, meetingDate[2]);
+    } else if (typeof meetingDate === 'string' && meetingDate.includes('-')) {
+      const parts = meetingDate.split('-');
+      mDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
     } else {
       mDate = new Date(meetingDate);
     }
@@ -85,7 +88,7 @@ const MeetingCalendarPage = () => {
         </div>
 
         <div className="flex items-center gap-2 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm">
-          <button 
+          <button
             onClick={prevMonth}
             className="p-2 hover:bg-gray-50 rounded-xl transition-colors text-gray-600"
           >
@@ -94,7 +97,7 @@ const MeetingCalendarPage = () => {
           <span className="px-4 font-bold text-gray-800 min-w-[150px] text-center">
             {monthNames[month]} {year}
           </span>
-          <button 
+          <button
             onClick={nextMonth}
             className="p-2 hover:bg-gray-50 rounded-xl transition-colors text-gray-600"
           >
@@ -112,7 +115,7 @@ const MeetingCalendarPage = () => {
             </div>
           ))}
         </div>
-        
+
         {/* Calendar Grid */}
         <div className="grid grid-cols-7">
           {/* Empty cells for start of month */}
@@ -131,11 +134,11 @@ const MeetingCalendarPage = () => {
                 <span className={`text-xs font-bold ${isToday ? 'bg-blue-600 text-white w-6 h-6 rounded-full flex items-center justify-center' : 'text-gray-400'}`}>
                   {day}
                 </span>
-                
+
                 <div className="mt-2 space-y-1">
                   {dayMeetings.map((m) => (
-                    <div 
-                      key={m.id} 
+                    <div
+                      key={m.id}
                       className={`${getStatusColor(m.statut)} text-white p-2 rounded-xl shadow-sm cursor-pointer hover:scale-[1.02] transition-transform overflow-hidden`}
                     >
                       <p className="text-[10px] font-bold truncate">Réunion #{m.id}</p>

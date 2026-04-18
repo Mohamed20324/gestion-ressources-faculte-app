@@ -111,10 +111,15 @@ const ResourcesPage = () => {
               className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
             />
           </div>
-          <button className="bg-blue-600 text-white px-5 py-2.5 rounded-xl shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all flex items-center gap-2 font-semibold whitespace-nowrap">
-            <Plus size={20} />
-            Ajouter
-          </button>
+      <button 
+        className="fixed bottom-8 right-8 w-12 h-12 bg-blue-600 text-white rounded-full shadow-2xl hover:bg-blue-700 hover:scale-110 transition-all flex items-center justify-center z-[50] group"
+        title="Ajouter une ressource"
+      >
+        <Plus size={24} />
+        <span className="absolute right-full mr-3 px-3 py-1 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+          Ajouter Ressource
+        </span>
+      </button>
         </div>
       </div>
 

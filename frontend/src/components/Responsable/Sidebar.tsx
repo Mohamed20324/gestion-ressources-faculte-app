@@ -347,7 +347,27 @@ const Sidebar = () => {
 
   // Vérifier si un chemin est actif
   const isPathActive = (path: string) => {
-    return location.pathname === path || location.pathname.startsWith(path + '/');
+    const currentPath = location.pathname;
+    if (currentPath === path) return true;
+
+    // Si le chemin est un préfixe (ex: /meetings est préfixe de /meetings/calendar)
+    if (currentPath.startsWith(path + '/')) {
+      // On vérifie si un autre item dans le menu actuel est un match plus précis
+      const menu = secondaryMenus[activeMenu as keyof typeof secondaryMenus];
+      if (menu) {
+        for (const section of menu.sections) {
+          const sectionItems = section.type === 'nav' ? section.items : (section.type === 'teamSpace' ? section.items : []);
+          const hasMoreSpecificMatch = sectionItems.some(item => 
+            item.path !== path && 
+            item.path.startsWith(path) && 
+            (currentPath === item.path || currentPath.startsWith(item.path + '/'))
+          );
+          if (hasMoreSpecificMatch) return false;
+        }
+      }
+      return true;
+    }
+    return false;
   };
 
   const renderSecondaryMenu = () => {

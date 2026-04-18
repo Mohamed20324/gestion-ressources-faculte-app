@@ -259,28 +259,26 @@ public class UtilisateurServiceImpl implements IUtilisateurService {
         if (dto.getEmail() != null) utilisateur.setEmail(dto.getEmail());
         if (dto.getActif() != null) utilisateur.setActif(dto.getActif());
 
-        // Mise à jour des champs spécifiques si c'est un enseignant
-        if (utilisateur instanceof Enseignant enseignant) {
-            if (dto.getMatricule() != null) enseignant.setMatricule(dto.getMatricule());
-            if (dto.getSpecialite() != null) enseignant.setSpecialite(dto.getSpecialite());
-            
-            if (dto.getDepartementId() != null) {
-                Departement dept = departementRepository.findById(dto.getDepartementId())
-                        .orElseThrow(() -> new RuntimeException("Département non trouvé : " + dto.getDepartementId()));
-                enseignant.setDepartement(dept);
-            }
-        }
-        
-        // Si c'est un chef de département, on met aussi à jour le département qu'il gère
+        // IMPORTANT: vérifier ChefDepartement AVANT Enseignant
+        // car ChefDepartement extends Enseignant → les deux instanceof seraient vrais
         if (utilisateur instanceof ChefDepartement chef) {
+            if (dto.getMatricule() != null) chef.setMatricule(dto.getMatricule());
+            if (dto.getSpecialite() != null) chef.setSpecialite(dto.getSpecialite());
             if (dto.getDepartementId() != null) {
                 Departement dept = departementRepository.findById(dto.getDepartementId())
                         .orElseThrow(() -> new RuntimeException("Département non trouvé : " + dto.getDepartementId()));
                 chef.setDepartementGere(dept);
             }
-        }
+        } else if (utilisateur instanceof Enseignant enseignant) {
+            if (dto.getMatricule() != null) enseignant.setMatricule(dto.getMatricule());
+            if (dto.getSpecialite() != null) enseignant.setSpecialite(dto.getSpecialite());
 
-        if (utilisateur instanceof Technicien tech) {
+            if (dto.getDepartementId() != null) {
+                Departement dept = departementRepository.findById(dto.getDepartementId())
+                        .orElseThrow(() -> new RuntimeException("Département non trouvé : " + dto.getDepartementId()));
+                enseignant.setDepartement(dept);
+            }
+        } else if (utilisateur instanceof Technicien tech) {
             if (dto.getMatricule() != null) tech.setMatricule(dto.getMatricule());
             if (dto.getSpecialite() != null) tech.setSpecialiteTechnique(dto.getSpecialite());
             if (dto.getDisponibilite() != null) tech.setDisponibilite(dto.getDisponibilite());
@@ -357,7 +355,14 @@ public class UtilisateurServiceImpl implements IUtilisateurService {
     // =====================
 
     @Override
+    @Transactional(readOnly = true)
     public UtilisateurDTO getById(Long id) {
+
+        // Pour les chefs de département, utiliser JOIN FETCH pour charger departementGere
+        var chefOpt = chefRepository.findByIdWithDepartement(id);
+        if (chefOpt.isPresent()) {
+            return convertirEnDTO(chefOpt.get());
+        }
 
         Utilisateur utilisateur = utilisateurRepository
                 .findById(id)
@@ -376,7 +381,15 @@ public class UtilisateurServiceImpl implements IUtilisateurService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<UtilisateurDTO> getByRole(String role) {
+        // Pour CHEF_DEPARTEMENT, charger departementGere en une seule requête JOIN FETCH
+        if ("CHEF_DEPARTEMENT".equals(role)) {
+            return chefRepository.findAllWithDepartement()
+                    .stream()
+                    .map(this::convertirEnDTO)
+                    .collect(Collectors.toList());
+        }
         return utilisateurRepository.findByRole(role)
                 .stream()
                 .map(this::convertirEnDTO)
@@ -426,17 +439,19 @@ public class UtilisateurServiceImpl implements IUtilisateurService {
         );
         dto.setMotDePasse(u.getMotDePasse());
 
-        if (u instanceof Enseignant e) {
+        if (u instanceof ChefDepartement c) {
+            dto.setMatricule(c.getMatricule());
+            dto.setSpecialite(c.getSpecialite());
+            if (c.getDepartementGere() != null) {
+                dto.setDepartementId(c.getDepartementGere().getId());
+                dto.setDepartementNom(c.getDepartementGere().getNom());
+            }
+        } else if (u instanceof Enseignant e) {
             dto.setMatricule(e.getMatricule());
             dto.setSpecialite(e.getSpecialite());
             if (e.getDepartement() != null) {
                 dto.setDepartementId(e.getDepartement().getId());
                 dto.setDepartementNom(e.getDepartement().getNom());
-            }
-        } else if (u instanceof ChefDepartement c) {
-            if (c.getDepartementGere() != null) {
-                dto.setDepartementId(c.getDepartementGere().getId());
-                dto.setDepartementNom(c.getDepartementGere().getNom());
             }
         } else if (u instanceof Technicien t) {
             dto.setMatricule(t.getMatricule());
@@ -497,7 +512,7 @@ public class UtilisateurServiceImpl implements IUtilisateurService {
         if (brut == null || brut.isBlank()) {
             throw new RuntimeException("Le mot de passe est obligatoire");
         }
-        // Désactivation du hachage pour permettre l'affichage en clair (Demande utilisateur)
-        return brut;
+        // Utilisation du PasswordEncoder injecté pour hasher le mot de passe (BCrypt)
+        return passwordEncoder.encode(brut);
     }
 }

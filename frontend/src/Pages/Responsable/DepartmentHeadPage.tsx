@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, Crown, X, Loader, Mail, Building2, Search, ChevronLeft, ChevronRight, AlertTriangle, User, Eye, Power, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { Plus, Edit, Trash2, Crown, X, Loader, Mail, Building2, Search, ChevronLeft, ChevronRight, AlertTriangle, User, Eye, Power, ShieldCheck, ShieldAlert, Calendar } from 'lucide-react';
 import { api } from '../../services/api';
 import { useNotifications } from '../../hooks/useNotifications';
 import { NotificationContainer } from '../../components/Notification';
@@ -81,6 +81,11 @@ const DepartmentHeadPage = () => {
             let response;
             if (editingHead) {
                 const { motDePasse, ...updateData } = formData;
+                // S'assurer que departementId est bien un nombre
+                if (updateData.departementId) {
+                    updateData.departementId = Number(updateData.departementId);
+                }
+                console.log('🔧 Mise à jour chef de département:', updateData);
                 response = await api.updateUser(editingHead.id, updateData);
             } else {
                 response = await api.createChef(formData);
@@ -200,10 +205,13 @@ const DepartmentHeadPage = () => {
                     </div>
                     <button 
                         onClick={() => { setEditingHead(null); setIsModalOpen(true); }}
-                        className="fixed bottom-8 right-8 w-16 h-16 bg-orange-500 text-white rounded-full shadow-2xl shadow-orange-200 hover:bg-orange-600 hover:scale-110 transition-all flex items-center justify-center z-[50]"
+                        className="fixed bottom-8 right-8 w-12 h-12 bg-orange-500 text-white rounded-full shadow-2xl hover:bg-orange-600 hover:scale-110 transition-all flex items-center justify-center z-[50] group"
                         title="Nommer un chef"
                     >
-                        <Plus size={32} />
+                        <Plus size={24} />
+                        <span className="absolute right-full mr-3 px-3 py-1 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                            Nommer Chef
+                        </span>
                     </button>
                 </div>
             </div>
@@ -493,7 +501,8 @@ const DepartmentHeadModal = ({ isOpen, onClose, onSave, head, saving, departemen
                 dateNomination: head.dateNomination || ''
             });
         } else {
-            setFormData({ nom: '', prenom: '', email: '', motDePasse: '', matricule: '', specialite: '', departementId: undefined, dateNomination: '' });
+            const today = new Date().toISOString().split('T')[0];
+            setFormData({ nom: '', prenom: '', email: '', motDePasse: '', matricule: '', specialite: '', departementId: undefined, dateNomination: today });
         }
     }, [head, isOpen]);
 
@@ -536,7 +545,16 @@ const DepartmentHeadModal = ({ isOpen, onClose, onSave, head, saving, departemen
                     </div>
                     <div className="col-span-1">
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Date de nomination</label>
-                        <input type="date" value={formData.dateNomination} onChange={(e) => setFormData({ ...formData, dateNomination: e.target.value })} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
+                        <div className="relative">
+                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                            <input 
+                                type="date" 
+                                value={formData.dateNomination} 
+                                onChange={(e) => setFormData({ ...formData, dateNomination: e.target.value })} 
+                                onClick={(e) => (e.target as any).showPicker?.()}
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all cursor-pointer" 
+                            />
+                        </div>
                     </div>
                     <div className="col-span-2">
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Département à diriger</label>
