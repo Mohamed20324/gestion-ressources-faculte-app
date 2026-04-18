@@ -4,10 +4,12 @@ import { useAuth } from '../../hooks/useAuth';
 import { api } from '../../services/api';
 import {
   Home, Users,
-  FileText, LayoutDashboard, PenTool,
-  UserPlus, Plus, Sparkles, MoreHorizontal, Settings, HelpCircle, LogOut,
-  Crown, GraduationCap, Wrench, Package, Video, CalendarCheck
+  FileText, LayoutDashboard,
+  UserPlus, Plus, Sparkles, MoreHorizontal,
+  Crown, GraduationCap, Wrench, Package, Video, CalendarCheck,
+  Moon, Sun
 } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 
 // Types pour les badges
 interface Badge {
@@ -177,21 +179,7 @@ const secondaryMenus: Record<string, MenuType> = {
         type: "nav",
         items: [
           { icon: <FileText size={16} />, text: "Docs", suffix: "Nouveau", path: "/responsable/apps/docs" },
-          { icon: <LayoutDashboard size={16} />, text: "Tableaux de bord", path: "/responsable/apps/dashboards" },
-          { icon: <PenTool size={16} />, text: "Whiteboards", path: "/responsable/apps/whiteboards" }
-        ]
-      },
-      {
-        type: "header",
-        title: "Paramètres"
-      },
-      {
-        type: "nav",
-        items: [
-          { icon: <Settings size={16} />, text: "Gestion utilisateurs", path: "/responsable/settings/users" },
-          { icon: <Sparkles size={16} />, text: "Préférences", path: "/responsable/settings/preferences" },
-          { icon: <HelpCircle size={16} />, text: "Aide", path: "/responsable/help" },
-          { icon: <LogOut size={16} />, text: "Déconnexion", path: "/logout" }
+          { icon: "THEME_TOGGLE", text: "Mode de l'app", path: "theme" }
         ]
       }
     ]
@@ -244,8 +232,13 @@ const NavItem = ({ icon, text, suffix, path, onClick, isActive }: {
 }) => {
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   const handleClick = () => {
+    if (path === 'theme') {
+      toggleTheme();
+      return;
+    }
     if (path === '/logout') {
       logout();
       navigate('/');
@@ -255,6 +248,8 @@ const NavItem = ({ icon, text, suffix, path, onClick, isActive }: {
     if (onClick) onClick();
   };
 
+  const isThemeToggle = icon === "THEME_TOGGLE";
+
   return (
     <div
       className={`flex items-center justify-between px-2 py-1.5 my-1 rounded-md cursor-pointer transition-colors ${isActive ? 'bg-gray-100 text-gray-800' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-800'
@@ -262,10 +257,17 @@ const NavItem = ({ icon, text, suffix, path, onClick, isActive }: {
       onClick={handleClick}
     >
       <div className="flex items-center gap-2">
-        <span className="text-gray-400">{icon}</span>
-        <span className="text-sm">{text}</span>
+        {!isThemeToggle && <span className="text-gray-400">{icon}</span>}
+        <span className="text-sm font-medium">{text}</span>
       </div>
-      {suffix && <span className="text-sm text-gray-400">{suffix}</span>}
+
+      {isThemeToggle ? (
+        <div className={`w-8 h-4 rounded-full p-0.5 transition-colors duration-200 ease-in-out ${theme === 'dark' ? 'bg-blue-500' : 'bg-gray-300'}`}>
+          <div className={`w-3 h-3 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out ${theme === 'dark' ? 'translate-x-4' : 'translate-x-0'}`} />
+        </div>
+      ) : (
+        suffix && <span className="text-sm text-gray-400">{suffix}</span>
+      )}
     </div>
   );
 };
@@ -303,6 +305,7 @@ const Sidebar = () => {
   const [activeMenu, setActiveMenu] = useState('Gestion');
   const [isSecondaryMenuVisible, setIsSecondaryMenuVisible] = useState(true);
   const [plannedMeetingsCount, setPlannedMeetingsCount] = useState(0);
+  const { theme, toggleTheme } = useTheme();
 
   const badges = getDynamicBadges(plannedMeetingsCount);
   const currentMenu = secondaryMenus[activeMenu as keyof typeof secondaryMenus];
@@ -377,9 +380,9 @@ const Sidebar = () => {
       if (menu) {
         for (const section of menu.sections) {
           const sectionItems = section.type === 'nav' ? section.items : (section.type === 'teamSpace' ? section.items : []);
-          const hasMoreSpecificMatch = sectionItems.some(item => 
-            item.path !== path && 
-            item.path.startsWith(path) && 
+          const hasMoreSpecificMatch = sectionItems.some(item =>
+            item.path !== path &&
+            item.path.startsWith(path) &&
             (currentPath === item.path || currentPath.startsWith(item.path + '/'))
           );
           if (hasMoreSpecificMatch) return false;
@@ -527,16 +530,16 @@ const Sidebar = () => {
         {/* Bottom Section */}
         <div className="border-t border-gray-700 p-2">
           <div className="space-y-2">
-            {/* Bouton Inviter */}
+            {/* Bouton Mode Sombre/Clair */}
             <div className="group relative">
               <button
                 className="flex items-center justify-center w-full py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-white transition-colors"
-                onClick={() => navigate('/responsable/invite')}
+                onClick={toggleTheme}
               >
-                <UserPlus size={18} />
+                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
               </button>
               <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 bg-black text-white text-sm rounded whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none shadow-lg">
-                Inviter
+                {theme === 'dark' ? 'Mode Clair' : 'Mode Sombre'}
               </div>
             </div>
 

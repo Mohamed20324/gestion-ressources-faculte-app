@@ -29,12 +29,6 @@ const monthlyData = [
     { name: 'Sem 4', tâches: 60, complétées: 51 },
 ];
 
-const projectData = [
-    { name: 'Projet Alpha', value: 75, color: '#10B981' },
-    { name: 'Projet Beta', value: 45, color: '#3B82F6' },
-    { name: 'Sprint 24', value: 90, color: '#8B5CF6' },
-    { name: 'Design System', value: 60, color: '#F59E0B' },
-];
 
 const teamPerformance = [
     { name: 'Jean', tâches: 24, complétées: 22, efficacité: 92 },
