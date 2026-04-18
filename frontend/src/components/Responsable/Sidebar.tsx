@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { api } from '../../services/api';
 import {
   Home, Users,
   FileText, LayoutDashboard, PenTool,
@@ -287,11 +288,11 @@ const getFirstPathFromMenu = (menuKey: string): string => {
 };
 
 // Badges dynamiques (simulés, à remplacer par des données réelles)
-const getDynamicBadges = () => {
+const getDynamicBadges = (plannedCount: number) => {
   return {
     ressources: 0,
     tasks: 12,
-    meetings: 4,
+    meetings: plannedCount,
     pendingInvites: 2
   };
 };
@@ -302,8 +303,9 @@ const Sidebar = () => {
   const { logout } = useAuth();
   const [activeMenu, setActiveMenu] = useState('Gestion');
   const [isSecondaryMenuVisible, setIsSecondaryMenuVisible] = useState(true);
+  const [plannedMeetingsCount, setPlannedMeetingsCount] = useState(0);
 
-  const badges = getDynamicBadges();
+  const badges = getDynamicBadges(plannedMeetingsCount);
   const currentMenu = secondaryMenus[activeMenu as keyof typeof secondaryMenus];
 
   // Synchroniser le menu actif avec l'URL au chargement
@@ -333,6 +335,25 @@ const Sidebar = () => {
       if (found) break;
     }
   }, [location.pathname]);
+
+  // Récupérer le nombre de réunions planifiées pour le badge
+  useEffect(() => {
+    const fetchMeetings = async () => {
+      try {
+        const response = await api.getAllReunions();
+        if (response.ok) {
+          const data = await response.json();
+          const planned = data.filter((m: any) => m.statut === 'PLANIFIEE').length;
+          setPlannedMeetingsCount(planned);
+        }
+      } catch (error) {
+        console.error("Erreur badge réunions:", error);
+      }
+    };
+    fetchMeetings();
+    const interval = setInterval(fetchMeetings, 60000); // Rafraîchir chaque minute
+    return () => clearInterval(interval);
+  }, []);
 
   const handleMenuClick = (menu: string) => {
     if (activeMenu === menu) {
@@ -476,7 +497,7 @@ const Sidebar = () => {
                 label="Réunions"
                 isActive={activeMenu === 'reunions'}
                 onClick={() => handleMenuClick('reunions')}
-                badge={badges.meetings}
+                badge={badges.meetings > 0 ? badges.meetings : undefined}
               />
             </div>
 
