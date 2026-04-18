@@ -18,7 +18,7 @@ const ResourcesPage = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [resToDelete, setResToDelete] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
-  const itemsPerPage = 5;
+  const itemsPerPage = 3;
 
   useEffect(() => {
     loadResources();

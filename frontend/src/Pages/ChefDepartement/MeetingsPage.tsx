@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
-import { 
-  Video,  
-  Plus, 
-  Calendar as CalendarIcon, 
-  Clock, 
-  Edit, 
+import {
+  Video,
+  Plus,
+  Calendar as CalendarIcon,
+  Clock,
+  Edit,
   Trash2,
   Clock3,
   X,
   Loader,
-  AlertTriangle
+  AlertTriangle,
+  CalendarCheck,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { NotificationContainer } from '../../components/Notification';
 import { useNotifications } from '../../hooks/useNotifications';
@@ -31,7 +34,7 @@ const MeetingsPage = () => {
   const [meetings, setMeetings] = useState<Reunion[]>([]);
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState<any>(null);
-  
+
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -39,18 +42,17 @@ const MeetingsPage = () => {
   const [meetingToDelete, setMeetingToDelete] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  
+
   // Form state
   const [formData, setFormData] = useState({
     date: '',
     heure: '',
     statut: 'PLANIFIEE'
   });
-
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('Tous');
+  
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
+  const itemsPerPage = 3;
+
 
   const fetchData = async () => {
     if (!user) return;
@@ -59,22 +61,22 @@ const MeetingsPage = () => {
       // 1. Obtenir les détails du Chef (pour son departementId)
       let currentDeptId = userData?.departementId;
       if (!currentDeptId) {
-          const userRes = await fetch(`http://localhost:8081/api/utilisateurs/${user.id}`, {
-            headers: {
-              'Authorization': `Bearer ${user.accessToken}`,
-              'Content-Type': 'application/json'
-            }
-          });
-          if (userRes.ok) {
-              const data = await userRes.json();
-              setUserData(data);
-              currentDeptId = data.departementId;
+        const userRes = await fetch(`http://localhost:8081/api/utilisateurs/${user.id}`, {
+          headers: {
+            'Authorization': `Bearer ${user.accessToken}`,
+            'Content-Type': 'application/json'
           }
+        });
+        if (userRes.ok) {
+          const data = await userRes.json();
+          setUserData(data);
+          currentDeptId = data.departementId;
+        }
       }
 
       if (currentDeptId) {
-          const meetingsRes = await api.getReunionsByDepartement(currentDeptId);
-          if (meetingsRes.ok) setMeetings(await meetingsRes.json());
+        const meetingsRes = await api.getReunionsByDepartement(currentDeptId);
+        if (meetingsRes.ok) setMeetings(await meetingsRes.json());
       }
 
     } catch (error) {
@@ -168,15 +170,8 @@ const MeetingsPage = () => {
     }
   };
 
-  const filteredMeetings = meetings.filter(m => {
-    const matchesSearch = m.id.toString().includes(searchTerm) || 
-                         (m.date && JSON.stringify(m.date).includes(searchTerm));
-    const matchesStatus = statusFilter === 'Tous' || m.statut === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  const totalPages = Math.ceil(filteredMeetings.length / itemsPerPage);
-  const currentMeetings = filteredMeetings.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const currentMeetings = meetings.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(meetings.length / itemsPerPage);
 
   const getStatusStyle = (status: string) => {
     switch (status) {
@@ -218,7 +213,7 @@ const MeetingsPage = () => {
           <p className="text-gray-500 mt-1">Planifiez et gérez les réunions pour valider les besoins de votre département.</p>
         </div>
 
-        <button 
+        <button
           onClick={handleOpenCreate}
           className="fixed bottom-8 right-8 w-12 h-12 bg-purple-600 text-white rounded-full shadow-2xl hover:bg-purple-700 hover:scale-110 transition-all flex items-center justify-center z-[50] group"
           title="Programmer une réunion"
@@ -274,14 +269,14 @@ const MeetingsPage = () => {
               </div>
 
               <div className="flex items-center justify-end pt-6 border-t border-gray-50 gap-2">
-                <button 
+                <button
                   onClick={() => handleOpenEdit(meeting)}
                   className="p-2 text-purple-600 hover:bg-purple-50 rounded-xl transition-colors"
                 >
                   <Edit size={16} />
                 </button>
-                <button 
-                  className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors" 
+                <button
+                  className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
                   onClick={() => { setMeetingToDelete(meeting.id); setIsDeleteModalOpen(true); }}
                 >
                   <Trash2 size={16} />
@@ -290,11 +285,53 @@ const MeetingsPage = () => {
             </div>
           ))}
           {!loading && currentMeetings.length === 0 && (
-             <div className="col-span-full py-20 text-center bg-white rounded-3xl border border-dashed border-gray-200">
-                <Video className="mx-auto text-gray-200 mb-4" size={48} />
-                <p className="text-gray-500 font-medium">Aucune réunion programmée pour votre département.</p>
-             </div>
+            <div className="col-span-full py-20 text-center bg-white rounded-3xl border border-dashed border-gray-200">
+              <Video className="mx-auto text-gray-200 mb-4" size={48} />
+              <p className="text-gray-500 font-medium">Aucune réunion programmée pour votre département.</p>
+            </div>
           )}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between bg-white px-6 py-4 border border-gray-100 rounded-3xl shadow-sm mb-8">
+          <div className="flex-1 flex justify-between sm:hidden">
+            <button onClick={() => setCurrentPage(p => Math.max(1, p - 1))} className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Précédent</button>
+            <button onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))} className="ml-3 px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">Suivant</button>
+          </div>
+          <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+              <p className="text-sm text-gray-700">
+                Affichage de <span className="font-medium">{((currentPage - 1) * itemsPerPage) + 1}</span> à <span className="font-medium">{Math.min(currentPage * itemsPerPage, meetings.length)}</span> sur <span className="font-medium">{meetings.length}</span> réunions
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className={`p-2 rounded-xl border border-gray-100 transition-colors ${currentPage === 1 ? 'text-gray-300 cursor-not-allowed' : 'text-purple-600 hover:bg-purple-50'}`}
+              >
+                <ChevronLeft size={20} />
+              </button>
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i + 1}
+                  onClick={() => setCurrentPage(i + 1)}
+                  className={`w-10 h-10 rounded-xl font-bold text-sm transition-all ${currentPage === i + 1 ? 'bg-purple-600 text-white shadow-lg shadow-purple-100' : 'text-gray-600 hover:bg-gray-50'}`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className={`p-2 rounded-xl border border-gray-100 transition-colors ${currentPage === totalPages ? 'text-gray-300 cursor-not-allowed' : 'text-purple-600 hover:bg-purple-50'}`}
+              >
+                <ChevronRight size={20} />
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -317,10 +354,10 @@ const MeetingsPage = () => {
                   <label className="text-sm font-bold text-gray-700 ml-1">Date</label>
                   <div className="relative">
                     <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
-                    <input 
-                      type="date" 
+                    <input
+                      type="date"
                       value={formData.date}
-                      onChange={(e) => setFormData({...formData, date: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                       onClick={(e) => (e.target as any).showPicker?.()}
                       className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition-all cursor-pointer"
                       required
@@ -331,10 +368,10 @@ const MeetingsPage = () => {
                   <label className="text-sm font-bold text-gray-700 ml-1">Heure</label>
                   <div className="relative">
                     <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
-                    <input 
-                      type="time" 
+                    <input
+                      type="time"
                       value={formData.heure}
-                      onChange={(e) => setFormData({...formData, heure: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, heure: e.target.value })}
                       onClick={(e) => (e.target as any).showPicker?.()}
                       className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition-all cursor-pointer"
                       required
@@ -345,9 +382,9 @@ const MeetingsPage = () => {
 
               <div className="space-y-1.5">
                 <label className="text-sm font-bold text-gray-700 ml-1">Statut</label>
-                <select 
+                <select
                   value={formData.statut}
-                  onChange={(e) => setFormData({...formData, statut: e.target.value})}
+                  onChange={(e) => setFormData({ ...formData, statut: e.target.value })}
                   className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition-all"
                 >
                   <option value="PLANIFIEE">Planifiée</option>

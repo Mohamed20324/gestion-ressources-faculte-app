@@ -69,7 +69,7 @@ const MeetingsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('Tous');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
+  const itemsPerPage = 3;
 
   const fetchData = async () => {
     setLoading(true);

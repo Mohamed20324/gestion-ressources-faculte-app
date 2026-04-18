@@ -38,67 +38,53 @@ public class DataInitializer implements CommandLineRunner {
             return; // Déjà initialisé
         }
 
-        // 1. Création des départements
-        Departement depInfo = new Departement("Informatique", 500000.0);
-        Departement depMath = new Departement("Mathématiques", 300000.0);
-        Departement depPhys = new Departement("Physique", 250000.0);
+        // 1. Création des 5 départements
+        Departement depInfo = departementRepository.save(new Departement("Informatique", 500000.0));
+        Departement depMath = departementRepository.save(new Departement("Mathématiques", 300000.0));
+        Departement depPhys = departementRepository.save(new Departement("Physique", 250000.0));
+        Departement depChim = departementRepository.save(new Departement("Chimie", 200000.0));
+        Departement depBio = departementRepository.save(new Departement("Biologie", 180000.0));
 
-        departementRepository.save(depInfo);
-        departementRepository.save(depMath);
-        departementRepository.save(depPhys);
+        // 2. Création des 8 Chefs de département
+        // Note: 5 avec département, 3 sans département pour le test
+        String pwd = passwordEncoder.encode("password123");
+        
+        chefRepository.save(new ChefDepartement("Alami", "Ahmed", "alami@univ.ma", pwd, "CHEF001", "Génie Logiciel", depInfo));
+        chefRepository.save(new ChefDepartement("Idrissi", "Karim", "idrissi@univ.ma", pwd, "CHEF002", "Algèbre", depMath));
+        chefRepository.save(new ChefDepartement("Berrada", "Salma", "berrada@univ.ma", pwd, "CHEF003", "Physique Nucléaire", depPhys));
+        chefRepository.save(new ChefDepartement("Tahiri", "Youssef", "tahiri@univ.ma", pwd, "CHEF004", "Chimie Organique", depChim));
+        chefRepository.save(new ChefDepartement("Mansouri", "Nisrine", "mansouri@univ.ma", pwd, "CHEF005", "Génétique", depBio));
+        chefRepository.save(new ChefDepartement("Zouhair", "Amine", "zouhair@univ.ma", pwd, "CHEF006", "Data Science", null));
+        chefRepository.save(new ChefDepartement("Chraibi", "Fatiha", "chraibi@univ.ma", pwd, "CHEF007", "Topologie", null));
+        chefRepository.save(new ChefDepartement("Slaoui", "Khalid", "slaoui@univ.ma", pwd, "CHEF008", "Mécanique", null));
 
-        // 2. Création des Chefs de département
-        ChefDepartement chefInfo = new ChefDepartement(
-                "Alami", "Ahmed", "alami@univ.ma",
-                passwordEncoder.encode("password123"), "MAT001", "Génie Logiciel", depInfo
-        );
-        chefRepository.save(chefInfo);
+        // 3. Création des 8 Enseignants
+        enseignantRepository.save(new Enseignant("Bennani", "Sami", "bennani@univ.ma", pwd, "PROF001", "Réseaux", depInfo));
+        enseignantRepository.save(new Enseignant("Tazi", "Houda", "tazi@univ.ma", pwd, "PROF002", "Analyse", depMath));
+        enseignantRepository.save(new Enseignant("Kadiri", "Meryem", "kadiri@univ.ma", pwd, "PROF003", "Optique", depPhys));
+        enseignantRepository.save(new Enseignant("Jebli", "Adnane", "jebli@univ.ma", pwd, "PROF004", "Thermodynamique", depChim));
+        enseignantRepository.save(new Enseignant("Radi", "Imane", "radi@univ.ma", pwd, "PROF005", "Biochimie", depBio));
+        enseignantRepository.save(new Enseignant("Haddad", "Mehdi", "haddad@univ.ma", pwd, "PROF006", "Intelligence Artificielle", depInfo));
+        enseignantRepository.save(new Enseignant("Fassi", "Asmaa", "fassi@univ.ma", pwd, "PROF007", "Statistiques", depMath));
+        enseignantRepository.save(new Enseignant("Kabbaj", "Rachid", "kabbaj@univ.ma", pwd, "PROF008", "Électronique", depPhys));
 
-        ChefDepartement chefMath = new ChefDepartement(
-                "Idrissi", "Karim", "idrissi@univ.ma",
-                passwordEncoder.encode("password123"), "MAT002", "Algèbre", depMath
-        );
-        chefRepository.save(chefMath);
+        // 4. Création des 8 Techniciens
+        technicienRepository.save(new Technicien("Saber", "Omar", "saber@univ.ma", pwd, "TECH001", "Maintenance Réseau"));
+        technicienRepository.save(new Technicien("Kasmi", "Layla", "kasmi@univ.ma", pwd, "TECH002", "Support IT"));
+        technicienRepository.save(new Technicien("Amrani", "Said", "amrani@univ.ma", pwd, "TECH003", "Gestion de Parc"));
+        technicienRepository.save(new Technicien("Filali", "Zineb", "filali@univ.ma", pwd, "TECH004", "Installation Logiciels"));
+        technicienRepository.save(new Technicien("Malki", "Hassan", "malki@univ.ma", pwd, "TECH005", "Réparation Matériel"));
+        technicienRepository.save(new Technicien("Naji", "Sanaa", "naji@univ.ma", pwd, "TECH006", "Sécurité Système"));
+        technicienRepository.save(new Technicien("Ghazali", "Driss", "ghazali@univ.ma", pwd, "TECH007", "Câblage"));
+        technicienRepository.save(new Technicien("Benjelloun", "Hind", "benjelloun@univ.ma", pwd, "TECH008", "Helpdesk"));
 
-        // 3. Création des Enseignants
-        Enseignant prof1 = new Enseignant(
-                "Bennani", "Sami", "bennani@univ.ma",
-                passwordEncoder.encode("password123"), "MAT003", "Réseaux", depInfo
-        );
-        enseignantRepository.save(prof1);
-
-        Enseignant prof2 = new Enseignant(
-                "Tazi", "Houda", "tazi@univ.ma",
-                passwordEncoder.encode("password123"), "MAT004", "Analyse", depMath
-        );
-        enseignantRepository.save(prof2);
-
-        Enseignant prof3 = new Enseignant(
-                "Mansouri", "Yassine", "mansouri@univ.ma",
-                passwordEncoder.encode("password123"), "MAT005", "Physique Quantique", depPhys
-        );
-        enseignantRepository.save(prof3);
-
-        // 4. Création des Techniciens
-        Technicien tech1 = new Technicien(
-                "Saber", "Omar", "saber@univ.ma",
-                passwordEncoder.encode("password123"), "MAT006", "Maintenance Réseau"
-        );
-        technicienRepository.save(tech1);
-
-        Technicien tech2 = new Technicien(
-                "Kasmi", "Layla", "kasmi@univ.ma",
-                passwordEncoder.encode("password123"), "MAT007", "Support IT"
-        );
-        technicienRepository.save(tech2);
-
-        // 5. Création du Responsable
+        // 5. Création du Responsable (Admin)
         Responsable resp = new Responsable(
                 "Ayoub", "El Amrani", "admin@univ.ma",
-                passwordEncoder.encode("password123"), "ADM001", "Bureau 101"
+                pwd, "ADM001", "Bureau 101"
         );
         responsableRepository.save(resp);
 
-        System.out.println(">>> Données initialisées avec succès.");
+        System.out.println(">>> Données initialisées : 5 Départements, 8 Chefs, 8 Enseignants, 8 Techniciens.");
     }
 }

@@ -15,7 +15,7 @@ const AppelsOffresPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 3;
 
   useEffect(() => {
     loadAppels();

@@ -300,7 +300,6 @@ const getDynamicBadges = (plannedCount: number) => {
 const Sidebar = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { logout } = useAuth();
   const [activeMenu, setActiveMenu] = useState('Gestion');
   const [isSecondaryMenuVisible, setIsSecondaryMenuVisible] = useState(true);
   const [plannedMeetingsCount, setPlannedMeetingsCount] = useState(0);

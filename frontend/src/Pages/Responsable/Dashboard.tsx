@@ -125,45 +125,54 @@ const LineChartComponent = () => (
     </div>
 );
 
-// Composant Graphique circulaire
-const PieChartComponent = () => (
-    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-        <div className="flex items-center justify-between mb-4">
-            <h3 className="font-semibold text-gray-900">Répartition des projets</h3>
-            <button className="text-gray-400 hover:text-gray-600">
-                <Download size={16} />
-            </button>
+// Composant Graphique circulaire pour la répartition du personnel
+const PersonnelPieChart = ({ stats }: { stats: any }) => {
+    const data = [
+        { name: 'Enseignants', value: stats.totalTeachers, color: '#8B5CF6' }, // Violet
+        { name: 'Chefs Dépt.', value: stats.totalChefs, color: '#3B82F6' },    // Bleu
+        { name: 'Techniciens', value: stats.totalTechnicians, color: '#10B981' }, // Vert
+        { name: 'Départements', value: stats.totalDepartements, color: '#F59E0B' }, // Orange
+    ];
+
+    return (
+        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-gray-900">Répartition des Effectifs</h3>
+                <button className="text-gray-400 hover:text-gray-600">
+                    <Download size={16} />
+                </button>
+            </div>
+            <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                    <Pie
+                        data={data}
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={100}
+                        paddingAngle={5}
+                        dataKey="value"
+                        label={({ name, value }) => `${name} (${value})`}
+                    >
+                        {data.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                    </Pie>
+                    <Tooltip />
+                </PieChart>
+            </ResponsiveContainer>
+            <div className="flex flex-wrap justify-center gap-4 mt-4">
+                {data.map((item, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
+                        <span className="text-xs font-medium text-gray-700">{item.name}:</span>
+                        <span className="text-xs font-bold text-gray-900">{item.value}</span>
+                    </div>
+                ))}
+            </div>
         </div>
-        <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-                <Pie
-                    data={projectData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                >
-                    {projectData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                </Pie>
-                <Tooltip />
-            </PieChart>
-        </ResponsiveContainer>
-        <div className="flex flex-wrap justify-center gap-4 mt-4">
-            {projectData.map((item, index) => (
-                <div key={index} className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                    <span className="text-xs text-gray-600">{item.name}</span>
-                    <span className="text-xs font-semibold text-gray-900">{item.value}%</span>
-                </div>
-            ))}
-        </div>
-    </div>
-);
+    );
+};
 
 // Composant Graphique en aires
 const AreaChartComponent = () => (
@@ -264,6 +273,9 @@ const Dashboard = () => {
         completedBesoins: 0,
         totalRessources: 0,
         totalDepartements: 0,
+        totalTeachers: 0,
+        totalChefs: 0,
+        totalTechnicians: 0,
     });
     const [loading, setLoading] = useState(true);
 
@@ -282,10 +294,13 @@ const Dashboard = () => {
                     }
                 };
 
-                const [besoins, ressources, depts] = await Promise.all([
+                const [besoins, ressources, depts, teachers, chefs, techs] = await Promise.all([
                     safeFetch(() => api.getAllBesoins()),
                     safeFetch(() => api.getAllRessources()),
-                    safeFetch(() => api.getAllDepartements())
+                    safeFetch(() => api.getAllDepartements()),
+                    safeFetch(() => api.getUsersByRole('ENSEIGNANT')),
+                    safeFetch(() => api.getUsersByRole('CHEF_DEPARTEMENT')),
+                    safeFetch(() => api.getUsersByRole('TECHNICIEN'))
                 ]);
 
                 setStats({
@@ -293,6 +308,9 @@ const Dashboard = () => {
                     completedBesoins: besoins.filter((b: any) => b.valider).length,
                     totalRessources: ressources.length,
                     totalDepartements: depts.length,
+                    totalTeachers: teachers.length,
+                    totalChefs: chefs.length,
+                    totalTechnicians: techs.length,
                 });
             } catch (error) {
                 console.error('Erreur stats:', error);
@@ -367,7 +385,7 @@ const Dashboard = () => {
 
             {/* Graphiques secondaires */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                <PieChartComponent />
+                <PersonnelPieChart stats={stats} />
                 <AreaChartComponent />
             </div>
 
