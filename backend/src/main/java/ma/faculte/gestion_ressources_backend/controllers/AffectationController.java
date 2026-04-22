@@ -35,6 +35,11 @@ public class AffectationController {
         return ResponseEntity.ok(affectationService.listerParDepartement(departementId));
     }
 
+    @GetMapping("/enseignant/{enseignantId}")
+    public ResponseEntity<List<AffectationDTO>> parEnseignant(@PathVariable Long enseignantId) {
+        return ResponseEntity.ok(affectationService.listerParEnseignant(enseignantId));
+    }
+
     @GetMapping("/ressource/{ressourceId}")
     public ResponseEntity<?> parRessource(@PathVariable Long ressourceId) {
         try {

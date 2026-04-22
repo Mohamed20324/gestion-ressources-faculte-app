@@ -9,6 +9,8 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
+
 @Component
 public class DataInitializer implements CommandLineRunner {
 
@@ -28,10 +30,16 @@ public class DataInitializer implements CommandLineRunner {
     private IResponsableRepository responsableRepository;
 
     @Autowired
-    private IUtilisateurRepository utilisateurRepository;
+    private IReunionRepository reunionRepository;
 
     @Autowired
     private ITypeRessourceRepository typeRessourceRepository;
+
+    @Autowired
+    private IFournisseurRepository fournisseurRepository;
+
+    @Autowired
+    private IBesoinRessourceRepository besoinRessourceRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -95,7 +103,75 @@ public class DataInitializer implements CommandLineRunner {
         typeRessourceRepository.save(new TypeRessource("PROJECTEUR", "Projecteur", false));
         typeRessourceRepository.save(new TypeRessource("SCANNER", "Scanner", false));
         typeRessourceRepository.save(new TypeRessource("SERVEUR", "Serveur", false));
+        typeRessourceRepository.save(new TypeRessource("TABLETTE", "Tablette", false));
+        typeRessourceRepository.save(new TypeRessource("PHOTOCOPIEUSE", "Photocopieuse", false));
 
-        System.out.println(">>> Données initialisées : 5 Départements, 8 Chefs, 8 Enseignants, 8 Techniciens, 5 Types Ressources.");
+        // 7. Création des Fournisseurs
+        Fournisseur f1 = new Fournisseur("Tech Solutions", "tech@solutions.ma", pwd);
+        f1.setGerant("Mohammed V");
+        f1.setLieu("Casablanca");
+        f1.setAdresse("Rue 123");
+        fournisseurRepository.save(f1);
+
+        Fournisseur f2 = new Fournisseur("Alpha Systems", "alpha@systems.com", pwd);
+        f2.setGerant("A. Benabdallah");
+        f2.setLieu("Rabat");
+        fournisseurRepository.save(f2);
+
+        Fournisseur f3 = new Fournisseur("Bureau Pro", "contact@bureaupro.ma", pwd);
+        f3.setGerant("Hassan II");
+        f3.setLieu("Marrakech");
+        fournisseurRepository.save(f3);
+
+        Fournisseur f4 = new Fournisseur("Digital Hub", "sara@digitalhub.ma", pwd);
+        f4.setGerant("Sara Naji");
+        f4.setLieu("Tanger");
+        fournisseurRepository.save(f4);
+
+        // 8. Création de quelques Besoins initiaux
+        TypeRessource trOrd = typeRessourceRepository.findByCode("ORDINATEUR").orElse(null);
+        TypeRessource trImp = typeRessourceRepository.findByCode("IMPRIMANTE").orElse(null);
+
+        if (trOrd != null && trImp != null) {
+            // Créer une réunion par défaut pour les besoins (obligatoire selon l'entité)
+            ma.faculte.gestion_ressources_backend.entities.departement.Reunion r = new ma.faculte.gestion_ressources_backend.entities.departement.Reunion();
+            r.setHeure("10:00");
+            r.setDate(LocalDate.now());
+            r.setDepartement(depInfo);
+            r.setStatut(ma.faculte.gestion_ressources_backend.entities.departement.Reunion.STATUT_VALIDEE);
+            r = reunionRepository.save(r);
+
+            // Besoin 1
+            ma.faculte.gestion_ressources_backend.entities.besoins.BesoinRessource b1 = new ma.faculte.gestion_ressources_backend.entities.besoins.BesoinRessource();
+            b1.setTypeRessource(trOrd);
+            b1.setQuantite(12);
+            b1.setStatut("VALIDE");
+            b1.setDepartement(depInfo);
+            b1.setReunion(r);
+            b1.setDateCreation(LocalDate.now());
+            besoinRessourceRepository.save(b1);
+
+            // Besoin 2
+            ma.faculte.gestion_ressources_backend.entities.besoins.BesoinRessource b2 = new ma.faculte.gestion_ressources_backend.entities.besoins.BesoinRessource();
+            b2.setTypeRessource(trImp);
+            b2.setQuantite(5);
+            b2.setStatut("VALIDE");
+            b2.setDepartement(depInfo);
+            b2.setReunion(r);
+            b2.setDateCreation(LocalDate.now());
+            besoinRessourceRepository.save(b2);
+
+            // Besoin 3
+            ma.faculte.gestion_ressources_backend.entities.besoins.BesoinRessource b3 = new ma.faculte.gestion_ressources_backend.entities.besoins.BesoinRessource();
+            b3.setTypeRessource(trOrd);
+            b3.setQuantite(8);
+            b3.setStatut("ENVOYE");
+            b3.setDepartement(depMath);
+            b3.setReunion(r);
+            b3.setDateCreation(LocalDate.now());
+            besoinRessourceRepository.save(b3);
+        }
+
+        System.out.println(">>> Données initialisées : 5 Départements, 8 Chefs, 8 Enseignants, 8 Techniciens, 7 Types Ressources, 4 Fournisseurs, 3 Besoins.");
     }
 }

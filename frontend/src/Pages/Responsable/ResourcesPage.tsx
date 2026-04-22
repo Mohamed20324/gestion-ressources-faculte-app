@@ -13,6 +13,8 @@ interface Ressource {
   marque: string;
   statut: string;
   categorie: string;
+  dateFinGarantie?: string;
+  fournisseurNom?: string;
 }
 
 const ResourcesPage = () => {
@@ -119,7 +121,8 @@ const ResourcesPage = () => {
                   <tr className="bg-gray-50 border-b border-gray-100">
                     <th className="px-8 py-5 text-xs font-bold text-gray-400 uppercase tracking-wider">Ressource</th>
                     <th className="px-8 py-5 text-xs font-bold text-gray-400 uppercase tracking-wider">Catégorie</th>
-                    <th className="px-8 py-5 text-xs font-bold text-gray-400 uppercase tracking-wider">Marque</th>
+                    <th className="px-8 py-5 text-xs font-bold text-gray-400 uppercase tracking-wider">Fournisseur</th>
+                    <th className="px-8 py-5 text-xs font-bold text-gray-400 uppercase tracking-wider">Garantie</th>
                     <th className="px-8 py-5 text-xs font-bold text-gray-400 uppercase tracking-wider">Statut</th>
                     <th className="px-8 py-5 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Actions</th>
                   </tr>
@@ -144,7 +147,15 @@ const ResourcesPage = () => {
                         </span>
                       </td>
                       <td className="px-8 py-5 text-sm font-bold text-gray-600">
-                        {res.marque}
+                        {res.fournisseurNom || 'N/A'}
+                      </td>
+                      <td className="px-8 py-5">
+                        {res.dateFinGarantie ? (
+                          <div className={`text-xs font-bold ${new Date(res.dateFinGarantie) > new Date() ? 'text-green-600' : 'text-red-500'}`}>
+                            {new Date(res.dateFinGarantie) > new Date() ? 'ACTIVE' : 'EXPIRÉE'}
+                            <div className="text-[10px] text-gray-400">{res.dateFinGarantie}</div>
+                          </div>
+                        ) : 'N/A'}
                       </td>
                       <td className="px-8 py-5">
                         <span className={`px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 w-fit border ${

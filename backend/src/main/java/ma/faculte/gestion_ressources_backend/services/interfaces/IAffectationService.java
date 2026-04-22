@@ -13,4 +13,6 @@ public interface IAffectationService {
     AffectationDTO getByRessource(Long ressourceId);
 
     void retirerAffectation(Long affectationId);
+
+    List<AffectationDTO> listerParEnseignant(Long enseignantId);
 }

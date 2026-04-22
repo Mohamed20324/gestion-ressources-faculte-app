@@ -31,6 +31,11 @@ public class UtilisateurDTO {
     private String departementNom;
     private String nomSociete;
     private String disponibilite;
+    private boolean estListeNoire;
+    private String lieu;
+    private String adresse;
+    private String siteInternet;
+    private String gerant;
 
     public UtilisateurDTO() {}
 
@@ -89,4 +94,19 @@ public class UtilisateurDTO {
 
     public String getDisponibilite() { return disponibilite; }
     public void setDisponibilite(String disponibilite) { this.disponibilite = disponibilite; }
+
+    public boolean isEstListeNoire() { return estListeNoire; }
+    public void setEstListeNoire(boolean estListeNoire) { this.estListeNoire = estListeNoire; }
+
+    public String getLieu() { return lieu; }
+    public void setLieu(String lieu) { this.lieu = lieu; }
+
+    public String getAdresse() { return adresse; }
+    public void setAdresse(String adresse) { this.adresse = adresse; }
+
+    public String getSiteInternet() { return siteInternet; }
+    public void setSiteInternet(String siteInternet) { this.siteInternet = siteInternet; }
+
+    public String getGerant() { return gerant; }
+    public void setGerant(String gerant) { this.gerant = gerant; }
 }

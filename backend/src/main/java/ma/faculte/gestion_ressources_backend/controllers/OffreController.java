@@ -19,6 +19,18 @@ public class OffreController {
     @Autowired
     private IOffreService offreService;
 
+    @GetMapping
+    @PreAuthorize("hasRole('RESPONSABLE')")
+    public ResponseEntity<List<OffreDTO>> getAll() {
+        return ResponseEntity.ok(offreService.getAllOffres());
+    }
+
+    @GetMapping("/fournisseur/{id}")
+    @PreAuthorize("hasRole('FOURNISSEUR') or hasRole('RESPONSABLE')")
+    public ResponseEntity<List<OffreDTO>> getByFournisseur(@PathVariable Long id) {
+        return ResponseEntity.ok(offreService.getByFournisseur(id));
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('FOURNISSEUR')")
     public ResponseEntity<?> soumettre(@RequestBody OffreDTO dto) {

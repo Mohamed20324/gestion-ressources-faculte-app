@@ -1,5 +1,7 @@
 package ma.faculte.gestion_ressources_backend.dto.appel_offre;
 
+import ma.faculte.gestion_ressources_backend.dto.departement.besoins.BesoinRessourceDTO;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +15,7 @@ public class AppelOffreDTO {
     private String statut;
     private Long responsableId;
     private List<Long> besoinIds = new ArrayList<>();
+    private List<BesoinRessourceDTO> besoins = new ArrayList<>();
 
     public AppelOffreDTO() {}
 
@@ -70,5 +73,13 @@ public class AppelOffreDTO {
 
     public void setBesoinIds(List<Long> besoinIds) {
         this.besoinIds = besoinIds;
+    }
+
+    public List<BesoinRessourceDTO> getBesoins() {
+        return besoins;
+    }
+
+    public void setBesoins(List<BesoinRessourceDTO> besoins) {
+        this.besoins = besoins;
     }
 }

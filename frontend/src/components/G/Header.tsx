@@ -13,6 +13,7 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
   const navigate = useNavigate();
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [meetings, setMeetings] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
   const [timeLeft, setTimeLeft] = useState<any>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -21,45 +22,65 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
     navigate('/');
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!user || (user.role !== 'ENSEIGNANT' && user.role !== 'CHEF_DEPARTEMENT')) return;
-      try {
+  const fetchAllNotifications = async () => {
+    if (!user) return;
+    
+    try {
+      // 1. Fetch general notifications (Entity Notification)
+      const notifRes = await api.getNotifications(user.id);
+      if (notifRes.ok) {
+        setNotifications(await notifRes.json());
+      }
+
+      // 2. Fetch meetings (for specific roles)
+      if (user.role === 'ENSEIGNANT' || user.role === 'CHEF_DEPARTEMENT') {
         const userRes = await fetch(`http://localhost:8081/api/utilisateurs/${user.id}`, {
           headers: {
             'Authorization': `Bearer ${user.accessToken}`,
             'Content-Type': 'application/json'
           }
         });
-        if (!userRes.ok) return;
-        const userData = await userRes.json();
-        if (!userData.departementId) return;
-
-        const reunionsRes = await api.getReunionsByDepartement(userData.departementId);
-        if (reunionsRes.ok) {
-          const allReunions = await reunionsRes.json();
-          const now = new Date();
-          const twoDaysFromNow = new Date(now.getTime() + (2 * 24 * 60 * 60 * 1000));
-          
-          const upcoming = allReunions
-            .filter((r: any) => r.statut === 'PLANIFIEE')
-            .map((r: any) => ({
-              ...r,
-              dateTime: new Date(`${r.date}T${r.heure.length === 5 ? r.heure + ':00' : r.heure}`)
-            }))
-            .filter((r: any) => r.dateTime > now && r.dateTime <= twoDaysFromNow)
-            .sort((a: any, b: any) => a.dateTime.getTime() - b.dateTime.getTime());
-          setMeetings(upcoming);
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          if (userData.departementId) {
+            const reunionsRes = await api.getReunionsByDepartement(userData.departementId);
+            if (reunionsRes.ok) {
+              const allReunions = await reunionsRes.json();
+              const now = new Date();
+              const twoDaysFromNow = new Date(now.getTime() + (2 * 24 * 60 * 60 * 1000));
+              
+              const upcoming = allReunions
+                .filter((r: any) => r.statut === 'PLANIFIEE')
+                .map((r: any) => ({
+                  ...r,
+                  dateTime: new Date(`${r.date}T${r.heure.length === 5 ? r.heure + ':00' : r.heure}`)
+                }))
+                .filter((r: any) => r.dateTime > now && r.dateTime <= twoDaysFromNow)
+                .sort((a: any, b: any) => a.dateTime.getTime() - b.dateTime.getTime());
+              setMeetings(upcoming);
+            }
+          }
         }
-      } catch (error) {
-        console.error("Error fetching meetings for header:", error);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    }
+  };
 
-    fetchData();
-    const interval = setInterval(fetchData, 60000); // Refresh list every minute
+  useEffect(() => {
+    fetchAllNotifications();
+    const interval = setInterval(fetchAllNotifications, 60000);
     return () => clearInterval(interval);
   }, [user]);
+
+  const handleMarkAsRead = async (id: number) => {
+    try {
+      await api.markNotificationAsRead(id);
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, lu: true } : n));
+    } catch (error) {
+      console.error("Error marking notification as read:", error);
+    }
+  };
 
   useEffect(() => {
     if (meetings.length === 0) {
@@ -99,7 +120,7 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const upcomingCount = meetings.length;
+  const totalCount = notifications.filter(n => !n.lu).length + meetings.length;
 
   return (
     <header className="h-14 border-b border-gray-200 flex items-center justify-between px-6 bg-white shrink-0 shadow-sm relative z-20">
@@ -119,9 +140,9 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
             className={`p-2 rounded-lg transition-all relative ${isNotificationsOpen ? 'text-purple-600 bg-purple-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
           >
             <Bell size={18} />
-            {upcomingCount > 0 && (
+            {totalCount > 0 && (
               <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">
-                {upcomingCount}
+                {totalCount}
               </span>
             )}
           </button>
@@ -131,15 +152,15 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
               <div className="p-4 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
                 <h3 className="font-bold text-gray-900 text-sm">Notifications</h3>
                 <span className="text-[10px] font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full uppercase">
-                  {upcomingCount} Réunion{upcomingCount > 1 ? 's' : ''}
+                  {totalCount} Nouvelle{totalCount > 1 ? 's' : ''}
                 </span>
               </div>
               
               <div className="max-h-[400px] overflow-y-auto">
-                {meetings.length > 0 ? (
+                {(meetings.length > 0 || notifications.length > 0) ? (
                   <div className="p-2 space-y-1">
                     {/* Next Meeting Countdown */}
-                    {timeLeft && (
+                    {timeLeft && meetings.length > 0 && (
                       <div className="p-3 bg-purple-50 rounded-xl border border-purple-100 mb-2">
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-[10px] font-bold text-purple-700 uppercase">Prochaine réunion</span>
@@ -157,48 +178,72 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
                       </div>
                     )}
 
-                    {/* All Upcoming Meetings */}
-                    <div className="space-y-1">
-                      {meetings.map((m, i) => (
-                        <div key={m.id} className="p-3 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer group">
-                          <div className="flex items-start gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
-                              <Calendar size={14} />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-bold text-gray-900 truncate group-hover:text-purple-600 transition-colors">
-                                Réunion de Département
-                              </p>
-                              <div className="flex items-center gap-2 mt-1">
-                                <span className="text-[10px] text-gray-500">{new Date(m.date).toLocaleDateString('fr-FR')}</span>
-                                <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                                <span className="text-[10px] text-gray-500 font-bold">{m.heure}</span>
-                              </div>
-                            </div>
-                            <ChevronRight size={14} className="text-gray-300 mt-1" />
+                    {/* General Notifications */}
+                    {notifications.map((n) => (
+                      <div 
+                        key={`notif-${n.id}`} 
+                        onClick={() => {
+                          handleMarkAsRead(n.id);
+                          if (user.role === 'Fournisseur') navigate('/fournisseur/mes-soumissions');
+                        }}
+                        className={`p-3 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer group border-l-4 ${!n.lu ? 'border-purple-500 bg-purple-50/30' : 'border-transparent'}`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                            n.type === 'ACCEPTATION' ? 'bg-green-50 text-green-600' : 
+                            n.type === 'REJET' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'
+                          }`}>
+                            {n.type === 'ACCEPTATION' ? <CheckCircle size={14} /> : <Info size={14} />}
                           </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-xs ${!n.lu ? 'font-bold text-gray-900' : 'text-gray-600'} leading-snug`}>
+                              {n.message}
+                            </p>
+                            <p className="text-[10px] text-gray-400 mt-1">
+                              {new Date(n.dateEnvoi).toLocaleDateString('fr-FR')}
+                            </p>
+                          </div>
+                          {!n.lu && <div className="w-2 h-2 bg-purple-500 rounded-full mt-1"></div>}
                         </div>
-                      ))}
-                    </div>
+                      </div>
+                    ))}
+
+                    {/* Meetings */}
+                    {meetings.map((m) => (
+                      <div key={`meet-${m.id}`} className="p-3 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer group">
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
+                            <Calendar size={14} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-gray-900 truncate group-hover:text-purple-600 transition-colors">
+                              Réunion de Département
+                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-[10px] text-gray-500">{new Date(m.date).toLocaleDateString('fr-FR')}</span>
+                              <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                              <span className="text-[10px] text-gray-500 font-bold">{m.heure}</span>
+                            </div>
+                          </div>
+                          <ChevronRight size={14} className="text-gray-300 mt-1" />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <div className="py-12 text-center">
                     <Bell className="mx-auto text-gray-200 mb-3" size={32} />
-                    <p className="text-sm text-gray-500">Aucune réunion programmée</p>
+                    <p className="text-sm text-gray-500">Aucune notification</p>
                   </div>
                 )}
               </div>
               
               <div className="p-3 border-t border-gray-50 bg-gray-50/30 text-center">
                 <button 
-                  onClick={() => { 
-                    const path = user.role === 'CHEF_DEPARTEMENT' ? '/chef-departement/meetings' : '/enseignant/meetings';
-                    navigate(path); 
-                    setIsNotificationsOpen(false); 
-                  }}
-                  className="text-[10px] font-bold text-purple-600 hover:text-purple-700 uppercase tracking-wider"
+                  onClick={() => setIsNotificationsOpen(false)}
+                  className="text-[10px] font-bold text-gray-400 hover:text-purple-600 uppercase tracking-wider"
                 >
-                  Voir tout l'agenda
+                  Fermer
                 </button>
               </div>
             </div>

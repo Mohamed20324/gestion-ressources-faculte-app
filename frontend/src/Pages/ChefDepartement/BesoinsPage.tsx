@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { 
   Plus, Search, Loader, FileText, Trash2, 
   AlertTriangle, CheckCircle, Clock, XCircle, 
-  ChevronLeft, ChevronRight, Filter
+  ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
@@ -13,11 +13,19 @@ interface Besoin {
   id: number;
   typeRessourceId: number;
   quantite: number;
-  statut: 'EN_ATTENTE' | 'VALIDE' | 'REJETE';
+  statut: 'EN_ATTENTE' | 'VALIDE' | 'REJETE' | 'ENVOYE';
   departementId: number;
   reunionId: number;
   enseignantId?: number;
   description?: string;
+  categorie: 'STANDARD' | 'ORDINATEUR' | 'IMPRIMANTE';
+  cpu?: string;
+  ram?: string;
+  disqueDur?: string;
+  ecran?: string;
+  vitesseImpression?: number;
+  resolution?: string;
+  marque?: string;
 }
 
 const BesoinsPage = () => {
@@ -39,7 +47,14 @@ const BesoinsPage = () => {
     typeRessourceId: '',
     quantite: 1,
     reunionId: '',
-    description: ''
+    description: '',
+    marque: '',
+    cpu: '',
+    ram: '',
+    disqueDur: '',
+    ecran: '',
+    vitesseImpression: 0,
+    resolution: ''
   });
 
   const [typesRessources, setTypesRessources] = useState<any[]>([]);
@@ -118,9 +133,56 @@ const BesoinsPage = () => {
       typeRessourceId: typesRessources[0]?.id || '', 
       quantite: 1,
       reunionId: reunions[0]?.id || '',
-      description: ''
+      description: '',
+      marque: '',
+      cpu: '',
+      ram: '',
+      disqueDur: '',
+      ecran: '',
+      vitesseImpression: 0,
+      resolution: ''
     });
     setIsModalOpen(true);
+  };
+
+  const handleSendToResponsible = async () => {
+    if (!userData?.departementId) return;
+    setSaving(true);
+    try {
+      // Find all VALIDATED needs that are not yet SENT
+      const needsToSend = besoins.filter(b => b.statut === 'VALIDE');
+      if (needsToSend.length === 0) {
+        showNotification('info', 'Aucun besoin validé à envoyer.');
+        setSaving(false);
+        return;
+      }
+
+      await Promise.all(needsToSend.map(b => 
+        api.updateBesoin(b.id, { ...b, statut: 'ENVOYE' })
+      ));
+
+      showNotification('success', 'Besoins envoyés au responsable !');
+      loadBesoins(userData.departementId);
+    } catch (error) {
+      showNotification('error', 'Erreur lors de l\'envoi');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleValidateBesoin = async (besoin: Besoin) => {
+    try {
+      const response = await api.updateBesoin(besoin.id, {
+        ...besoin,
+        statut: 'VALIDE'
+      });
+      if (response.ok) {
+        showNotification('success', 'Besoin validé');
+        loadBesoins(userData.departementId);
+      }
+    } catch (error) {
+      showNotification('error', 'Erreur de validation');
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -133,6 +195,7 @@ const BesoinsPage = () => {
 
     setSaving(true);
     try {
+      const selectedType = typesRessources.find(t => t.id === parseInt(formData.typeRessourceId as string));
       const payload = {
         typeRessourceId: parseInt(formData.typeRessourceId as string),
         quantite: formData.quantite,
@@ -140,8 +203,15 @@ const BesoinsPage = () => {
         departementId: userData.departementId,
         description: formData.description,
         statut: 'EN_ATTENTE',
-        categorie: 'STANDARD',
-        enseignantId: user.role === 'ENSEIGNANT' ? user.id : null
+        categorie: selectedType?.code === 'ORDINATEUR' ? 'ORDINATEUR' : (selectedType?.code === 'IMPRIMANTE' ? 'IMPRIMANTE' : 'STANDARD'),
+        enseignantId: user.role === 'ENSEIGNANT' ? user.id : null,
+        marque: formData.marque,
+        cpu: formData.cpu,
+        ram: formData.ram,
+        disqueDur: formData.disqueDur,
+        ecran: formData.ecran,
+        vitesseImpression: formData.vitesseImpression,
+        resolution: formData.resolution
       };
 
       const response = await api.createBesoin(payload);
@@ -215,6 +285,7 @@ const BesoinsPage = () => {
   const getStatusStyle = (status: string) => {
     switch (status) {
       case 'VALIDE': return 'bg-green-100 text-green-700 border-green-200';
+      case 'ENVOYE': return 'bg-blue-100 text-blue-700 border-blue-200';
       case 'REJETE': return 'bg-red-100 text-red-700 border-red-200';
       default: return 'bg-yellow-100 text-yellow-700 border-yellow-200';
     }
@@ -223,6 +294,7 @@ const BesoinsPage = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'VALIDE': return <CheckCircle size={14} />;
+      case 'ENVOYE': return <FileText size={14} />;
       case 'REJETE': return <XCircle size={14} />;
       default: return <Clock size={14} />;
     }
@@ -259,6 +331,17 @@ const BesoinsPage = () => {
             <Plus size={20} />
             Nouveau Besoin
           </button>
+          
+          {user.role === 'CHEF_DEPARTEMENT' && (
+            <button 
+              onClick={handleSendToResponsible}
+              disabled={saving || besoins.filter(b => b.statut === 'VALIDE').length === 0}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 disabled:opacity-50"
+            >
+              <FileText size={20} />
+              Envoyer au Responsable
+            </button>
+          )}
         </div>
       </div>
 
@@ -295,7 +378,7 @@ const BesoinsPage = () => {
                       <td className="px-8 py-5">
                         <div className="flex items-center gap-3">
                           <span className="font-mono font-bold text-gray-600">{besoin.quantite}</span>
-                          {besoin.statut === 'EN_ATTENTE' && (
+                          {besoin.statut === 'EN_ATTENTE' && (user.role === 'CHEF_DEPARTEMENT' || besoin.enseignantId === user.id) && (
                             <button 
                               onClick={() => handleIncreaseQuantity(besoin)}
                               className="p-1 bg-purple-50 text-purple-600 rounded-md hover:bg-purple-100 transition-colors"
@@ -313,14 +396,29 @@ const BesoinsPage = () => {
                         </span>
                       </td>
                       <td className="px-8 py-5 text-right text-purple-600">
-                        {besoin.statut === 'EN_ATTENTE' && (
-                          <button 
-                            onClick={() => handleDeleteClick(besoin.id)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                          >
-                            <Trash2 size={18} />
-                          </button>
-                        )}
+                        <div className="flex items-center justify-end gap-2">
+                          {user.role === 'CHEF_DEPARTEMENT' && besoin.statut === 'EN_ATTENTE' && (
+                            <button 
+                              onClick={() => handleValidateBesoin(besoin)}
+                              className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                              title="Valider"
+                            >
+                              <CheckCircle size={18} />
+                            </button>
+                          )}
+                          {(
+                            (besoin.statut === 'EN_ATTENTE' && (user.role === 'CHEF_DEPARTEMENT' || besoin.enseignantId === user.id)) || 
+                            (user.role === 'CHEF_DEPARTEMENT' && besoin.statut === 'VALIDE')
+                          ) && (
+                            <button 
+                              onClick={() => handleDeleteClick(besoin.id)}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Supprimer"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -451,6 +549,31 @@ const BesoinsPage = () => {
                   placeholder="Détails supplémentaires..."
                 />
               </div>
+
+              {/* Specific fields based on type */}
+              {typesRessources.find(t => t.id === parseInt(formData.typeRessourceId))?.code === 'ORDINATEUR' && (
+                <div className="bg-purple-50 p-6 rounded-2xl space-y-4 border border-purple-100">
+                  <h3 className="text-sm font-bold text-purple-700 uppercase">Spécifications Ordinateur</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <input placeholder="Marque" value={formData.marque} onChange={e => setFormData({...formData, marque: e.target.value})} className="px-4 py-3 bg-white border border-purple-100 rounded-xl outline-none focus:ring-2 focus:ring-purple-400" />
+                    <input placeholder="CPU" value={formData.cpu} onChange={e => setFormData({...formData, cpu: e.target.value})} className="px-4 py-3 bg-white border border-purple-100 rounded-xl outline-none focus:ring-2 focus:ring-purple-400" />
+                    <input placeholder="RAM" value={formData.ram} onChange={e => setFormData({...formData, ram: e.target.value})} className="px-4 py-3 bg-white border border-purple-100 rounded-xl outline-none focus:ring-2 focus:ring-purple-400" />
+                    <input placeholder="Disque Dur" value={formData.disqueDur} onChange={e => setFormData({...formData, disqueDur: e.target.value})} className="px-4 py-3 bg-white border border-purple-100 rounded-xl outline-none focus:ring-2 focus:ring-purple-400" />
+                    <input placeholder="Écran" value={formData.ecran} onChange={e => setFormData({...formData, ecran: e.target.value})} className="px-4 py-3 bg-white border border-purple-100 rounded-xl outline-none focus:ring-2 focus:ring-purple-400 col-span-2" />
+                  </div>
+                </div>
+              )}
+
+              {typesRessources.find(t => t.id === parseInt(formData.typeRessourceId))?.code === 'IMPRIMANTE' && (
+                <div className="bg-purple-50 p-6 rounded-2xl space-y-4 border border-purple-100">
+                  <h3 className="text-sm font-bold text-purple-700 uppercase">Spécifications Imprimante</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <input placeholder="Marque" value={formData.marque} onChange={e => setFormData({...formData, marque: e.target.value})} className="px-4 py-3 bg-white border border-purple-100 rounded-xl outline-none focus:ring-2 focus:ring-purple-400 col-span-2" />
+                    <input type="number" placeholder="Vitesse (ppm)" value={formData.vitesseImpression} onChange={e => setFormData({...formData, vitesseImpression: parseInt(e.target.value)})} className="px-4 py-3 bg-white border border-purple-100 rounded-xl outline-none focus:ring-2 focus:ring-purple-400" />
+                    <input placeholder="Résolution" value={formData.resolution} onChange={e => setFormData({...formData, resolution: e.target.value})} className="px-4 py-3 bg-white border border-purple-100 rounded-xl outline-none focus:ring-2 focus:ring-purple-400" />
+                  </div>
+                </div>
+              )}
 
               <div className="flex gap-4 pt-4">
                 <button 

@@ -16,8 +16,19 @@ public class OffreDTO {
     private String statut;
     private String motifRejet;
     private Long fournisseurId;
+    private String fournisseurNom;
     private Long appelOffreId;
+    private String appelOffreReference;
+    private String appelOffreStatut;
     private List<LigneOffreDTO> lignes = new ArrayList<>();
+
+    public String getAppelOffreStatut() {
+        return appelOffreStatut;
+    }
+
+    public void setAppelOffreStatut(String appelOffreStatut) {
+        this.appelOffreStatut = appelOffreStatut;
+    }
 
     public OffreDTO() {}
 
@@ -99,5 +110,21 @@ public class OffreDTO {
 
     public void setLignes(List<LigneOffreDTO> lignes) {
         this.lignes = lignes;
+    }
+
+    public String getFournisseurNom() {
+        return fournisseurNom;
+    }
+
+    public void setFournisseurNom(String fournisseurNom) {
+        this.fournisseurNom = fournisseurNom;
+    }
+
+    public String getAppelOffreReference() {
+        return appelOffreReference;
+    }
+
+    public void setAppelOffreReference(String appelOffreReference) {
+        this.appelOffreReference = appelOffreReference;
     }
 }

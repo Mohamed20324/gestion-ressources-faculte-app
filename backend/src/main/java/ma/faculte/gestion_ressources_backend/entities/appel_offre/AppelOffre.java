@@ -18,6 +18,7 @@ import java.util.List;
 @Table(name = "appels_offre")
 public class AppelOffre {
 
+    public static final String STATUT_BROUILLON = "BROUILLON";
     public static final String STATUT_OUVERT = "OUVERT";
     public static final String STATUT_CLOTURE = "CLOTURE";
     public static final String STATUT_TRAITE = "TRAITE";

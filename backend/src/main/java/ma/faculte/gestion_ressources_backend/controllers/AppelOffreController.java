@@ -19,6 +19,12 @@ public class AppelOffreController {
     @Autowired
     private IAppelOffreService appelOffreService;
 
+    @GetMapping
+    @PreAuthorize("hasRole('RESPONSABLE')")
+    public ResponseEntity<List<AppelOffreDTO>> getAll() {
+        return ResponseEntity.ok(appelOffreService.getAll());
+    }
+
     @PostMapping
     @PreAuthorize("hasRole('RESPONSABLE')")
     public ResponseEntity<?> creer(@RequestBody AppelOffreDTO dto) {
@@ -54,6 +60,37 @@ public class AppelOffreController {
     @GetMapping("/ouverts")
     public ResponseEntity<List<AppelOffreDTO>> ouverts() {
         return ResponseEntity.ok(appelOffreService.getAllOuverts());
+    }
+
+    @PutMapping("/{id}/publier")
+    @PreAuthorize("hasRole('RESPONSABLE')")
+    public ResponseEntity<?> publier(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(appelOffreService.publierAppelOffre(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body(erreur(e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('RESPONSABLE')")
+    public ResponseEntity<?> supprimer(@PathVariable Long id) {
+        try {
+            appelOffreService.supprimerAppelOffre(id);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body(erreur(e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{id}/besoins/{besoinId}")
+    @PreAuthorize("hasRole('RESPONSABLE')")
+    public ResponseEntity<?> retirerBesoin(@PathVariable Long id, @PathVariable Long besoinId) {
+        try {
+            return ResponseEntity.ok(appelOffreService.retirerBesoin(id, besoinId));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body(erreur(e.getMessage()));
+        }
     }
 
     @GetMapping("/{id}")

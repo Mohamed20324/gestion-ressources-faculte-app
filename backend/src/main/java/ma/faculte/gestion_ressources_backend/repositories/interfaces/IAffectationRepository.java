@@ -13,4 +13,6 @@ public interface IAffectationRepository extends JpaRepository<Affectation, Long>
     Optional<Affectation> findByRessource_Id(Long ressourceId);
 
     List<Affectation> findByDepartement_Id(Long departementId);
+    
+    List<Affectation> findByEnseignant_Id(Long enseignantId);
 }

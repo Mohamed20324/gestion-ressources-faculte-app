@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Package, Calendar, FileText, Users, Settings } from 'lucide-react';
+import { LayoutDashboard, Calendar, FileText, Users, Settings, Package, Wrench, History } from 'lucide-react';
 
 interface SidebarProps {
   role: string;
@@ -19,18 +19,35 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
 
   const baseUrl = getBaseUrl();
 
-  const getLinks = () => {
+    const getLinks = () => {
+    if (role === 'Fournisseur') {
+      return [
+        { to: `${baseUrl}/dashboard`, icon: LayoutDashboard, label: 'Tableau de bord' },
+        { to: `${baseUrl}/appels-offres`, icon: FileText, label: 'Appels d\'offres' },
+        { to: `${baseUrl}/mes-soumissions`, icon: Package, label: 'Mes Soumissions' },
+        { to: `${baseUrl}/dossiers-traites`, icon: History, label: 'Dossiers Traités' },
+      ];
+    }
+
+    if (role === 'Technicien') {
+      return [
+        { to: `${baseUrl}/dashboard`, icon: LayoutDashboard, label: 'Tableau de bord' },
+        { to: `${baseUrl}/interventions`, icon: Wrench, label: 'Interventions' },
+      ];
+    }
+
     const baseLinks = [
       { to: `${baseUrl}/dashboard`, icon: LayoutDashboard, label: 'Tableau de bord' },
       { to: `${baseUrl}/besoins`, icon: FileText, label: 'Mes Besoins' },
     ];
 
     if (role === 'ChefDepartement' || role === 'Enseignant') {
+      baseLinks.splice(2, 0, { to: `${baseUrl}/affectations`, icon: Package, label: 'Mes Affectations' });
       if (role === 'ChefDepartement') {
         baseLinks.splice(1, 0, { to: `${baseUrl}/enseignants`, icon: Users, label: 'Enseignants' });
         baseLinks.splice(2, 0, { to: `${baseUrl}/types-ressources`, icon: Settings, label: 'Types Ressources' });
       }
-      baseLinks.splice(role === 'ChefDepartement' ? 3 : 1, 0, { to: `${baseUrl}/meetings`, icon: Calendar, label: 'Réunions' });
+      baseLinks.splice(role === 'ChefDepartement' ? 5 : 2, 0, { to: `${baseUrl}/meetings`, icon: Calendar, label: 'Réunions' });
     }
 
     return baseLinks;

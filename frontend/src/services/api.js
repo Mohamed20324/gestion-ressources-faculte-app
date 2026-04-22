@@ -94,6 +94,10 @@ export const api = {
         headers: getHeaders() 
     }),
 
+    getBesoinsByEnseignant: (id) => fetch(`${API_BASE_URL}/besoins/enseignant/${id}`, { 
+        headers: getHeaders() 
+    }),
+
     createBesoin: (data) => fetch(`${API_BASE_URL}/besoins`, {
         method: 'POST',
         headers: getHeaders(),
@@ -127,6 +131,18 @@ export const api = {
     getAllAppelsOffresOuverts: () => fetch(`${API_BASE_URL}/appels-offres/ouverts`, { 
         headers: getHeaders() 
     }),
+    publierAppelOffre: (id) => fetch(`${API_BASE_URL}/appels-offres/${id}/publier`, {
+        method: 'PUT',
+        headers: getHeaders()
+    }),
+    supprimerAppelOffre: (id) => fetch(`${API_BASE_URL}/appels-offres/${id}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+    }),
+    retirerBesoinFromAO: (aoId, besoinId) => fetch(`${API_BASE_URL}/appels-offres/${aoId}/besoins/${besoinId}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+    }),
     
     createAppelOffre: (data) => fetch(`${API_BASE_URL}/appels-offres`, {
         method: 'POST',
@@ -140,8 +156,101 @@ export const api = {
         body: JSON.stringify(besoinIds)
     }),
 
+    getAffectationsByEnseignant: (id) => fetch(`${API_BASE_URL}/affectations/enseignant/${id}`, { 
+        headers: getHeaders() 
+    }),
+
+    getAllAppelsOffres: () => fetch(`${API_BASE_URL}/appels-offres`, { headers: getHeaders() }),
+    getAppelOffreById: (id) => fetch(`${API_BASE_URL}/appels-offres/${id}`, { headers: getHeaders() }),
+
+    // Offres
+    soumettreOffre: (data) => fetch(`${API_BASE_URL}/offres`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data)
+    }),
+    
+    getAllOffres: () => fetch(`${API_BASE_URL}/offres`, { headers: getHeaders() }),
+
+    getOffresByAppelOffre: (id) => fetch(`${API_BASE_URL}/offres/appel-offre/${id}`, { 
+        headers: getHeaders() 
+    }),
+    
+    getMyOffres: (fournisseurId) => fetch(`${API_BASE_URL}/offres/fournisseur/${fournisseurId}`, {
+        headers: getHeaders()
+    }),
+
+    accepterOffre: (id) => fetch(`${API_BASE_URL}/offres/${id}/accepter`, {
+        method: 'PUT',
+        headers: getHeaders()
+    }),
+
+    rejeterOffre: (id, motif) => fetch(`${API_BASE_URL}/offres/${id}/rejeter?motif=${encodeURIComponent(motif)}`, {
+        method: 'PUT',
+        headers: getHeaders()
+    }),
+
+    eliminerOffre: (id, motif) => fetch(`${API_BASE_URL}/offres/${id}/eliminer?motif=${encodeURIComponent(motif)}`, {
+        method: 'PUT',
+        headers: getHeaders()
+    }),
+
+    getMoinsDisant: (aoId) => fetch(`${API_BASE_URL}/offres/appel-offre/${aoId}/moins-disant`, {
+        headers: getHeaders()
+    }),
+
+    // Auth & Inscription
+    registerFournisseur: (data) => fetch(`${API_BASE_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }),
+
+    updateFournisseurInfo: (id, data) => fetch(`${API_BASE_URL}/utilisateurs/fournisseur/${id}/completer`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(data)
+    }),
+
+    getFournisseurById: (id) => fetch(`${API_BASE_URL}/utilisateurs/${id}`, { 
+        headers: getHeaders() 
+    }),
+
+    // Blacklist
+    blacklistSupplier: (id, motif) => fetch(`${API_BASE_URL}/liste-noire/fournisseur/${id}?motif=${encodeURIComponent(motif)}`, {
+        method: 'POST',
+        headers: getHeaders()
+    }),
+
+    getBlacklistedSuppliers: () => fetch(`${API_BASE_URL}/liste-noire`, { 
+        headers: getHeaders() 
+    }),
+
     // Réunions
     getAllReunions: () => fetch(`${API_BASE_URL}/reunion`, { headers: getHeaders() }),
+
+    // Maintenance
+    createSignalement: (data) => fetch(`${API_BASE_URL}/signalements`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data)
+    }),
+
+    getSignalementsByEnseignant: (id) => fetch(`${API_BASE_URL}/signalements/enseignant/${id}`, { 
+        headers: getHeaders() 
+    }),
+
+    getSignalementsByTechnicien: (id) => fetch(`${API_BASE_URL}/signalements/technicien/${id}`, { 
+        headers: getHeaders() 
+    }),
+
+    getAllSignalements: () => fetch(`${API_BASE_URL}/signalements`, { headers: getHeaders() }),
+
+    createConstat: (data) => fetch(`${API_BASE_URL}/constats`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data)
+    }),
     
     getReunionsByDepartement: (id) => fetch(`${API_BASE_URL}/reunion/departement/${id}`, { 
         headers: getHeaders() 
@@ -182,4 +291,10 @@ export const api = {
         method: 'DELETE',
         headers: getHeaders()
     }),
+
+    // Notifications
+    getNotifications: (userId) => 
+        fetch(`${API_BASE_URL}/notifications/utilisateur/${userId}`, { headers: getHeaders() }),
+    markNotificationAsRead: (id) =>
+        fetch(`${API_BASE_URL}/notifications/${id}/lu`, { method: 'PUT', headers: getHeaders() }),
 };

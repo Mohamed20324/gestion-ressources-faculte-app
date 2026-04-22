@@ -74,12 +74,14 @@ public class BesoinServiceImpl implements IBesoinService {
             bo.setRam(dto.getRam());
             bo.setDisqueDur(dto.getDisqueDur());
             bo.setEcran(dto.getEcran());
+            bo.setMarque(dto.getMarque());
             return bo;
         }
         if ("IMPRIMANTE".equalsIgnoreCase(cat)) {
             BesoinImprimante bi = new BesoinImprimante();
             bi.setVitesseImpression(dto.getVitesseImpression());
             bi.setResolution(dto.getResolution());
+            bi.setMarque(dto.getMarque());
             return bi;
         }
         return new BesoinRessource();
@@ -123,12 +125,18 @@ public class BesoinServiceImpl implements IBesoinService {
             if (dto.getEcran() != null) {
                 bo.setEcran(dto.getEcran());
             }
+            if (dto.getMarque() != null) {
+                bo.setMarque(dto.getMarque());
+            }
         } else if (b instanceof BesoinImprimante bi) {
             if (dto.getVitesseImpression() > 0) {
                 bi.setVitesseImpression(dto.getVitesseImpression());
             }
             if (dto.getResolution() != null) {
                 bi.setResolution(dto.getResolution());
+            }
+            if (dto.getMarque() != null) {
+                bi.setMarque(dto.getMarque());
             }
         }
         return versDto(besoinRessourceRepository.save(b));
@@ -195,10 +203,12 @@ public class BesoinServiceImpl implements IBesoinService {
             d.setRam(bo.getRam());
             d.setDisqueDur(bo.getDisqueDur());
             d.setEcran(bo.getEcran());
+            d.setMarque(bo.getMarque());
         } else if (b instanceof BesoinImprimante bi) {
             d.setCategorie("IMPRIMANTE");
             d.setVitesseImpression(bi.getVitesseImpression());
             d.setResolution(bi.getResolution());
+            d.setMarque(bi.getMarque());
         } else {
             d.setCategorie("STANDARD");
         }

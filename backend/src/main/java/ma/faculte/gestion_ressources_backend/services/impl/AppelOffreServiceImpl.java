@@ -1,7 +1,10 @@
 package ma.faculte.gestion_ressources_backend.services.impl;
 
 import ma.faculte.gestion_ressources_backend.dto.appel_offre.AppelOffreDTO;
+import ma.faculte.gestion_ressources_backend.dto.departement.besoins.BesoinRessourceDTO;
 import ma.faculte.gestion_ressources_backend.entities.appel_offre.AppelOffre;
+import ma.faculte.gestion_ressources_backend.entities.besoins.BesoinImprimante;
+import ma.faculte.gestion_ressources_backend.entities.besoins.BesoinOrdinateur;
 import ma.faculte.gestion_ressources_backend.entities.besoins.BesoinRessource;
 import ma.faculte.gestion_ressources_backend.entities.utilisateurs.Responsable;
 import ma.faculte.gestion_ressources_backend.repositories.interfaces.IAppelOffreRepository;
@@ -94,6 +97,50 @@ public class AppelOffreServiceImpl implements IAppelOffreService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<AppelOffreDTO> getAll() {
+        return appelOffreRepository.findAll().stream()
+                .map(this::versDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public AppelOffreDTO publierAppelOffre(Long id) {
+        AppelOffre ao = appelOffreRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Appel d'offres introuvable"));
+        ao.setStatut(AppelOffre.STATUT_OUVERT);
+        return versDto(appelOffreRepository.save(ao));
+    }
+
+    @Override
+    @Transactional
+    public void supprimerAppelOffre(Long id) {
+        AppelOffre ao = appelOffreRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Appel d'offres introuvable"));
+        // Remove links to needs before deleting
+        for (BesoinRessource b : ao.getBesoins()) {
+            b.getAppelsOffre().remove(ao);
+        }
+        ao.getBesoins().clear();
+        appelOffreRepository.delete(ao);
+    }
+
+    @Override
+    @Transactional
+    public AppelOffreDTO retirerBesoin(Long aoId, Long besoinId) {
+        AppelOffre ao = appelOffreRepository.findById(aoId)
+                .orElseThrow(() -> new RuntimeException("Appel d'offres introuvable"));
+        BesoinRessource b = besoinRessourceRepository.findById(besoinId)
+                .orElseThrow(() -> new RuntimeException("Besoin introuvable"));
+        
+        ao.getBesoins().remove(b);
+        b.getAppelsOffre().remove(ao);
+        
+        return versDto(appelOffreRepository.save(ao));
+    }
+
     private AppelOffreDTO versDto(AppelOffre ao) {
         AppelOffreDTO d = new AppelOffreDTO();
         d.setId(ao.getId());
@@ -103,6 +150,40 @@ public class AppelOffreServiceImpl implements IAppelOffreService {
         d.setStatut(ao.getStatut());
         d.setResponsableId(ao.getResponsable().getId());
         d.setBesoinIds(ao.getBesoins().stream().map(BesoinRessource::getId).collect(Collectors.toList()));
+        
+        // Populate full needs details
+        d.setBesoins(ao.getBesoins().stream().map(this::mapBesoinToDto).collect(Collectors.toList()));
+        
+        return d;
+    }
+
+    private BesoinRessourceDTO mapBesoinToDto(BesoinRessource b) {
+        BesoinRessourceDTO d = new BesoinRessourceDTO();
+        d.setId(b.getId());
+        d.setTypeRessourceId(b.getTypeRessource().getId());
+        d.setQuantite(b.getQuantite());
+        d.setDescription(b.getDescription());
+        d.setStatut(b.getStatut());
+        d.setDepartementId(b.getDepartement() != null ? b.getDepartement().getId() : null);
+        d.setReunionId(b.getReunion() != null ? b.getReunion().getId() : null);
+        
+        // Handle specific types (Ordinateur, Imprimante)
+        if (b instanceof BesoinOrdinateur bo) {
+            d.setCategorie("ORDINATEUR");
+            d.setCpu(bo.getCpu());
+            d.setRam(bo.getRam());
+            d.setDisqueDur(bo.getDisqueDur());
+            d.setEcran(bo.getEcran());
+            d.setMarque(bo.getMarque());
+        } else if (b instanceof BesoinImprimante bi) {
+            d.setCategorie("IMPRIMANTE");
+            d.setVitesseImpression(bi.getVitesseImpression());
+            d.setResolution(bi.getResolution());
+            d.setMarque(bi.getMarque());
+        } else {
+            d.setCategorie("STANDARD");
+        }
+        
         return d;
     }
 }

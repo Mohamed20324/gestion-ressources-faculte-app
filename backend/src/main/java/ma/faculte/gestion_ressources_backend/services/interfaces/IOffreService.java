@@ -17,4 +17,6 @@ public interface IOffreService {
     List<OffreDTO> getMoinsDisant(Long appelOffreId);
 
     List<OffreDTO> getOffresByAppelOffre(Long appelOffreId);
+    List<OffreDTO> getAllOffres();
+    List<OffreDTO> getByFournisseur(Long fournisseurId);
 }

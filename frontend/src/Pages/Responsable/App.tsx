@@ -11,6 +11,15 @@ import AppelsOffresPage from './AppelsOffresPage';
 import MeetingsPage from './MeetingsPage';
 import MeetingCalendarPage from './MeetingCalendarPage';
 import BesoinsGlobalPage from './BesoinsGlobalPage';
+import OffresGestionPage from './OffresGestionPage';
+import ReceptionPage from './ReceptionPage';
+import FournisseursPage from './FournisseursPage';
+import BlacklistPage from './BlacklistPage';
+import ProcurementDashboard from './ProcurementDashboard';
+import InventoryDashboard from './InventoryDashboard';
+import PartnersDashboard from './PartnersDashboard';
+import ReportsPage from './ReportsPage';
+import SoumissionsGestionPage from './SoumissionsGestionPage';
 
 const AppContent = () => {
   return (
@@ -28,7 +37,16 @@ const AppContent = () => {
             <Route path="/department-heads" element={<DepartmentHeadPage />} />
             <Route path="/resources" element={<ResourcesPage />} />
             <Route path="/needs" element={<BesoinsGlobalPage />} />
-            <Route path="/tenders" element={<AppelsOffresPage />} />
+            <Route path="/appels-offres" element={<AppelsOffresPage />} />
+            <Route path="/appels-offres/:id/offres" element={<OffresGestionPage />} />
+            <Route path="/reception" element={<ReceptionPage />} />
+            <Route path="/suppliers" element={<FournisseursPage />} />
+            <Route path="/submissions" element={<SoumissionsGestionPage />} />
+            <Route path="/blacklist" element={<BlacklistPage />} />
+            <Route path="/procurement/dashboard" element={<ProcurementDashboard />} />
+            <Route path="/inventory/dashboard" element={<InventoryDashboard />} />
+            <Route path="/partners/dashboard" element={<PartnersDashboard />} />
+            <Route path="/reports" element={<ReportsPage />} />
             
             {/* Routes Réunions */}
             <Route path="/meetings" element={<MeetingsPage />} />

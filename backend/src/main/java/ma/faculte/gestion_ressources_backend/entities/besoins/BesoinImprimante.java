@@ -18,6 +18,9 @@ public class BesoinImprimante extends BesoinRessource {
     @Column(nullable = true)
     private String resolution;
 
+    @Column(nullable = true)
+    private String marque;
+
     public BesoinImprimante() {}
 
     public int getVitesseImpression() {
@@ -34,5 +37,13 @@ public class BesoinImprimante extends BesoinRessource {
 
     public void setResolution(String resolution) {
         this.resolution = resolution;
+    }
+
+    public String getMarque() {
+        return marque;
+    }
+
+    public void setMarque(String marque) {
+        this.marque = marque;
     }
 }

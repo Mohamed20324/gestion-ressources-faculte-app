@@ -15,4 +15,8 @@ public interface IAppelOffreService {
     AppelOffreDTO getById(Long id);
 
     List<AppelOffreDTO> getAllOuverts();
+    List<AppelOffreDTO> getAll();
+    AppelOffreDTO publierAppelOffre(Long id);
+    void supprimerAppelOffre(Long id);
+    AppelOffreDTO retirerBesoin(Long aoId, Long besoinId);
 }

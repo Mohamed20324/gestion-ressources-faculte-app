@@ -92,6 +92,14 @@ public class AffectationServiceImpl implements IAffectationService {
         affectationRepository.delete(a);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<AffectationDTO> listerParEnseignant(Long enseignantId) {
+        return affectationRepository.findByEnseignant_Id(enseignantId).stream()
+                .map(this::versDto)
+                .collect(Collectors.toList());
+    }
+
     private AffectationDTO versDto(Affectation a) {
         AffectationDTO d = new AffectationDTO();
         d.setId(a.getId());

@@ -457,6 +457,13 @@ public class UtilisateurServiceImpl implements IUtilisateurService {
             dto.setMatricule(t.getMatricule());
             dto.setSpecialite(t.getSpecialiteTechnique());
             dto.setDisponibilite(t.getDisponibilite());
+        } else if (u instanceof Fournisseur f) {
+            dto.setNomSociete(f.getNomSociete());
+            dto.setEstListeNoire(f.isEstListeNoire());
+            dto.setLieu(f.getLieu());
+            dto.setAdresse(f.getAdresse());
+            dto.setSiteInternet(f.getSiteInternet());
+            dto.setGerant(f.getGerant());
         }
 
         return dto;

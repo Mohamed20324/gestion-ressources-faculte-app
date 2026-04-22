@@ -6,6 +6,7 @@ public class LigneOffreDTO {
     public static final String VARIANTE_ORDINATEUR = "ORDINATEUR";
     public static final String VARIANTE_IMPRIMANTE = "IMPRIMANTE";
 
+    private Long id;
     private Long typeRessourceId;
     private String marque;
     private Double prixUnitaire;
@@ -23,6 +24,14 @@ public class LigneOffreDTO {
     private String resolution;
 
     public LigneOffreDTO() {}
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
 
     public Long getTypeRessourceId() {
         return typeRessourceId;

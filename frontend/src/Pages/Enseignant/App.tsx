@@ -4,6 +4,7 @@ import Sidebar from '../../components/G/Sidebar';
 import Dashboard from './Dashboard';
 import BesoinsPage from '../ChefDepartement/BesoinsPage';
 import MeetingsPage from '../ChefDepartement/MeetingsPage';
+import AffectationsPage from './AffectationsPage';
 
 const AppContent = () => {
   return (
@@ -17,6 +18,7 @@ const AppContent = () => {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/besoins" element={<BesoinsPage />} />
             <Route path="/meetings" element={<MeetingsPage />} />
+            <Route path="/affectations" element={<AffectationsPage />} />
           </Routes>
         </div>
       </div>

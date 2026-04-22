@@ -544,14 +544,14 @@ const DepartmentHeadModal = ({ isOpen, onClose, onSave, head, saving, departemen
                     </div>
                     <div className="col-span-1">
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Date de nomination</label>
-                        <div className="relative">
-                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={16} />
+                        <div className="relative group">
+                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-orange-400 group-hover:text-orange-600 transition-colors pointer-events-none" size={16} />
                             <input 
                                 type="date" 
                                 value={formData.dateNomination} 
                                 onChange={(e) => setFormData({ ...formData, dateNomination: e.target.value })} 
-                                onClick={(e) => (e.target as any).showPicker?.()}
-                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all cursor-pointer" 
+                                onClick={(e) => (e.target as HTMLInputElement).showPicker()}
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all cursor-pointer appearance-none" 
                             />
                         </div>
                     </div>

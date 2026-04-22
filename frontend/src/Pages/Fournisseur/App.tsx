@@ -2,6 +2,10 @@ import { Routes, Route } from 'react-router-dom';
 import Header from '../../components/G/Header';
 import Sidebar from '../../components/G/Sidebar';
 import Dashboard from './Dashboard';
+import AppelsOffresPage from './AppelsOffresPage';
+import SoumettreOffrePage from './SoumettreOffrePage';
+import MesSoumissionsPage from './MesSoumissionsPage';
+import DossiersTraitesPage from './DossiersTraitesPage';
 
 const AppContent = () => {
   return (
@@ -13,6 +17,10 @@ const AppContent = () => {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/appels-offres" element={<AppelsOffresPage />} />
+            <Route path="/mes-soumissions" element={<MesSoumissionsPage />} />
+            <Route path="/dossiers-traites" element={<DossiersTraitesPage />} />
+            <Route path="/soumission/:id" element={<SoumettreOffrePage />} />
           </Routes>
         </div>
       </div>

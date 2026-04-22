@@ -7,7 +7,7 @@ import {
   FileText, LayoutDashboard,
   UserPlus, Plus, Sparkles, MoreHorizontal,
   Crown, GraduationCap, Wrench, Package, Video, CalendarCheck,
-  Moon, Sun, ClipboardList
+  Moon, Sun, ClipboardList, Truck, ShieldAlert
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -81,20 +81,57 @@ const secondaryMenus: Record<string, MenuType> = {
       }
     ]
   },
-  ressources: {
-    title: "Ressources",
-    defaultPath: "/responsable/resources",
+  Procurement: {
+    title: "Appels d'Offres",
+    defaultPath: "/responsable/procurement/dashboard",
     sections: [
       {
         type: "header",
-        title: "Inventaire & Besoins"
+        title: "Demandes & AO"
       },
       {
         type: "nav",
         items: [
-          { icon: <Package size={16} />, text: "Inventaire", path: "/responsable/resources" },
+          { icon: <LayoutDashboard size={16} />, text: "Tableau de Bord AO", path: "/responsable/procurement/dashboard" },
           { icon: <ClipboardList size={16} />, text: "Besoins Départements", path: "/responsable/needs" },
-          { icon: <FileText size={16} />, text: "Marchés & Appels d'offres", path: "/responsable/tenders" }
+          { icon: <FileText size={16} />, text: "Marchés & Appels d'offres", path: "/responsable/appels-offres" }
+        ]
+      }
+    ]
+  },
+  Inventaire: {
+    title: "Gestion Inventaire",
+    defaultPath: "/responsable/inventory/dashboard",
+    sections: [
+      {
+        type: "header",
+        title: "Parc & Livraisons"
+      },
+      {
+        type: "nav",
+        items: [
+          { icon: <LayoutDashboard size={16} />, text: "Tableau de Bord Parc", path: "/responsable/inventory/dashboard" },
+          { icon: <Package size={16} />, text: "Inventaire Global", path: "/responsable/resources" },
+          { icon: <Truck size={16} />, text: "Réception & Livraison", path: "/responsable/reception" }
+        ]
+      }
+    ]
+  },
+  Partenaires: {
+    title: "Fournisseurs",
+    defaultPath: "/responsable/partners/dashboard",
+    sections: [
+      {
+        type: "header",
+        title: "Gestion Partenaires"
+      },
+      {
+        type: "nav",
+        items: [
+          { icon: <LayoutDashboard size={16} />, text: "Tableau de Bord Partenaires", path: "/responsable/partners/dashboard" },
+          { icon: <Users size={16} />, text: "Liste Fournisseurs", path: "/responsable/suppliers" },
+          { icon: <FileText size={16} />, text: "Soumissions Reçues", path: "/responsable/submissions" },
+          { icon: <ShieldAlert size={16} />, text: "Liste Noire", path: "/responsable/blacklist" }
         ]
       }
     ]
@@ -123,46 +160,6 @@ const secondaryMenus: Record<string, MenuType> = {
         items: [
           { icon: <Plus size={16} />, text: "Programmer une réunion", path: "/responsable/meetings/new" },
           { icon: <FileText size={16} />, text: "Comptes-rendus & Archives", path: "/responsable/meetings/archives" }
-        ]
-      }
-    ]
-  },
-  equipes: {
-    title: "Équipes",
-    defaultPath: "/responsable/teams/design",
-    sections: [
-      {
-        type: "header",
-        title: "Mes équipes"
-      },
-      {
-        type: "teamSpace",
-        name: "Équipe Design",
-        color: "bg-purple-500",
-        defaultPath: "/responsable/teams/design",
-        items: [
-          { icon: <Users size={14} />, text: "Membres (8)", suffix: "3 actifs", path: "/responsable/teams/design/members" },
-          { icon: <FileText size={14} />, text: "Projets", suffix: "4", path: "/responsable/teams/design/projects" }
-        ]
-      },
-      {
-        type: "teamSpace",
-        name: "Équipe Dev",
-        color: "bg-blue-500",
-        defaultPath: "/responsable/teams/dev",
-        items: [
-          { icon: <Users size={14} />, text: "Membres (12)", suffix: "5 actifs", path: "/responsable/teams/dev/members" },
-          { icon: <FileText size={14} />, text: "Projets", suffix: "6", path: "/responsable/teams/dev/projects" }
-        ]
-      },
-      {
-        type: "header",
-        title: "Invitations"
-      },
-      {
-        type: "nav",
-        items: [
-          { icon: <UserPlus size={16} />, text: "En attente", suffix: "2", path: "/responsable/invitations/pending" }
         ]
       }
     ]
@@ -481,38 +478,45 @@ const Sidebar = () => {
             />
           </div>
 
-          <div className="flex-1 pb-1">
-            {/* Ressources avec badge dynamique */}
-            <div className="mb-2">
-              <SidebarIconCollapsed
-                icon={<Package size={20} />}
-                label="Ressources"
-                isActive={activeMenu === 'ressources'}
-                onClick={() => handleMenuClick('ressources')}
-              />
-            </div>
+          {/* Appels d'Offres */}
+          <div className="mb-2">
+            <SidebarIconCollapsed
+              icon={<ClipboardList size={20} />}
+              label="Appels d'Offres"
+              isActive={activeMenu === 'Procurement'}
+              onClick={() => handleMenuClick('Procurement')}
+            />
+          </div>
 
-            <div className="flex-1 pb-1">
-              {/* Réunions */}
-              <SidebarIconCollapsed
-                icon={<Video size={20} />}
-                label="Réunions"
-                isActive={activeMenu === 'reunions'}
-                onClick={() => handleMenuClick('reunions')}
-                badge={badges.meetings > 0 ? badges.meetings : undefined}
-              />
-            </div>
+          {/* Inventaire */}
+          <div className="mb-2">
+            <SidebarIconCollapsed
+              icon={<Package size={20} />}
+              label="Inventaire"
+              isActive={activeMenu === 'Inventaire'}
+              onClick={() => handleMenuClick('Inventaire')}
+            />
+          </div>
 
-            <div className="flex-1 pt-1">
-              {/* Équipes avec badge pour invitations */}
-              <SidebarIconCollapsed
-                icon={<Users size={20} />}
-                label="Équipes"
-                isActive={activeMenu === 'equipes'}
-                onClick={() => handleMenuClick('equipes')}
-                badge={badges.pendingInvites > 0 ? badges.pendingInvites : undefined}
-              />
-            </div>
+          {/* Fournisseurs */}
+          <div className="mb-2">
+            <SidebarIconCollapsed
+              icon={<Users size={20} />}
+              label="Fournisseurs"
+              isActive={activeMenu === 'Partenaires'}
+              onClick={() => handleMenuClick('Partenaires')}
+            />
+          </div>
+
+          {/* Réunions */}
+          <div className="mb-2">
+            <SidebarIconCollapsed
+              icon={<Video size={20} />}
+              label="Réunions"
+              isActive={activeMenu === 'reunions'}
+              onClick={() => handleMenuClick('reunions')}
+              badge={badges.meetings > 0 ? badges.meetings : undefined}
+            />
           </div>
 
           {/* Divider */}

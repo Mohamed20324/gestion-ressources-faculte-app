@@ -35,6 +35,7 @@ public class BesoinRessourceDTO {
     private String ecran;
     private int vitesseImpression;
     private String resolution;
+    private String marque;
 
     public BesoinRessourceDTO() {}
 
@@ -172,5 +173,13 @@ public class BesoinRessourceDTO {
 
     public void setResolution(String resolution) {
         this.resolution = resolution;
+    }
+
+    public String getMarque() {
+        return marque;
+    }
+
+    public void setMarque(String marque) {
+        this.marque = marque;
     }
 }

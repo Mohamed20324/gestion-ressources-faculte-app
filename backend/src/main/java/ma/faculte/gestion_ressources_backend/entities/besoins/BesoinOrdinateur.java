@@ -24,6 +24,9 @@ public class BesoinOrdinateur extends BesoinRessource {
     @Column(nullable = true)
     private String ecran;
 
+    @Column(nullable = true)
+    private String marque;
+
     public BesoinOrdinateur() {}
 
     public String getCpu() {
@@ -56,5 +59,13 @@ public class BesoinOrdinateur extends BesoinRessource {
 
     public void setEcran(String ecran) {
         this.ecran = ecran;
+    }
+
+    public String getMarque() {
+        return marque;
+    }
+
+    public void setMarque(String marque) {
+        this.marque = marque;
     }
 }

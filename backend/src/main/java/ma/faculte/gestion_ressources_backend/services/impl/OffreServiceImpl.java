@@ -180,6 +180,22 @@ public class OffreServiceImpl implements IOffreService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<OffreDTO> getAllOffres() {
+        return offreRepository.findAll().stream()
+                .map(this::versDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<OffreDTO> getByFournisseur(Long fournisseurId) {
+        return offreRepository.findByFournisseurId(fournisseurId).stream()
+                .map(this::versDto)
+                .collect(Collectors.toList());
+    }
+
     private OffreDTO versDto(Offre o) {
         OffreDTO d = new OffreDTO();
         d.setId(o.getId());
@@ -190,7 +206,37 @@ public class OffreServiceImpl implements IOffreService {
         d.setStatut(o.getStatut());
         d.setMotifRejet(o.getMotifRejet());
         d.setFournisseurId(o.getFournisseur().getId());
+        d.setFournisseurNom(o.getFournisseur().getNomSociete());
         d.setAppelOffreId(o.getAppelOffre().getId());
+        d.setAppelOffreReference(o.getAppelOffre().getReference());
+        d.setAppelOffreStatut(o.getAppelOffre().getStatut());
+        
+        if (o.getLignes() != null) {
+            d.setLignes(o.getLignes().stream().map(l -> {
+                LigneOffreDTO ld = new LigneOffreDTO();
+                ld.setId(l.getId());
+                ld.setQuantite(l.getQuantite());
+                ld.setPrixUnitaire(l.getPrixUnitaire());
+                ld.setMarque(l.getMarque());
+                ld.setTypeRessourceId(l.getTypeRessource().getId());
+                ld.setBesoinId(l.getBesoin().getId());
+                if (l instanceof LigneOffreOrdinateur) {
+                    LigneOffreOrdinateur lo = (LigneOffreOrdinateur) l;
+                    ld.setVariante(LigneOffreDTO.VARIANTE_ORDINATEUR);
+                    ld.setCpu(lo.getCpu());
+                    ld.setRam(lo.getRam());
+                    ld.setDisqueDur(lo.getDisqueDur());
+                    ld.setEcran(lo.getEcran());
+                } else if (l instanceof LigneOffreImprimante) {
+                    LigneOffreImprimante li = (LigneOffreImprimante) l;
+                    ld.setVariante(LigneOffreDTO.VARIANTE_IMPRIMANTE);
+                    ld.setVitesseImpression(li.getVitesseImpression());
+                    ld.setResolution(li.getResolution());
+                }
+                return ld;
+            }).collect(Collectors.toList()));
+        }
+        
         return d;
     }
 }
