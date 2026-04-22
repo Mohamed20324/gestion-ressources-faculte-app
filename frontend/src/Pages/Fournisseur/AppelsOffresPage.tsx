@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { 
-  FileText, Search, Loader, Calendar, 
-  ArrowRight, Clock, Building2, Package, CheckCircle
+import {
+  FileText, Search, Loader, Calendar,
+  ArrowRight, Clock, Package, CheckCircle
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
@@ -24,14 +24,17 @@ const AppelsOffresPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Wait until auth has resolved and we have a user id
+    if (!user?.id) return;
     fetchData();
-  }, []);
+  }, [user?.id]);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
       const [aoRes, myOffresRes] = await Promise.all([
         api.getAllAppelsOffresOuverts(),
-        api.getMyOffres(user?.id)
+        api.getMyOffres(user!.id)
       ]);
 
       if (aoRes.ok) setAppelsOffres(await aoRes.json());
@@ -47,7 +50,7 @@ const AppelsOffresPage = () => {
     return myOffres.some(o => o.appelOffreId === aoId);
   };
 
-  const filtered = appelsOffres.filter(ao => 
+  const filtered = appelsOffres.filter(ao =>
     ao.reference.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -124,13 +127,12 @@ const AppelsOffresPage = () => {
                   </div>
                 </div>
 
-                <button 
+                <button
                   onClick={() => navigate(`/fournisseur/soumission/${ao.id}`)}
-                  className={`w-full py-4 rounded-2xl font-black transition-all flex items-center justify-center gap-2 group-hover:scale-[1.02] shadow-lg ${
-                    hasSubmitted(ao.id) 
-                    ? 'bg-green-600 hover:bg-green-700 text-white shadow-green-100' 
-                    : 'bg-gray-900 hover:bg-purple-600 text-white shadow-gray-200'
-                  }`}
+                  className={`w-full py-4 rounded-2xl font-black transition-all flex items-center justify-center gap-2 group-hover:scale-[1.02] shadow-lg ${hasSubmitted(ao.id)
+                      ? 'bg-green-600 hover:bg-green-700 text-white shadow-green-100'
+                      : 'bg-gray-900 hover:bg-purple-600 text-white shadow-gray-200'
+                    }`}
                 >
                   {hasSubmitted(ao.id) ? (
                     <>

@@ -1,12 +1,54 @@
-import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Calendar, FileText, Users, Settings, Package, Wrench, History } from 'lucide-react';
+import React, { useState } from 'react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import {
+  LayoutDashboard, Calendar, FileText, Users,
+  Settings, Package, Wrench, Home,
+  MoreHorizontal, Moon, Sun, Sparkles
+} from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 
 interface SidebarProps {
   role: string;
 }
 
+const SidebarIconCollapsed = ({ icon, label, isActive, onClick, badge }: {
+  icon: React.ReactNode;
+  label: string;
+  isActive: boolean;
+  onClick: () => void;
+  badge?: string | number;
+}) => {
+  return (
+    <div className="group relative">
+      <div
+        className={`flex items-center justify-center p-2 mx-2 rounded-lg cursor-pointer transition-all duration-200 ${isActive
+            ? 'bg-gray-200 text-black'
+            : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+          }`}
+        onClick={onClick}
+      >
+        <div className="w-5 h-5 flex items-center justify-center">
+          {icon}
+        </div>
+        {badge && (
+          <div className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 rounded-full text-[10px] flex items-center justify-center text-white px-1">
+            {badge}
+          </div>
+        )}
+      </div>
+      <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 bg-black text-white text-sm rounded whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none shadow-lg">
+        {label}
+      </div>
+    </div>
+  );
+};
+
 const Sidebar: React.FC<SidebarProps> = ({ role }) => {
+  const [activeMenu, setActiveMenu] = useState('General');
+  const { theme, toggleTheme } = useTheme();
+  const location = useLocation();
+  const navigate = useNavigate();
+
   const getBaseUrl = () => {
     switch (role) {
       case 'Enseignant': return '/enseignant';
@@ -19,13 +61,12 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
 
   const baseUrl = getBaseUrl();
 
-    const getLinks = () => {
+  const getLinks = () => {
     if (role === 'Fournisseur') {
       return [
         { to: `${baseUrl}/dashboard`, icon: LayoutDashboard, label: 'Tableau de bord' },
         { to: `${baseUrl}/appels-offres`, icon: FileText, label: 'Appels d\'offres' },
         { to: `${baseUrl}/mes-soumissions`, icon: Package, label: 'Mes Soumissions' },
-        { to: `${baseUrl}/dossiers-traites`, icon: History, label: 'Dossiers Traités' },
       ];
     }
 
@@ -56,34 +97,116 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
   const links = getLinks();
 
   return (
-    <aside className="w-64 bg-[#f8f9fa] border-r border-gray-200 hidden md:flex flex-col h-full">
-      <nav className="flex-1 py-4 px-3 overflow-y-auto space-y-1">
-        {links.map((link) => (
-          <NavLink
-            key={link.to}
-            to={link.to}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-all duration-200 ${
-                isActive
-                  ? 'bg-purple-50 text-purple-700'
-                  : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-              }`
-            }
-          >
-            <link.icon size={18} className="shrink-0" />
-            <span className="truncate">{link.label}</span>
-          </NavLink>
-        ))}
-      </nav>
-      <div className="p-4 border-t border-gray-200">
-        <div className="bg-purple-50 rounded-xl p-4 border border-purple-100">
-          <h4 className="text-xs font-bold text-purple-900 mb-1">Besoin d'aide ?</h4>
-          <p className="text-[10px] text-purple-600 mb-2 leading-relaxed">
-            Contactez l'administration pour toute assistance.
-          </p>
+    <div className="flex h-full bg-gray-50 p-2 rounded-2xl hidden md:flex">
+      {/* Primary Sidebar (Slim, Dark) */}
+      <div className="w-12 flex-shrink-0 bg-black flex flex-col relative rounded-xl shadow-xl">
+        <div className="flex-1 pt-2 pb-1">
+          <div className="mb-2">
+            <SidebarIconCollapsed
+              icon={<Home size={20} />}
+              label="Général"
+              isActive={activeMenu === 'General'}
+              onClick={() => setActiveMenu('General')}
+            />
+          </div>
+          {/* Add more categories here if needed in the future */}
+          <div className="h-px bg-gray-700 my-3 mx-3"></div>
+          <SidebarIconCollapsed
+            icon={<MoreHorizontal size={20} />}
+            label="Plus"
+            isActive={activeMenu === 'Plus'}
+            onClick={() => setActiveMenu('Plus')}
+          />
+        </div>
+
+        {/* Bottom Section */}
+        <div className="border-t border-gray-700 p-2">
+          <div className="space-y-2">
+            <div className="group relative">
+              <button
+                className="flex items-center justify-center w-full py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-white transition-colors"
+                onClick={toggleTheme}
+              >
+                {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+              </button>
+              <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 bg-black text-white text-sm rounded whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none shadow-lg">
+                {theme === 'dark' ? 'Mode Clair' : 'Mode Sombre'}
+              </div>
+            </div>
+            <div className="group relative">
+              <button
+                className="flex items-center justify-center w-full py-2 bg-transparent border border-gray-700 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors"
+                onClick={() => navigate(`${baseUrl}/dashboard`)}
+              >
+                <Sparkles size={18} />
+              </button>
+              <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 bg-black text-white text-sm rounded whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none shadow-lg">
+                Retour
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-    </aside>
+
+      {/* Secondary Sidebar (Wider, Light) */}
+      <div className="w-64 flex-shrink-0 h-full bg-gradient-to-tr from-pink-50 to-blue-100 flex flex-col border border-gray-200 ml-2 mr-0 rounded-r-xl shadow-lg">
+        <div className="py-2 px-6 border-b border-gray-200 bg-white/50 rounded-tr-2xl">
+          <h1 className="font-semibold text-lg text-gray-900">
+            {role === 'ChefDepartement' ? 'Chef de Départ.' : role}
+          </h1>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-2">
+          {activeMenu === 'General' ? (
+            <>
+              <div className="mt-4 mb-2 px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Menu Principal
+              </div>
+              {links.map((link, idx) => {
+                const isActive = location.pathname === link.to || location.pathname.startsWith(link.to + '/');
+                return (
+                  <NavLink
+                    key={idx}
+                    to={link.to}
+                    className={`flex items-center gap-2 px-2 py-1.5 my-1 rounded-md cursor-pointer transition-colors ${isActive
+                        ? 'bg-white text-purple-700 shadow-sm'
+                        : 'text-gray-600 hover:bg-white hover:text-gray-900'
+                      }`}
+                  >
+                    <link.icon size={16} className={isActive ? "text-purple-600" : "text-gray-400"} />
+                    <span className="text-sm font-medium">{link.label}</span>
+                  </NavLink>
+                );
+              })}
+            </>
+          ) : (
+            <>
+              <div className="mt-4 mb-2 px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Paramètres
+              </div>
+              <div
+                className="flex items-center gap-2 px-2 py-1.5 my-1 rounded-md cursor-pointer transition-colors text-gray-600 hover:bg-white hover:text-gray-900"
+                onClick={toggleTheme}
+              >
+                <div className={`w-8 h-4 rounded-full p-0.5 transition-colors duration-200 ease-in-out ${theme === 'dark' ? 'bg-blue-500' : 'bg-gray-300'}`}>
+                  <div className={`w-3 h-3 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out ${theme === 'dark' ? 'translate-x-4' : 'translate-x-0'}`} />
+                </div>
+                <span className="text-sm font-medium">Mode de l'app</span>
+              </div>
+            </>
+          )}
+
+          <div className="mt-8 p-4 border-t border-gray-200/50">
+            <div className="bg-white/60 rounded-xl p-4 border border-white/80 shadow-sm">
+              <h4 className="text-xs font-bold text-gray-800 mb-1">Besoin d'aide ?</h4>
+              <p className="text-[10px] text-gray-500 mb-2 leading-relaxed">
+                Contactez l'administration pour toute assistance sur la plateforme.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 

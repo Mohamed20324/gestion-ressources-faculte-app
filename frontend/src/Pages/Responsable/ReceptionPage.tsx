@@ -133,14 +133,29 @@ const ReceptionPage = () => {
         <div className="grid gap-6">
           {offresAcceptees.map(o => (
             <div key={o.id} className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-xl flex justify-between items-center group hover:border-purple-200 transition-all">
-              <div>
-                <h3 className="text-xl font-black text-gray-900">{o.fournisseurNom}</h3>
-                <p className="text-gray-500 font-medium">Offre #OFR-{o.id} • Total: {o.prixTotal.toLocaleString()} MAD</p>
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-xl font-black text-gray-900">{o.fournisseurNom}</h3>
+                  {/* Badge En cours de livraison */}
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-amber-50 text-amber-600 border border-amber-200 shadow-sm">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse inline-block" />
+                    <Truck size={11} />
+                    En cours de livraison
+                  </span>
+                </div>
+                <p className="text-gray-500 font-medium">
+                  Offre <span className="font-black text-gray-700">#OFR-{o.id}</span>
+                  {' '}•{' '}
+                  AO : <span className="font-bold text-purple-600">{o.appelOffreReference}</span>
+                  {' '}•{' '}
+                  Total : <span className="font-black text-gray-900">{o.prixTotal?.toLocaleString()} MAD</span>
+                </p>
               </div>
               <button 
                 onClick={() => handleSelectOffre(o)}
-                className="px-6 py-3 bg-purple-600 text-white rounded-2xl font-black hover:bg-purple-700 transition-all shadow-lg shadow-purple-100"
+                className="px-6 py-3 bg-purple-600 text-white rounded-2xl font-black hover:bg-purple-700 transition-all shadow-lg shadow-purple-100 flex items-center gap-2 whitespace-nowrap"
               >
+                <PackageCheck size={18} />
                 Réceptionner
               </button>
             </div>

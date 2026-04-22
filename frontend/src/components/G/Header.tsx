@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { LogOut, Bell, Settings, Calendar, Clock, ChevronRight } from 'lucide-react';
+import { LogOut, Bell, Settings, Calendar, Clock, ChevronRight, CheckCircle, XCircle, Package, Info, FileText } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
@@ -26,13 +26,49 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
     if (!user) return;
     
     try {
-      // 1. Fetch general notifications (Entity Notification)
+      // 1. Fetch general notifications from backend (acceptance/rejection)
       const notifRes = await api.getNotifications(user.id);
+      let backendNotifs: any[] = [];
       if (notifRes.ok) {
-        setNotifications(await notifRes.json());
+        backendNotifs = await notifRes.json();
       }
 
-      // 2. Fetch meetings (for specific roles)
+      // 2. For FOURNISSEUR: add local notifications for NEW AOs only
+      // (acceptance/rejection notifications are already handled by the backend)
+      let frontendNotifs: any[] = [];
+      if (user.role === 'FOURNISSEUR') {
+        const aoRes = await api.getAllAppelsOffresOuverts();
+
+        // New AOs added within the last 3 days
+        if (aoRes.ok) {
+          const aos = await aoRes.json();
+          const threeDaysAgo = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+          const newAos = aos.filter((ao: any) => {
+            const d = Array.isArray(ao.dateDebut)
+              ? new Date(ao.dateDebut[0], ao.dateDebut[1] - 1, ao.dateDebut[2])
+              : new Date(ao.dateDebut);
+            return d >= threeDaysAgo;
+          });
+          newAos.forEach((ao: any) => {
+            frontendNotifs.push({
+              id: `ao-${ao.id}`,
+              type: 'NOUVEL_AO',
+              message: `Nouvel appel d'offre disponible : ${ao.reference}`,
+              lu: false,
+              dateEnvoi: ao.dateDebut,
+              link: '/fournisseur/appels-offres'
+            });
+          });
+        }
+      }
+
+      // Merge: backend notifications first, then frontend-generated ones
+      // Deduplicate: if backend already has an equivalent, skip the local one
+      const backendIds = new Set(backendNotifs.map((n: any) => n.id));
+      const deduped = frontendNotifs.filter(n => !backendIds.has(n.id));
+      setNotifications([...backendNotifs, ...deduped]);
+
+      // 3. Fetch meetings (for specific roles)
       if (user.role === 'ENSEIGNANT' || user.role === 'CHEF_DEPARTEMENT') {
         const userRes = await fetch(`http://localhost:8081/api/utilisateurs/${user.id}`, {
           headers: {
@@ -148,100 +184,133 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
           </button>
 
           {isNotificationsOpen && (
-            <div className="absolute top-full right-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 z-50">
-              <div className="p-4 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
-                <h3 className="font-bold text-gray-900 text-sm">Notifications</h3>
-                <span className="text-[10px] font-bold text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full uppercase">
-                  {totalCount} Nouvelle{totalCount > 1 ? 's' : ''}
-                </span>
-              </div>
+            <div className="absolute top-full right-0 mt-2 w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden z-50">
               
-              <div className="max-h-[400px] overflow-y-auto">
-                {(meetings.length > 0 || notifications.length > 0) ? (
-                  <div className="p-2 space-y-1">
-                    {/* Next Meeting Countdown */}
+              {/* Header */}
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-gray-900 text-sm">Notifications</h3>
+                  {totalCount > 0 && (
+                    <span className="bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                      {totalCount}
+                    </span>
+                  )}
+                </div>
+                {notifications.some(n => !n.lu) && (
+                  <button
+                    onClick={() => notifications.filter(n => !n.lu && typeof n.id === 'number').forEach(n => handleMarkAsRead(n.id))}
+                    className="text-[11px] font-semibold text-purple-600 hover:text-purple-800 transition-colors"
+                  >
+                    Tout marquer lu
+                  </button>
+                )}
+              </div>
+
+              {/* Content */}
+              <div className="max-h-[380px] overflow-y-auto">
+                {(meetings.length === 0 && notifications.length === 0) ? (
+                  <div className="py-14 flex flex-col items-center gap-2 text-gray-400">
+                    <Bell size={28} className="text-gray-200" />
+                    <p className="text-sm font-medium">Aucune notification</p>
+                    <p className="text-xs text-gray-300">Tout est à jour</p>
+                  </div>
+                ) : (
+                  <div className="py-2">
+
+                    {/* Upcoming meeting countdown */}
                     {timeLeft && meetings.length > 0 && (
-                      <div className="p-3 bg-purple-50 rounded-xl border border-purple-100 mb-2">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-[10px] font-bold text-purple-700 uppercase">Prochaine réunion</span>
-                          <div className="flex items-center gap-1 text-purple-600 animate-pulse">
-                            <Clock size={12} />
-                            <span className="text-xs font-bold font-mono">
-                              {timeLeft.days > 0 ? `${timeLeft.days}j ` : ''}
-                              {String(timeLeft.hours).padStart(2, '0')}:{String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
-                            </span>
+                      <div className="mx-3 mb-1 p-3 bg-indigo-50 rounded-xl border border-indigo-100">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-7 h-7 bg-indigo-100 rounded-lg flex items-center justify-center text-indigo-600">
+                              <Calendar size={14} />
+                            </div>
+                            <div>
+                              <p className="text-xs font-bold text-indigo-800">Prochaine réunion</p>
+                              <p className="text-[10px] text-indigo-500 truncate max-w-[160px]">Session #{meetings[0].id}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 text-indigo-600 font-mono text-xs font-bold bg-white border border-indigo-100 px-2 py-1 rounded-lg">
+                            <Clock size={11} className="animate-pulse" />
+                            {timeLeft.days > 0 ? `${timeLeft.days}j ` : ''}
+                            {String(timeLeft.hours).padStart(2,'0')}:{String(timeLeft.minutes).padStart(2,'0')}:{String(timeLeft.seconds).padStart(2,'0')}
                           </div>
                         </div>
-                        <p className="text-xs font-medium text-gray-700 truncate">
-                          Session de Validation #{meetings[0].id}
-                        </p>
                       </div>
                     )}
 
-                    {/* General Notifications */}
-                    {notifications.map((n) => (
-                      <div 
-                        key={`notif-${n.id}`} 
-                        onClick={() => {
-                          handleMarkAsRead(n.id);
-                          if (user.role === 'Fournisseur') navigate('/fournisseur/mes-soumissions');
-                        }}
-                        className={`p-3 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer group border-l-4 ${!n.lu ? 'border-purple-500 bg-purple-50/30' : 'border-transparent'}`}
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                            n.type === 'ACCEPTATION' ? 'bg-green-50 text-green-600' : 
-                            n.type === 'REJET' ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'
-                          }`}>
-                            {n.type === 'ACCEPTATION' ? <CheckCircle size={14} /> : <Info size={14} />}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className={`text-xs ${!n.lu ? 'font-bold text-gray-900' : 'text-gray-600'} leading-snug`}>
-                              {n.message}
-                            </p>
-                            <p className="text-[10px] text-gray-400 mt-1">
-                              {new Date(n.dateEnvoi).toLocaleDateString('fr-FR')}
-                            </p>
-                          </div>
-                          {!n.lu && <div className="w-2 h-2 bg-purple-500 rounded-full mt-1"></div>}
+                    {/* Meeting list items */}
+                    {meetings.map((m) => (
+                      <div key={`meet-${m.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
+                        <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-500 shrink-0">
+                          <Calendar size={14} />
                         </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-gray-800">Réunion de département</p>
+                          <p className="text-[10px] text-gray-400 mt-0.5">{new Date(m.date).toLocaleDateString('fr-FR')} · {m.heure}</p>
+                        </div>
+                        <div className="w-2 h-2 bg-indigo-400 rounded-full shrink-0" />
                       </div>
                     ))}
 
-                    {/* Meetings */}
-                    {meetings.map((m) => (
-                      <div key={`meet-${m.id}`} className="p-3 hover:bg-gray-50 rounded-xl transition-colors cursor-pointer group">
-                        <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
-                            <Calendar size={14} />
+                    {/* Divider between meetings and notifs */}
+                    {meetings.length > 0 && notifications.length > 0 && (
+                      <hr className="mx-4 my-1 border-gray-100" />
+                    )}
+
+                    {/* General & Fournisseur notifications */}
+                    {notifications.map((n) => {
+                      const isUnread = !n.lu;
+                      const iconBg =
+                        n.type === 'ACCEPTATION' ? 'bg-green-50 border-green-100 text-green-600' :
+                        n.type === 'REJET' || n.type === 'ELIMINATION' ? 'bg-red-50 border-red-100 text-red-500' :
+                        n.type === 'NOUVEL_AO' ? 'bg-purple-50 border-purple-100 text-purple-600' :
+                        'bg-blue-50 border-blue-100 text-blue-600';
+                      const icon =
+                        n.type === 'ACCEPTATION' ? <CheckCircle size={14} /> :
+                        n.type === 'REJET' || n.type === 'ELIMINATION' ? <XCircle size={14} /> :
+                        n.type === 'NOUVEL_AO' ? <Package size={14} /> :
+                        <Info size={14} />;
+                      const dateStr = n.dateEnvoi
+                        ? Array.isArray(n.dateEnvoi)
+                          ? `${String(n.dateEnvoi[2]).padStart(2,'0')}/${String(n.dateEnvoi[1]).padStart(2,'0')}/${n.dateEnvoi[0]}`
+                          : new Date(n.dateEnvoi).toLocaleDateString('fr-FR')
+                        : '';
+
+                      return (
+                        <div
+                          key={`notif-${n.id}`}
+                          onClick={() => {
+                            if (typeof n.id === 'number') handleMarkAsRead(n.id);
+                            const link = n.link || (user?.role === 'FOURNISSEUR' ? '/fournisseur/mes-soumissions' : undefined);
+                            if (link) { navigate(link); setIsNotificationsOpen(false); }
+                          }}
+                          className={`flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors ${
+                            isUnread ? 'bg-purple-50/60 hover:bg-purple-50' : 'hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 ${iconBg}`}>
+                            {icon}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold text-gray-900 truncate group-hover:text-purple-600 transition-colors">
-                              Réunion de Département
+                            <p className={`text-xs leading-snug ${isUnread ? 'font-semibold text-gray-900' : 'text-gray-600'}`}>
+                              {n.message}
                             </p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <span className="text-[10px] text-gray-500">{new Date(m.date).toLocaleDateString('fr-FR')}</span>
-                              <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
-                              <span className="text-[10px] text-gray-500 font-bold">{m.heure}</span>
-                            </div>
+                            {dateStr && <p className="text-[10px] text-gray-400 mt-0.5">{dateStr}</p>}
                           </div>
-                          <ChevronRight size={14} className="text-gray-300 mt-1" />
+                          {isUnread && <div className="w-2 h-2 bg-purple-500 rounded-full shrink-0 mt-1.5" />}
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="py-12 text-center">
-                    <Bell className="mx-auto text-gray-200 mb-3" size={32} />
-                    <p className="text-sm text-gray-500">Aucune notification</p>
+                      );
+                    })}
                   </div>
                 )}
               </div>
-              
-              <div className="p-3 border-t border-gray-50 bg-gray-50/30 text-center">
-                <button 
+
+              {/* Footer */}
+              <div className="px-5 py-3 border-t border-gray-100 bg-gray-50/50">
+                <button
                   onClick={() => setIsNotificationsOpen(false)}
-                  className="text-[10px] font-bold text-gray-400 hover:text-purple-600 uppercase tracking-wider"
+                  className="w-full text-center text-[11px] font-semibold text-gray-400 hover:text-gray-700 transition-colors"
                 >
                   Fermer
                 </button>
