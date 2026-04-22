@@ -5,7 +5,7 @@ import { api } from '../../services/api';
 import {
   Home, Users,
   FileText, LayoutDashboard,
-  UserPlus, Plus, Sparkles, MoreHorizontal,
+  Plus, Sparkles, MoreHorizontal,
   Crown, GraduationCap, Wrench, Package, Video, CalendarCheck,
   Moon, Sun, ClipboardList, Truck, ShieldAlert, User
 } from 'lucide-react';
@@ -176,7 +176,6 @@ const secondaryMenus: Record<string, MenuType> = {
       {
         type: "nav",
         items: [
-          { icon: <Home size={16} />, text: "Page Principale", path: "/responsable/dashboard" },
           { icon: <User size={16} />, text: "Mon Profil", path: "/responsable/profile" },
           { icon: <FileText size={16} />, text: "Docs", suffix: "Nouveau", path: "/responsable/apps/docs" },
           { icon: "THEME_TOGGLE", text: "Mode Sombre", path: "theme" }

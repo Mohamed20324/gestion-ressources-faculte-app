@@ -89,6 +89,16 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
     return () => clearInterval(interval);
   }, [user, role]);
 
+  // Sync active menu with current URL
+  useEffect(() => {
+    const path = location.pathname;
+    if (path.includes('/profile') || path.includes('/docs')) {
+      setActiveMenu('Plus');
+    } else {
+      setActiveMenu('General');
+    }
+  }, [location.pathname]);
+
   const getBaseUrl = () => {
     switch (role) {
       case 'Enseignant': return '/enseignant';
@@ -143,6 +153,12 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
     } else {
       setActiveMenu(menu);
       setIsSecondaryMenuVisible(true);
+      // Navigate to the relevant default page when switching menus
+      if (menu === 'General') {
+        navigate(`${baseUrl}/dashboard`);
+      } else if (menu === 'Plus') {
+        navigate(`${baseUrl}/profile`);
+      }
     }
   };
 
@@ -236,15 +252,16 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
                   Paramètres
                 </div>
                 <NavLink
-                  to={`${baseUrl}/dashboard`}
+                  to={`${baseUrl}/profile`}
                   className={({ isActive }) => `flex items-center gap-2 px-2 py-1.5 my-1 rounded-md cursor-pointer transition-colors ${isActive
                     ? 'bg-white text-purple-700 shadow-sm'
                     : 'text-gray-600 hover:bg-white hover:text-gray-900'
                   }`}
                 >
-                  <Home size={16} className={location.pathname.endsWith('/dashboard') ? "text-purple-600" : "text-gray-400"} />
-                  <span className="text-sm font-medium">Page Principale</span>
+                  <User size={16} className={location.pathname.endsWith('/profile') ? "text-purple-600" : "text-gray-400"} />
+                  <span className="text-sm font-medium">Mon Profil</span>
                 </NavLink>
+
                 <div
                   className="flex items-center gap-2 px-2 py-1.5 my-1 rounded-md cursor-pointer transition-colors text-gray-600 hover:bg-white hover:text-gray-900"
                   onClick={toggleTheme}
@@ -254,15 +271,16 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
                   </div>
                   <span className="text-sm font-medium">Mode Sombre</span>
                 </div>
+
                 <NavLink
-                  to={`${baseUrl}/profile`}
+                  to={`${baseUrl}/docs`}
                   className={({ isActive }) => `flex items-center gap-2 px-2 py-1.5 my-1 rounded-md cursor-pointer transition-colors ${isActive
                     ? 'bg-white text-purple-700 shadow-sm'
                     : 'text-gray-600 hover:bg-white hover:text-gray-900'
                   }`}
                 >
-                  <User size={16} className={location.pathname.endsWith('/profile') ? "text-purple-600" : "text-gray-400"} />
-                  <span className="text-sm font-medium">Mon Profil</span>
+                  <FileText size={16} className={location.pathname.endsWith('/docs') ? "text-purple-600" : "text-gray-400"} />
+                  <span className="text-sm font-medium">Docs</span>
                 </NavLink>
               </>
             )}
