@@ -5,10 +5,10 @@ import {
   ArrowRight, ChevronLeft, ChevronRight, Package, Tag, Info,
   Plus
 } from 'lucide-react';
-import { api } from '../../services/api';
-import { useAuth } from '../../hooks/useAuth';
-import { NotificationContainer } from '../../components/Notification';
-import { useNotifications } from '../../hooks/useNotifications';
+import { api } from '../../../services/api';
+import { useAuth } from '../../../hooks/useAuth';
+import { NotificationContainer } from '../../../components/Notification';
+import { useNotifications } from '../../../hooks/useNotifications';
 
 interface Besoin {
   id: number;
@@ -469,3 +469,5 @@ const BesoinsGlobalPage = () => {
 };
 
 export default BesoinsGlobalPage;
+
+

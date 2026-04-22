@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Crown, X, Loader, Mail, Building2, Search, ChevronLeft, ChevronRight, AlertTriangle, User, Eye, Power, ShieldCheck, ShieldAlert, Calendar } from 'lucide-react';
-import { api } from '../../services/api';
-import { useNotifications } from '../../hooks/useNotifications';
-import { NotificationContainer } from '../../components/Notification';
+import { api } from '../../../services/api';
+import { useNotifications } from '../../../hooks/useNotifications';
+import { NotificationContainer } from '../../../components/Notification';
 
 interface DepartmentHead {
     id: number;
@@ -588,3 +588,5 @@ const DepartmentHeadModal = ({ isOpen, onClose, onSave, head, saving, departemen
 };
 
 export default DepartmentHeadPage;
+
+

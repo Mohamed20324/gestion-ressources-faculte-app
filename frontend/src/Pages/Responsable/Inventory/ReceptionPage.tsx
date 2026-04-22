@@ -5,9 +5,9 @@ import {
   CheckCircle, Plus, Info, Search, AlertTriangle,
   ArrowLeft, Calendar, FileText
 } from 'lucide-react';
-import { api } from '../../services/api';
-import { useNotifications } from '../../hooks/useNotifications';
-import { NotificationContainer } from '../../components/Notification';
+import { api } from '../../../services/api';
+import { useNotifications } from '../../../hooks/useNotifications';
+import { NotificationContainer } from '../../../components/Notification';
 
 const ReceptionPage = () => {
   const { notifications, showNotification, removeNotification } = useNotifications();
@@ -92,16 +92,33 @@ const ReceptionPage = () => {
     }
     setSaving(true);
     try {
-      await api.updateFournisseurInfo(selectedOffre.fournisseurId, fournisseurInfo);
-      await Promise.all(items.map(it => 
-        api.createRessource({
+      await Promise.all(items.map(async (it) => {
+        // 1. Fetch Besoin to get department
+        const bRes = await fetch(`http://localhost:8081/api/besoins/${it.besoinId}`, {
+          headers: { 'Authorization': `Bearer ${JSON.parse(localStorage.getItem('user')!).accessToken}` }
+        });
+        const bData = await bRes.json();
+
+        // 2. Create Ressource with departement and warranty
+        const dateReception = new Date();
+        const dateFinGarantie = new Date(dateReception);
+        dateFinGarantie.setFullYear(dateFinGarantie.getFullYear() + 1); // Default 1 year
+
+        const res = await api.createRessource({
           numeroInventaire: it.numeroInventaire,
           marque: it.marque,
           statut: 'FONCTIONNELLE',
           typeRessourceId: it.typeRessourceId,
+          departementId: bData.departementId,
+          dateFinGarantie: dateFinGarantie.toISOString().split('T')[0],
           descriptionTechnique: `${it.variante}: ${it.cpu || ''} ${it.ram || ''}`
-        })
-      ));
+        });
+
+        // 3. Update Besoin status
+        if (res.ok) {
+          await api.updateBesoin(it.besoinId, { ...bData, statut: 'VALIDE' }); // Mark as fully fulfilled
+        }
+      }));
 
       showNotification('success', 'Livraison réceptionnée avec succès');
       setSelectedOffre(null);
@@ -301,3 +318,5 @@ const ReceptionPage = () => {
 };
 
 export default ReceptionPage;
+
+

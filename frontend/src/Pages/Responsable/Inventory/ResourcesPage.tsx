@@ -4,9 +4,9 @@ import {
   ChevronLeft, ChevronRight, AlertTriangle, Filter,
   Monitor, Info, MoreHorizontal
 } from 'lucide-react';
-import { api } from '../../services/api';
-import { NotificationContainer } from '../../components/Notification';
-import { useNotifications } from '../../hooks/useNotifications';
+import { api } from '../../../services/api';
+import { NotificationContainer } from '../../../components/Notification';
+import { useNotifications } from '../../../hooks/useNotifications';
 
 interface Ressource {
   id: number;
@@ -279,3 +279,5 @@ const ResourcesPage = () => {
 };
 
 export default ResourcesPage;
+
+

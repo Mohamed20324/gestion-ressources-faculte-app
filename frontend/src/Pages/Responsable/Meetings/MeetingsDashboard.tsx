@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { api } from '../../services/api';
+import { api } from '../../../services/api';
 import {
     BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
     XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -287,3 +287,5 @@ const MeetingsDashboard = () => {
 };
 
 export default MeetingsDashboard;
+
+

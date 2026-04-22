@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, X, Loader, DollarSign, User, Building2, Search, ChevronLeft, ChevronRight, AlertTriangle } from 'lucide-react';
-import { api } from '../../services/api';
-import { useNotifications } from '../../hooks/useNotifications';
-import { NotificationContainer } from '../../components/Notification';
+import { api } from '../../../services/api';
+import { useNotifications } from '../../../hooks/useNotifications';
+import { NotificationContainer } from '../../../components/Notification';
 
 interface Departement {
     id: number;
@@ -434,3 +434,4 @@ const DeptModal = ({ isOpen, onClose, onSave, formData, setFormData, editing, sa
 };
 
 export default DepartmentsPage;
+

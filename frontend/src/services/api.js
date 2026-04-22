@@ -55,12 +55,6 @@ export const api = {
         headers: getHeaders()
     }),
 
-    changePassword: (id, data) => fetch(`${API_BASE_URL}/utilisateurs/${id}/password`, {
-        method: 'PUT',
-        headers: getHeaders(),
-        body: JSON.stringify(data)
-    }),
-
     // Départements
     getAllDepartements: () => fetch(`${API_BASE_URL}/departements`, { 
         headers: getHeaders() 

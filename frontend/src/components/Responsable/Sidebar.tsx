@@ -176,9 +176,10 @@ const secondaryMenus: Record<string, MenuType> = {
       {
         type: "nav",
         items: [
+          { icon: <Home size={16} />, text: "Page Principale", path: "/responsable/dashboard" },
           { icon: <User size={16} />, text: "Mon Profil", path: "/responsable/profile" },
           { icon: <FileText size={16} />, text: "Docs", suffix: "Nouveau", path: "/responsable/apps/docs" },
-          { icon: "THEME_TOGGLE", text: "Mode de l'app", path: "theme" }
+          { icon: "THEME_TOGGLE", text: "Mode Sombre", path: "theme" }
         ]
       }
     ]
@@ -251,12 +252,12 @@ const NavItem = ({ icon, text, suffix, path, onClick, isActive }: {
 
   return (
     <div
-      className={`flex items-center justify-between px-2 py-1.5 my-1 rounded-md cursor-pointer transition-colors ${isActive ? 'bg-gray-100 text-gray-800' : 'text-gray-400 hover:bg-gray-100 hover:text-gray-800'
+      className={`flex items-center justify-between px-2 py-1.5 my-1 rounded-md cursor-pointer transition-colors ${isActive ? 'bg-white text-purple-700 shadow-sm' : 'text-gray-600 hover:bg-white hover:text-gray-900'
         }`}
       onClick={handleClick}
     >
       <div className="flex items-center gap-2">
-        {!isThemeToggle && <span className="text-gray-400">{icon}</span>}
+        {!isThemeToggle && <span className={isActive ? "text-purple-600" : "text-gray-400"}>{icon}</span>}
         <span className="text-sm font-medium">{text}</span>
       </div>
 

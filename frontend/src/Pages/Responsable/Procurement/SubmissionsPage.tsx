@@ -7,9 +7,9 @@ import {
   FileText, ArrowRight, X, Info,
   ExternalLink, BarChart3
 } from 'lucide-react';
-import { api } from '../../services/api';
-import { NotificationContainer } from '../../components/Notification';
-import { useNotifications } from '../../hooks/useNotifications';
+import { api } from '../../../services/api';
+import { NotificationContainer } from '../../../components/Notification';
+import { useNotifications } from '../../../hooks/useNotifications';
 
 const SoumissionsGestionPage = () => {
   const { notifications, showNotification, removeNotification } = useNotifications();
@@ -297,3 +297,4 @@ const SoumissionsGestionPage = () => {
 };
 
 export default SoumissionsGestionPage;
+

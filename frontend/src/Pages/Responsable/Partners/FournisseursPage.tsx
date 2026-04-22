@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { 
   Users, Search, Loader, Filter, 
-  ExternalLink, ShieldAlert, CheckCircle, 
-  Mail, Phone, Building2, MapPin, X, Info
+  ExternalLink, ShieldAlert, 
+  Mail, Building2, MapPin, X, Info
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { NotificationContainer } from '../../components/Notification';
@@ -154,76 +154,54 @@ const FournisseursPage = () => {
 
       {/* Profile Modal */}
       {selectedProfile && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/20 backdrop-blur-sm">
-          <div className="bg-white w-full max-w-4xl rounded-[2.5rem] shadow-2xl animate-in zoom-in duration-200 overflow-hidden border border-gray-100">
-            <div className="flex flex-col md:flex-row min-h-[400px]">
-              {/* Left Section: Company Brand */}
-              <div className="w-full md:w-[320px] bg-gray-50/50 p-10 border-r border-gray-100 flex flex-col items-center text-center justify-center">
-                <div className="w-24 h-24 bg-white rounded-3xl flex items-center justify-center text-blue-600 mb-6 shadow-xl shadow-gray-200/50 border border-gray-100">
-                  <Building2 size={48} strokeWidth={1.5} />
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl animate-in zoom-in duration-200 overflow-hidden">
+            <div className="h-24 bg-slate-900 flex items-center justify-between px-8">
+              <h2 className="text-xl font-bold text-white tracking-tight">Fiche Partenaire</h2>
+              <button onClick={() => setSelectedProfile(null)} className="text-white/60 hover:text-white transition-colors">
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="p-8">
+              <div className="flex items-center gap-5 mb-8 pb-8 border-b border-gray-100">
+                <div className="w-16 h-16 bg-blue-50 border border-blue-100 rounded-2xl flex items-center justify-center text-blue-600">
+                  <Building2 size={32} />
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 leading-tight mb-2">
-                  {selectedProfile.nomSociete}
-                </h2>
-                <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100">
-                  Fournisseur Agrée
-                </span>
-                
-                <div className="mt-10 w-full space-y-3">
-                  <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100 text-gray-500">
-                    <Mail size={16} className="text-blue-500" />
-                    <span className="text-xs font-bold truncate">{selectedProfile.email}</span>
-                  </div>
-                  <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-gray-100 text-gray-500">
-                    <Phone size={16} className="text-emerald-500" />
-                    <span className="text-xs font-bold">{selectedProfile.telephone || 'Non renseigné'}</span>
-                  </div>
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900">{selectedProfile.nomSociete}</h3>
+                  <p className="text-sm font-medium text-gray-400">{selectedProfile.email}</p>
                 </div>
               </div>
 
-              {/* Right Section: Details & Address */}
-              <div className="flex-1 p-10 relative flex flex-col">
-                <button 
-                  onClick={() => setSelectedProfile(null)} 
-                  className="absolute top-8 right-8 p-2 text-gray-400 hover:text-gray-900 hover:bg-gray-100 rounded-full transition-all"
-                >
-                  <X size={24} />
-                </button>
-
-                <div className="flex-1">
-                  <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-8">Informations de l'entreprise</h3>
-                  
-                  <div className="grid grid-cols-2 gap-10 mb-10">
-                    <div className="space-y-1.5">
-                      <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Responsable Gérant</p>
-                      <p className="text-lg font-bold text-gray-900">{selectedProfile.gerant || 'Directeur Général'}</p>
-                    </div>
-                    <div className="space-y-1.5">
-                      <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest">Zone d'intervention</p>
-                      <p className="text-lg font-bold text-gray-900">{selectedProfile.lieu || 'Nationale'}</p>
-                    </div>
-                  </div>
-
-                  <div className="p-8 bg-gray-50 rounded-[2rem] border border-gray-100 mb-8">
-                    <div className="flex items-center gap-3 mb-4">
-                      <MapPin size={20} className="text-blue-600" />
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Siège Social & Livraison</p>
-                    </div>
-                    <p className="text-sm font-medium text-gray-700 leading-relaxed">
-                      {selectedProfile.adresse || "L'adresse détaillée n'a pas été renseignée dans le profil du partenaire."}
-                    </p>
-                  </div>
+              <div className="grid grid-cols-2 gap-4 mb-8">
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Gérant</p>
+                  <p className="text-sm font-bold text-gray-800">{selectedProfile.gerant || 'Non renseigné'}</p>
                 </div>
-
-                <div className="flex items-center justify-end pt-6 border-t border-gray-50">
-                  <button 
-                    onClick={() => setSelectedProfile(null)}
-                    className="px-10 py-4 bg-gray-900 text-white rounded-2xl font-bold text-sm hover:bg-blue-600 transition-all shadow-lg active:scale-95"
-                  >
-                    Fermer la fiche
-                  </button>
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Téléphone</p>
+                  <p className="text-sm font-bold text-gray-800">{selectedProfile.telephone || 'Non renseigné'}</p>
+                </div>
+                <div className="p-4 bg-gray-50 rounded-xl border border-gray-100 col-span-2">
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1.5">Localisation</p>
+                  <p className="text-sm font-bold text-gray-800">{selectedProfile.lieu || 'Non renseigné'}</p>
                 </div>
               </div>
+
+              <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-100 mb-8">
+                <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1.5">Adresse de Livraison</p>
+                <p className="text-sm text-gray-700 font-medium leading-relaxed">
+                  {selectedProfile.adresse || "L'adresse détaillée n'a pas été fournie."}
+                </p>
+              </div>
+
+              <button 
+                onClick={() => setSelectedProfile(null)}
+                className="w-full py-4 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition-all shadow-md"
+              >
+                Fermer la fiche
+              </button>
             </div>
           </div>
         </div>

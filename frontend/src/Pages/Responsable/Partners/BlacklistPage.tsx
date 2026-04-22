@@ -5,9 +5,9 @@ import {
   User, Building2, CheckCircle,
   AlertCircle, ArrowRight, Info
 } from 'lucide-react';
-import { api } from '../../services/api';
-import { NotificationContainer } from '../../components/Notification';
-import { useNotifications } from '../../hooks/useNotifications';
+import { api } from '../../../services/api';
+import { NotificationContainer } from '../../../components/Notification';
+import { useNotifications } from '../../../hooks/useNotifications';
 
 const BlacklistPage = () => {
   const { notifications, showNotification, removeNotification } = useNotifications();
@@ -175,3 +175,5 @@ const BlacklistPage = () => {
 };
 
 export default BlacklistPage;
+
+

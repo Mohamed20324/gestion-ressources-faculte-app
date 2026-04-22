@@ -11,7 +11,7 @@ import {
   Tooltip, LineChart, Line, XAxis, YAxis, CartesianGrid,
   BarChart, Bar
 } from 'recharts';
-import { api } from '../../services/api';
+import { api } from '../../../services/api';
 
 const StatCard = ({ title, value, icon: Icon, trend, color, bgColor, subValue }: any) => (
     <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-all group relative overflow-hidden">
@@ -309,3 +309,5 @@ const InventoryDashboard = () => {
 };
 
 export default InventoryDashboard;
+
+

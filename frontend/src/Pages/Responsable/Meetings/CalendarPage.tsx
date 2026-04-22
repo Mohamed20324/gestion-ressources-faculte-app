@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Loader, Clock } from 'lucide-react';
-import { api } from '../../services/api';
+import { api } from '../../../services/api';
 
 interface Reunion {
   id: number;
@@ -171,3 +171,5 @@ const MeetingCalendarPage = () => {
 };
 
 export default MeetingCalendarPage;
+
+

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, User, X, Loader, GraduationCap, Building2, Mail, Search, ChevronLeft, ChevronRight, AlertTriangle, Eye, Power, ShieldCheck, ShieldAlert } from 'lucide-react';
-import { api } from '../../services/api';
-import { useNotifications } from '../../hooks/useNotifications';
-import { NotificationContainer } from '../../components/Notification';
+import { api } from '../../../services/api';
+import { useNotifications } from '../../../hooks/useNotifications';
+import { NotificationContainer } from '../../../components/Notification';
 
 interface Enseignant {
   id: number;
@@ -612,3 +612,4 @@ const TeacherModal = ({ isOpen, onClose, onSave, formData, setFormData, editing,
 };
 
 export default TeachersPage;
+

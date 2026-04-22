@@ -1,26 +1,41 @@
 import { Routes, Route } from 'react-router-dom';
 import Sidebar from '../../components/Responsable/Sidebar';
 import Header from '../../components/G/Header';
-import DepartmentsPage from './Departement';
-import TeachersPage from './TeachersPage';
-import TechniciansPage from './TechniciansPage';
-import DepartmentHeadPage from './DepartmentHeadPage';
-import Dashboard from './Dashboard';
-import ResourcesPage from './ResourcesPage';
-import AppelsOffresPage from './AppelsOffresPage';
-import MeetingsPage from './MeetingsPage';
-import MeetingCalendarPage from './MeetingCalendarPage';
-import BesoinsGlobalPage from './BesoinsGlobalPage';
-import OffresGestionPage from './OffresGestionPage';
-import ReceptionPage from './ReceptionPage';
-import FournisseursPage from './FournisseursPage';
-import BlacklistPage from './BlacklistPage';
-import ProcurementDashboard from './ProcurementDashboard';
-import InventoryDashboard from './InventoryDashboard';
-import PartnersDashboard from './PartnersDashboard';
-import ReportsPage from './ReportsPage';
-import SoumissionsGestionPage from './SoumissionsGestionPage';
-import MeetingsDashboard from './MeetingsDashboard';
+
+// General
+import Dashboard from './General/Dashboard';
+import ReportsPage from './General/ReportsPage';
+
+// Users
+import DepartmentsPage from './Users/DepartmentsPage';
+import TeachersPage from './Users/TeachersPage';
+import TechniciansPage from './Users/TechniciansPage';
+import DepartmentHeadPage from './Users/DepartmentHeadsPage';
+
+// Inventory
+import InventoryDashboard from './Inventory/InventoryDashboard';
+import ResourcesPage from './Inventory/ResourcesPage';
+import ReceptionPage from './Inventory/ReceptionPage';
+import MaintenancePage from './Inventory/MaintenancePage';
+
+// Procurement
+import ProcurementDashboard from './Procurement/ProcurementDashboard';
+import NeedsPage from './Procurement/NeedsPage';
+import AppelsOffresPage from './Procurement/AppelsOffresPage';
+import OffresPage from './Procurement/OffresPage';
+import SubmissionsPage from './Procurement/SubmissionsPage';
+
+// Partners
+import PartnersDashboard from './Partners/PartnersDashboard';
+import SuppliersPage from './Partners/SuppliersPage';
+import BlacklistPage from './Partners/BlacklistPage';
+
+// Meetings
+import MeetingsDashboard from './Meetings/MeetingsDashboard';
+import MeetingsPage from './Meetings/MeetingsPage';
+import CalendarPage from './Meetings/CalendarPage';
+
+// Common
 import ProfilePage from '../Common/ProfilePage';
 
 const AppContent = () => {
@@ -31,31 +46,41 @@ const AppContent = () => {
         <Sidebar />
         <div className="flex-1 overflow-y-auto pb-20">
           <Routes>
+            {/* General */}
             <Route path="/" element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/reports" element={<ReportsPage />} />
+
+            {/* Users */}
             <Route path="/departments" element={<DepartmentsPage />} />
             <Route path="/teachers" element={<TeachersPage />} />
             <Route path="/technicians" element={<TechniciansPage />} />
             <Route path="/department-heads" element={<DepartmentHeadPage />} />
-            <Route path="/resources" element={<ResourcesPage />} />
-            <Route path="/needs" element={<BesoinsGlobalPage />} />
-            <Route path="/appels-offres" element={<AppelsOffresPage />} />
-            <Route path="/appels-offres/:id/offres" element={<OffresGestionPage />} />
-            <Route path="/reception" element={<ReceptionPage />} />
-            <Route path="/suppliers" element={<FournisseursPage />} />
-            <Route path="/submissions" element={<SoumissionsGestionPage />} />
-            <Route path="/blacklist" element={<BlacklistPage />} />
-            <Route path="/procurement/dashboard" element={<ProcurementDashboard />} />
+
+            {/* Inventory */}
             <Route path="/inventory/dashboard" element={<InventoryDashboard />} />
+            <Route path="/resources" element={<ResourcesPage />} />
+            <Route path="/reception" element={<ReceptionPage />} />
+            <Route path="/maintenance" element={<MaintenancePage />} />
+
+            {/* Procurement */}
+            <Route path="/procurement/dashboard" element={<ProcurementDashboard />} />
+            <Route path="/needs" element={<NeedsPage />} />
+            <Route path="/appels-offres" element={<AppelsOffresPage />} />
+            <Route path="/appels-offres/:id/offres" element={<OffresPage />} />
+            <Route path="/submissions" element={<SubmissionsPage />} />
+
+            {/* Partners */}
             <Route path="/partners/dashboard" element={<PartnersDashboard />} />
-            <Route path="/reports" element={<ReportsPage />} />
-            
-            {/* Routes Réunions */}
-            <Route path="/meetings" element={<MeetingsPage />} />
+            <Route path="/suppliers" element={<SuppliersPage />} />
+            <Route path="/blacklist" element={<BlacklistPage />} />
+
+            {/* Meetings */}
             <Route path="/meetings/dashboard" element={<MeetingsDashboard />} />
-            <Route path="/meetings/calendar" element={<MeetingCalendarPage />} />
-            <Route path="/meetings/new" element={<MeetingsPage />} /> {/* Reuse for now */}
-            <Route path="/meetings/archives" element={<MeetingsPage />} /> {/* Reuse for now */}
+            <Route path="/meetings" element={<MeetingsPage />} />
+            <Route path="/meetings/calendar" element={<CalendarPage />} />
+
+            {/* Profile */}
             <Route path="/profile" element={<ProfilePage />} />
           </Routes>
         </div>

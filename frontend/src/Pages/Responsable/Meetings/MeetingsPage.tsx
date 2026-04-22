@@ -17,9 +17,9 @@ import {
   Loader,
   AlertTriangle
 } from 'lucide-react';
-import { NotificationContainer } from '../../components/Notification';
-import { useNotifications } from '../../hooks/useNotifications';
-import { api } from '../../services/api';
+import { NotificationContainer } from '../../../components/Notification';
+import { useNotifications } from '../../../hooks/useNotifications';
+import { api } from '../../../services/api';
 
 interface Reunion {
   id: number;
@@ -481,3 +481,5 @@ const MeetingsPage = () => {
 };
 
 export default MeetingsPage;
+
+

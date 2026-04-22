@@ -6,9 +6,9 @@ import {
   User, Calendar, Info, Package,
   Trash2, ShieldAlert, Award
 } from 'lucide-react';
-import { api } from '../../services/api';
-import { NotificationContainer } from '../../components/Notification';
-import { useNotifications } from '../../hooks/useNotifications';
+import { api } from '../../../services/api';
+import { NotificationContainer } from '../../../components/Notification';
+import { useNotifications } from '../../../hooks/useNotifications';
 
 const OffresGestionPage = () => {
   const { id } = useParams();
@@ -272,3 +272,5 @@ const OffresGestionPage = () => {
 };
 
 export default OffresGestionPage;
+
+

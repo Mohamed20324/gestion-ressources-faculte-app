@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash2, Wrench, X, Loader, Mail, User, Search, ChevronLeft, ChevronRight, AlertTriangle, Eye, Power, ShieldCheck } from 'lucide-react';
-import { api } from '../../services/api';
+import { api } from '../../../services/api';
 
 interface Technician {
   id: number;
@@ -545,3 +545,5 @@ const TechnicianModal = ({ isOpen, onClose, onSave, technician, saving }: any) =
 };
 
 export default TechniciansPage;
+
+

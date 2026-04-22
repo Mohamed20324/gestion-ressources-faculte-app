@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Calendar, FileText, Users,
@@ -6,6 +6,8 @@ import {
   MoreHorizontal, Moon, Sun, Sparkles, User
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../hooks/useAuth';
+import { api } from '../../services/api';
 
 interface SidebarProps {
   role: string;
@@ -22,8 +24,8 @@ const SidebarIconCollapsed = ({ icon, label, isActive, onClick, badge }: {
     <div className="group relative">
       <div
         className={`flex items-center justify-center p-2 mx-2 rounded-lg cursor-pointer transition-all duration-200 ${isActive
-          ? 'bg-gray-200 text-black'
-          : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+            ? 'bg-gray-200 text-black'
+            : 'text-gray-400 hover:bg-gray-700 hover:text-white'
           }`}
         onClick={onClick}
       >
@@ -47,8 +49,45 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
   const [activeMenu, setActiveMenu] = useState('General');
   const [isSecondaryMenuVisible, setIsSecondaryMenuVisible] = useState(true);
   const { theme, toggleTheme } = useTheme();
+  const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [meetingCount, setMeetingCount] = useState(0);
+
+  useEffect(() => {
+    const fetchMeetings = async () => {
+      if (!user) return;
+      try {
+        let allReunions: any[] = [];
+        if (role === 'Responsable') {
+          const res = await api.getAllReunions();
+          if (res.ok) allReunions = await res.json();
+        } else {
+          const userRes = await fetch(`http://localhost:8081/api/utilisateurs/${user.id}`, {
+            headers: {
+              'Authorization': `Bearer ${user.accessToken}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          if (userRes.ok) {
+            const userData = await userRes.json();
+            if (userData.departementId) {
+              const res = await api.getReunionsByDepartement(userData.departementId);
+              if (res.ok) allReunions = await res.json();
+            }
+          }
+        }
+        const upcoming = allReunions.filter((r: any) => r.statut === 'PLANIFIEE');
+        setMeetingCount(upcoming.length);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchMeetings();
+    const interval = setInterval(fetchMeetings, 60000);
+    return () => clearInterval(interval);
+  }, [user, role]);
 
   const getBaseUrl = () => {
     switch (role) {
@@ -79,7 +118,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
       ];
     }
 
-    const baseLinks = [
+    const baseLinks: any[] = [
       { to: `${baseUrl}/dashboard`, icon: LayoutDashboard, label: 'Tableau de bord' },
       { to: `${baseUrl}/besoins`, icon: FileText, label: 'Mes Besoins' },
     ];
@@ -90,7 +129,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
         baseLinks.splice(1, 0, { to: `${baseUrl}/enseignants`, icon: Users, label: 'Enseignants' });
         baseLinks.splice(2, 0, { to: `${baseUrl}/types-ressources`, icon: Settings, label: 'Types Ressources' });
       }
-      baseLinks.splice(role === 'ChefDepartement' ? 5 : 2, 0, { to: `${baseUrl}/meetings`, icon: Calendar, label: 'Réunions' });
+      baseLinks.splice(role === 'ChefDepartement' ? 5 : 2, 0, { to: `${baseUrl}/meetings`, icon: Calendar, label: 'Réunions', badge: meetingCount });
     }
 
     return baseLinks;
@@ -117,22 +156,15 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
               icon={<Home size={20} />}
               label="Général"
               isActive={activeMenu === 'General'}
-              onClick={() => {
-                handleMenuClick('General');
-                navigate(`${baseUrl}/dashboard`);
-              }}
+              onClick={() => handleMenuClick('General')}
             />
           </div>
-          {/* Add more categories here if needed in the future */}
           <div className="h-px bg-gray-700 my-3 mx-3"></div>
           <SidebarIconCollapsed
             icon={<MoreHorizontal size={20} />}
             label="Plus"
             isActive={activeMenu === 'Plus'}
-            onClick={() => {
-              handleMenuClick('Plus');
-              navigate(`${baseUrl}/profile`);
-            }}
+            onClick={() => handleMenuClick('Plus')}
           />
         </div>
 
@@ -146,9 +178,6 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
               >
                 {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
               </button>
-              <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 bg-black text-white text-sm rounded whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none shadow-lg">
-                {theme === 'dark' ? 'Mode Clair' : 'Mode Sombre'}
-              </div>
             </div>
             <div className="group relative">
               <button
@@ -157,9 +186,6 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
               >
                 <Sparkles size={18} />
               </button>
-              <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 px-2 py-1 bg-black text-white text-sm rounded whitespace-nowrap opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 pointer-events-none shadow-lg">
-                Retour
-              </div>
             </div>
           </div>
         </div>
@@ -186,13 +212,20 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
                     <NavLink
                       key={idx}
                       to={link.to}
-                      className={`flex items-center gap-2 px-2 py-1.5 my-1 rounded-md cursor-pointer transition-colors ${isActive
-                        ? 'bg-white text-purple-700 shadow-sm'
-                        : 'text-gray-600 hover:bg-white hover:text-gray-900'
+                      className={`flex items-center justify-between px-2 py-1.5 my-1 rounded-md cursor-pointer transition-colors ${isActive
+                          ? 'bg-white text-purple-700 shadow-sm'
+                          : 'text-gray-600 hover:bg-white hover:text-gray-900'
                         }`}
                     >
-                      <link.icon size={16} className={isActive ? "text-purple-600" : "text-gray-400"} />
-                      <span className="text-sm font-medium">{link.label}</span>
+                      <div className="flex items-center gap-2">
+                        <link.icon size={16} className={isActive ? "text-purple-600" : "text-gray-400"} />
+                        <span className="text-sm font-medium">{link.label}</span>
+                      </div>
+                      {link.badge > 0 && (
+                        <span className="bg-purple-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                          {link.badge}
+                        </span>
+                      )}
                     </NavLink>
                   );
                 })}
@@ -201,6 +234,25 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
               <>
                 <div className="mt-4 mb-2 px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Paramètres
+                </div>
+                <NavLink
+                  to={`${baseUrl}/dashboard`}
+                  className={({ isActive }) => `flex items-center gap-2 px-2 py-1.5 my-1 rounded-md cursor-pointer transition-colors ${isActive
+                    ? 'bg-white text-purple-700 shadow-sm'
+                    : 'text-gray-600 hover:bg-white hover:text-gray-900'
+                  }`}
+                >
+                  <Home size={16} className={location.pathname.endsWith('/dashboard') ? "text-purple-600" : "text-gray-400"} />
+                  <span className="text-sm font-medium">Page Principale</span>
+                </NavLink>
+                <div
+                  className="flex items-center gap-2 px-2 py-1.5 my-1 rounded-md cursor-pointer transition-colors text-gray-600 hover:bg-white hover:text-gray-900"
+                  onClick={toggleTheme}
+                >
+                  <div className={`w-8 h-4 rounded-full p-0.5 transition-colors duration-200 ease-in-out ${theme === 'dark' ? 'bg-blue-500' : 'bg-gray-300'}`}>
+                    <div className={`w-3 h-3 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out ${theme === 'dark' ? 'translate-x-4' : 'translate-x-0'}`} />
+                  </div>
+                  <span className="text-sm font-medium">Mode Sombre</span>
                 </div>
                 <NavLink
                   to={`${baseUrl}/profile`}
@@ -212,15 +264,6 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
                   <User size={16} className={location.pathname.endsWith('/profile') ? "text-purple-600" : "text-gray-400"} />
                   <span className="text-sm font-medium">Mon Profil</span>
                 </NavLink>
-                <div
-                  className="flex items-center gap-2 px-2 py-1.5 my-1 rounded-md cursor-pointer transition-colors text-gray-600 hover:bg-white hover:text-gray-900"
-                  onClick={toggleTheme}
-                >
-                  <div className={`w-8 h-4 rounded-full p-0.5 transition-colors duration-200 ease-in-out ${theme === 'dark' ? 'bg-blue-500' : 'bg-gray-300'}`}>
-                    <div className={`w-3 h-3 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out ${theme === 'dark' ? 'translate-x-4' : 'translate-x-0'}`} />
-                  </div>
-                  <span className="text-sm font-medium">Mode de l'app</span>
-                </div>
               </>
             )}
 

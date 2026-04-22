@@ -8,10 +8,10 @@ import {
   Info, MoreHorizontal, LayoutGrid, List as ListIcon,
   Archive, FileCheck
 } from 'lucide-react';
-import { api } from '../../services/api';
-import { useAuth } from '../../hooks/useAuth';
-import { NotificationContainer } from '../../components/Notification';
-import { useNotifications } from '../../hooks/useNotifications';
+import { api } from '../../../services/api';
+import { useAuth } from '../../../hooks/useAuth';
+import { NotificationContainer } from '../../../components/Notification';
+import { useNotifications } from '../../../hooks/useNotifications';
 
 interface AppelOffre {
   id: number;
@@ -494,3 +494,5 @@ const AppelsOffresPage = () => {
 };
 
 export default AppelsOffresPage;
+
+

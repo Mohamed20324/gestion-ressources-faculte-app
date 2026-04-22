@@ -3,134 +3,12 @@ import {
   User, Mail, Shield, Calendar, 
   Settings, Camera, Lock, Bell, 
   LogOut, Save, Loader, Briefcase,
-  MapPin, Phone, Award, ChevronRight,
-  Globe, Fingerprint, Activity, X,
-  Eye, EyeOff, CheckCircle
+  MapPin, Phone, Award
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { api } from '../../services/api';
 import { NotificationContainer } from '../../components/Notification';
 import { useNotifications } from '../../hooks/useNotifications';
-
-const PasswordModal = ({ isOpen, onClose, userId, showNotification }: any) => {
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [passwords, setPasswords] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (passwords.newPassword !== passwords.confirmPassword) {
-      showNotification('error', 'Les nouveaux mots de passe ne correspondent pas');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const response = await api.changePassword(userId, {
-        oldPassword: passwords.currentPassword,
-        newPassword: passwords.newPassword
-      });
-
-      if (response.ok) {
-        showNotification('success', 'Mot de passe mis à jour avec succès');
-        setPasswords({ currentPassword: '', newPassword: '', confirmPassword: '' });
-        onClose();
-      } else {
-        const err = await response.text();
-        showNotification('error', err || 'Échec de la mise à jour du mot de passe');
-      }
-    } catch (error) {
-      showNotification('error', 'Erreur lors du changement de mot de passe');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-gray-900/20 backdrop-blur-sm animate-in fade-in duration-300">
-      <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl border border-gray-100 animate-in zoom-in-95 duration-300">
-        <div className="p-8 bg-white border-b border-gray-50 flex justify-between items-center">
-          <div>
-            <h3 className="text-xl font-bold text-gray-900">Changer le mot de passe</h3>
-            <p className="text-gray-400 text-xs mt-0.5">Sécurisez votre accès à la plateforme.</p>
-          </div>
-          <button onClick={onClose} className="p-2 hover:bg-gray-50 rounded-full transition-colors text-gray-400">
-            <X size={20} />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-8 space-y-5">
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Ancien mot de passe</label>
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-              <input 
-                type={showPassword ? "text" : "password"}
-                required
-                value={passwords.currentPassword}
-                onChange={e => setPasswords({...passwords, currentPassword: e.target.value})}
-                className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium text-sm"
-                placeholder="••••••••"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Nouveau mot de passe</label>
-            <div className="relative">
-              <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-              <input 
-                type={showPassword ? "text" : "password"}
-                required
-                value={passwords.newPassword}
-                onChange={e => setPasswords({...passwords, newPassword: e.target.value})}
-                className="w-full pl-11 pr-11 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium text-sm"
-                placeholder="••••••••"
-              />
-              <button 
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Confirmer</label>
-            <div className="relative">
-              <CheckCircle className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-              <input 
-                type={showPassword ? "text" : "password"}
-                required
-                value={passwords.confirmPassword}
-                onChange={e => setPasswords({...passwords, confirmPassword: e.target.value})}
-                className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium text-sm"
-                placeholder="••••••••"
-              />
-            </div>
-          </div>
-
-          <button 
-            type="submit" 
-            disabled={loading}
-            className="w-full py-3.5 bg-gray-900 text-white rounded-xl font-bold text-sm hover:bg-black transition-all shadow-md disabled:opacity-50 flex items-center justify-center gap-2 mt-2"
-          >
-            {loading ? <Loader className="animate-spin" size={18} /> : <Save size={16} />}
-            Mettre à jour le mot de passe
-          </button>
-        </form>
-      </div>
-    </div>
-  );
-};
 
 const ProfilePage = () => {
   const { user, logout } = useAuth();
@@ -139,12 +17,6 @@ const ProfilePage = () => {
   const [saving, setSaving] = useState(false);
   const [profileData, setProfileData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('infos');
-  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
-  
-  const [formData, setFormData] = useState({
-    prenom: '',
-    nom: ''
-  });
 
   useEffect(() => {
     if (user) {
@@ -160,12 +32,7 @@ const ProfilePage = () => {
         }
       });
       if (response.ok) {
-        const data = await response.json();
-        setProfileData(data);
-        setFormData({
-          prenom: data.prenom || '',
-          nom: data.nom || ''
-        });
+        setProfileData(await response.json());
       }
     } catch (error) {
       showNotification('error', 'Erreur lors du chargement du profil');
@@ -178,18 +45,9 @@ const ProfilePage = () => {
     e.preventDefault();
     setSaving(true);
     try {
-      const response = await api.updateUser(user.id, {
-        ...profileData,
-        prenom: formData.prenom,
-        nom: formData.nom
-      });
-
-      if (response.ok) {
-        showNotification('success', 'Profil mis à jour avec succès');
-        fetchProfile();
-      } else {
-        showNotification('error', 'Échec de la sauvegarde');
-      }
+      // Simulation d'update
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      showNotification('success', 'Profil mis à jour avec succès');
     } catch (error) {
       showNotification('error', 'Erreur lors de la sauvegarde');
     } finally {
@@ -199,201 +57,250 @@ const ProfilePage = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[500px]">
-        <Loader className="animate-spin text-blue-600 mb-4" size={32} />
-        <p className="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Chargement du profil...</p>
+      <div className="flex flex-col items-center justify-center min-h-[500px] gap-4">
+        <Loader className="animate-spin text-blue-600" size={48} />
+        <p className="text-gray-500 font-medium">Chargement de votre profil...</p>
       </div>
     );
   }
 
   return (
-    <div className="p-8 bg-white min-h-full">
+    <div className="p-8 bg-gray-50/30 min-h-screen pb-20">
       <NotificationContainer notifications={notifications} removeNotification={removeNotification} />
-      <PasswordModal 
-        isOpen={isPasswordModalOpen} 
-        onClose={() => setIsPasswordModalOpen(false)} 
-        userId={user.id}
-        showNotification={showNotification}
-      />
 
-      <div className="max-w-[1100px] mx-auto">
-        {/* Simple Header */}
-        <div className="flex flex-col md:flex-row items-center gap-8 mb-12 pb-12 border-b border-gray-100">
-          <div className="relative group">
-            <div className="w-32 h-32 rounded-2xl bg-gray-50 border border-gray-200 flex items-center justify-center text-gray-300 overflow-hidden shadow-sm">
-              {profileData?.photo ? (
-                <img src={profileData.photo} alt="Profile" className="w-full h-full object-cover" />
-              ) : (
-                <User size={48} />
-              )}
-            </div>
-            <button className="absolute -bottom-2 -right-2 p-2 bg-white border border-gray-200 text-gray-600 rounded-xl shadow-md hover:bg-gray-50 transition-all">
-              <Camera size={16} />
-            </button>
-          </div>
-
-          <div className="flex-1 text-center md:text-left">
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3 mb-2">
-              <h2 className="text-3xl font-bold text-gray-900 tracking-tight">{profileData?.prenom} {profileData?.nom}</h2>
-              <span className="px-3 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold uppercase tracking-wider">
-                {profileData?.role}
-              </span>
-            </div>
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-5 text-gray-500 font-medium">
-              <div className="flex items-center gap-2 text-sm">
-                <Mail size={14} className="text-gray-400" />
-                {profileData?.email}
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Briefcase size={14} className="text-gray-400" />
-                {profileData?.departementNom || 'Administration Centrale'}
-              </div>
-            </div>
-          </div>
-
-          <button 
-            onClick={logout}
-            className="px-6 py-2.5 bg-white border border-gray-200 text-gray-600 rounded-xl font-bold text-sm hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-all flex items-center gap-2 shadow-sm"
-          >
-            <LogOut size={16} />
-            Déconnexion
-          </button>
+      <div className="max-w-5xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Mon Profil</h1>
+          <p className="text-gray-500 mt-2">Gérez vos informations personnelles et vos préférences de compte.</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-          {/* Navigation Side */}
-          <div className="lg:col-span-3">
-            <div className="space-y-1">
-              {[
-                { id: 'infos', label: 'Compte', icon: User },
-                { id: 'security', label: 'Sécurité', icon: Shield },
-                { id: 'notifications', label: 'Notifications', icon: Bell }
-              ].map((item) => (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Column: Profile Card */}
+          <div className="lg:col-span-1 space-y-8">
+            <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/50 p-8 text-center relative overflow-hidden">
+              <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-br from-blue-600 to-indigo-700 z-0"></div>
+              
+              <div className="relative z-10">
+                <div className="relative inline-block mt-8">
+                  <div className="w-32 h-32 rounded-[2rem] bg-white p-1 shadow-2xl">
+                    <div className="w-full h-full rounded-[1.8rem] bg-gray-100 flex items-center justify-center text-blue-600 border-2 border-white overflow-hidden">
+                      {profileData?.photo ? (
+                        <img src={profileData.photo} alt="Profile" className="w-full h-full object-cover" />
+                      ) : (
+                        <User size={64} />
+                      )}
+                    </div>
+                  </div>
+                  <button className="absolute bottom-0 right-0 p-2.5 bg-blue-600 text-white rounded-xl shadow-lg border-2 border-white hover:bg-blue-700 transition-all">
+                    <Camera size={18} />
+                  </button>
+                </div>
+
+                <div className="mt-6">
+                  <h2 className="text-2xl font-bold text-gray-900">{profileData?.prenom} {profileData?.nom}</h2>
+                  <p className="text-blue-600 font-bold text-sm uppercase tracking-widest mt-1">{profileData?.role}</p>
+                </div>
+
+                <div className="mt-8 pt-8 border-t border-gray-50 flex justify-center gap-6">
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-gray-900">12</p>
+                    <p className="text-xs text-gray-400 font-bold uppercase mt-1">Actions</p>
+                  </div>
+                  <div className="text-center border-x border-gray-100 px-6">
+                    <p className="text-2xl font-bold text-gray-900">85%</p>
+                    <p className="text-xs text-gray-400 font-bold uppercase mt-1">Score</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-gray-900">2</p>
+                    <p className="text-xs text-gray-400 font-bold uppercase mt-1">Badges</p>
+                  </div>
+                </div>
+
                 <button 
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-sm transition-all ${activeTab === item.id ? 'bg-gray-900 text-white shadow-lg' : 'text-gray-500 hover:bg-gray-50'}`}
+                  onClick={logout}
+                  className="mt-8 w-full py-4 px-6 bg-red-50 text-red-600 rounded-2xl font-bold hover:bg-red-100 transition-all flex items-center justify-center gap-2"
                 >
-                  <item.icon size={18} />
-                  {item.label}
+                  <LogOut size={18} />
+                  Déconnexion
                 </button>
-              ))}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-[2rem] border border-gray-100 shadow-lg p-6 space-y-4">
+              <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest ml-2">Navigation</h3>
+              <div className="space-y-1">
+                <button 
+                  onClick={() => setActiveTab('infos')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'infos' ? 'bg-blue-50 text-blue-600' : 'text-gray-500 hover:bg-gray-50'}`}
+                >
+                  <User size={18} />
+                  Informations
+                </button>
+                <button 
+                  onClick={() => setActiveTab('security')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'security' ? 'bg-blue-50 text-blue-600' : 'text-gray-500 hover:bg-gray-50'}`}
+                >
+                  <Lock size={18} />
+                  Sécurité
+                </button>
+                <button 
+                  onClick={() => setActiveTab('notifications')}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${activeTab === 'notifications' ? 'bg-blue-50 text-blue-600' : 'text-gray-500 hover:bg-gray-50'}`}
+                >
+                  <Bell size={18} />
+                  Notifications
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Content Side */}
-          <div className="lg:col-span-9">
-            {activeTab === 'infos' && (
-              <form onSubmit={handleSave} className="space-y-8 animate-in fade-in duration-300">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Prénom</label>
-                    <input 
-                      type="text" 
-                      value={formData.prenom}
-                      onChange={e => setFormData({...formData, prenom: e.target.value})}
-                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all font-semibold text-gray-900 shadow-sm"
-                    />
+          {/* Right Column: Details */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/50 p-10 h-full">
+              {activeTab === 'infos' && (
+                <form onSubmit={handleSave} className="space-y-8">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-xl font-bold text-gray-900 flex items-center gap-3">
+                      <Award className="text-blue-600" size={24} />
+                      Détails du compte
+                    </h3>
+                    <button 
+                      type="submit" 
+                      disabled={saving}
+                      className="px-6 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 flex items-center gap-2 disabled:opacity-50"
+                    >
+                      {saving ? <Loader className="animate-spin" size={18} /> : <Save size={18} />}
+                      Enregistrer
+                    </button>
                   </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Nom de famille</label>
-                    <input 
-                      type="text" 
-                      value={formData.nom}
-                      onChange={e => setFormData({...formData, nom: e.target.value})}
-                      className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 outline-none transition-all font-semibold text-gray-900 shadow-sm"
-                    />
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-3">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Prénom</label>
+                      <div className="relative">
+                        <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <input 
+                          type="text" 
+                          defaultValue={profileData?.prenom}
+                          className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-[1.5rem] focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold text-gray-700"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Nom</label>
+                      <div className="relative">
+                        <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <input 
+                          type="text" 
+                          defaultValue={profileData?.nom}
+                          className="w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-[1.5rem] focus:ring-2 focus:ring-blue-500 outline-none transition-all font-bold text-gray-700"
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Identifiant Email</label>
-                  <input 
-                    type="email" 
-                    readOnly
-                    value={profileData?.email}
-                    className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl text-gray-400 cursor-not-allowed font-semibold shadow-sm"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
-                  <div className="p-5 bg-gray-50 rounded-2xl border border-gray-100">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Rattachement</p>
-                    <p className="font-bold text-gray-900">{profileData?.departementNom || 'Administration'}</p>
+                  <div className="space-y-3">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Email professionnel</label>
+                    <div className="relative">
+                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                      <input 
+                        type="email" 
+                        readOnly
+                        value={profileData?.email}
+                        className="w-full pl-12 pr-4 py-4 bg-gray-100 border border-gray-200 rounded-[1.5rem] text-gray-500 cursor-not-allowed font-medium"
+                      />
+                    </div>
                   </div>
-                  <div className="p-5 bg-gray-50 rounded-2xl border border-gray-100">
-                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Niveau d'accès</p>
-                    <p className="font-bold text-gray-900">{profileData?.role}</p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-3">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Département</label>
+                      <div className="relative">
+                        <Briefcase className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <input 
+                          type="text" 
+                          readOnly
+                          value={profileData?.departementNom || 'N/A'}
+                          className="w-full pl-12 pr-4 py-4 bg-gray-100 border border-gray-200 rounded-[1.5rem] text-gray-500 cursor-not-allowed font-medium"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Rôle Système</label>
+                      <div className="relative">
+                        <Shield className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <input 
+                          type="text" 
+                          readOnly
+                          value={profileData?.role}
+                          className="w-full pl-12 pr-4 py-4 bg-gray-100 border border-gray-200 rounded-[1.5rem] text-gray-500 cursor-not-allowed font-medium"
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex justify-end pt-6 border-t border-gray-50">
-                  <button 
-                    type="submit" 
-                    disabled={saving}
-                    className="px-10 py-3.5 bg-gray-900 text-white rounded-xl font-bold text-sm hover:bg-blue-600 transition-all shadow-lg shadow-gray-200 disabled:opacity-50 flex items-center gap-2"
-                  >
-                    {saving ? <Loader className="animate-spin" size={18} /> : <Save size={18} />}
-                    Mettre à jour le profil
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {activeTab === 'security' && (
-              <div className="space-y-6 animate-in fade-in duration-300">
-                <div className="p-6 bg-white border border-gray-100 rounded-2xl flex items-center justify-between shadow-sm hover:shadow-md transition-all">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-gray-50 rounded-xl text-gray-600 border border-gray-100">
-                      <Lock size={20} />
+                  <div className="bg-blue-50 p-6 rounded-3xl border border-blue-100 flex items-start gap-4">
+                    <div className="p-2 bg-white rounded-xl text-blue-600 shadow-sm">
+                      <Calendar size={20} />
                     </div>
                     <div>
-                      <p className="font-bold text-gray-900">Mot de passe</p>
-                      <p className="text-xs text-gray-400 font-medium">Modifié pour la dernière fois il y a 3 mois</p>
+                      <p className="text-sm font-bold text-blue-900">Membre depuis</p>
+                      <p className="text-xs text-blue-600 mt-0.5">
+                        {profileData?.dateCreation ? new Date(profileData.dateCreation).toLocaleDateString() : 'Non définie'}
+                      </p>
                     </div>
                   </div>
-                  <button 
-                    onClick={() => setIsPasswordModalOpen(true)}
-                    className="px-6 py-2 bg-white border border-gray-200 text-gray-600 rounded-lg font-bold text-xs hover:bg-gray-50 transition-all"
-                  >
-                    Modifier
-                  </button>
-                </div>
+                </form>
+              )}
 
-                <div className="p-6 bg-white border border-gray-100 rounded-2xl flex items-center justify-between shadow-sm opacity-50 grayscale">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-gray-50 rounded-xl text-gray-600 border border-gray-100">
-                      <Shield size={20} />
+              {activeTab === 'security' && (
+                <div className="space-y-8">
+                  <h3 className="text-xl font-bold text-gray-900">Paramètres de Sécurité</h3>
+                  <div className="space-y-6">
+                    <div className="p-6 bg-gray-50 rounded-3xl border border-gray-100 flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-blue-600 shadow-sm">
+                          <Lock size={20} />
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-900">Changer le mot de passe</p>
+                          <p className="text-xs text-gray-400 mt-0.5">Dernière modification il y a 3 mois</p>
+                        </div>
+                      </div>
+                      <button className="px-6 py-2 bg-white border border-gray-200 rounded-xl font-bold text-gray-700 hover:bg-gray-100 transition-all shadow-sm">Modifier</button>
                     </div>
-                    <div>
-                      <p className="font-bold text-gray-900">Authentification à deux facteurs</p>
-                      <p className="text-xs text-gray-400 font-medium">Non configuré</p>
+                    <div className="p-6 bg-gray-50 rounded-3xl border border-gray-100 flex items-center justify-between opacity-50 cursor-not-allowed">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-blue-600 shadow-sm">
+                          <Shield size={20} />
+                        </div>
+                        <div>
+                          <p className="font-bold text-gray-900">Double authentification</p>
+                          <p className="text-xs text-gray-400 mt-0.5">Bientôt disponible</p>
+                        </div>
+                      </div>
+                      <div className="w-12 h-6 bg-gray-300 rounded-full"></div>
                     </div>
                   </div>
-                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Bientôt</span>
                 </div>
-              </div>
-            )}
+              )}
 
-            {activeTab === 'notifications' && (
-              <div className="space-y-4 animate-in fade-in duration-300">
-                {[
-                  { t: 'Emails d\'activité', d: 'Rapports hebdomadaires et résumés' },
-                  { t: 'Alertes système', d: 'Informations critiques sur le matériel' },
-                  { t: 'Nouveaux messages', d: 'Communications de l\'administration' }
-                ].map((pref, i) => (
-                  <div key={i} className="flex items-center justify-between p-5 bg-white border border-gray-100 rounded-2xl shadow-sm">
-                    <div>
-                      <p className="font-bold text-gray-800 text-sm">{pref.t}</p>
-                      <p className="text-xs text-gray-400 font-medium">{pref.d}</p>
-                    </div>
-                    <div className={`w-12 h-6 ${i < 2 ? 'bg-emerald-500' : 'bg-gray-200'} rounded-full relative cursor-pointer`}>
-                      <div className={`absolute top-1 ${i < 2 ? 'right-1' : 'left-1'} w-4 h-4 bg-white rounded-full shadow-sm`}></div>
-                    </div>
+              {activeTab === 'notifications' && (
+                <div className="space-y-8">
+                  <h3 className="text-xl font-bold text-gray-900">Préférences de Notification</h3>
+                  <div className="space-y-4">
+                    {['Emails d\'activité', 'Alertes système', 'Nouveaux messages', 'Mises à jour de ressources'].map((pref, i) => (
+                      <div key={i} className="flex items-center justify-between py-4 border-b border-gray-50 last:border-0">
+                        <span className="font-bold text-gray-700">{pref}</span>
+                        <div className={`w-12 h-6 ${i < 2 ? 'bg-blue-600' : 'bg-gray-200'} rounded-full relative transition-colors`}>
+                          <div className={`absolute top-1 ${i < 2 ? 'right-1' : 'left-1'} w-4 h-4 bg-white rounded-full`}></div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
