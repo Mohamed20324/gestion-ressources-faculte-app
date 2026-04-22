@@ -3,6 +3,7 @@ import Header from '../../components/G/Header';
 import Sidebar from '../../components/G/Sidebar';
 import Dashboard from './Dashboard';
 import InterventionsPage from './InterventionsPage';
+import ProfilePage from '../Common/ProfilePage';
 
 const AppContent = () => {
   return (
@@ -10,11 +11,12 @@ const AppContent = () => {
       <Header title="Espace Technicien" />
       <div className="flex flex-1 bg-white text-sm text-gray-700 font-sans overflow-hidden">
         <Sidebar role="Technicien" />
-        <div className="flex-1 flex flex-col h-screen overflow-auto pb-20">
+        <div className="flex-1 overflow-y-auto pb-20">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/interventions" element={<InterventionsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
           </Routes>
         </div>
       </div>

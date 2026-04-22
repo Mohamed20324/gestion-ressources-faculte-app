@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { LogOut, Bell, Settings, Calendar, Clock, ChevronRight, CheckCircle, XCircle, Package, Info, FileText } from 'lucide-react';
+import { LogOut, Bell, Settings, Calendar, Clock, CheckCircle, XCircle, Package, Info } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../../services/api';
@@ -24,7 +24,7 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
 
   const fetchAllNotifications = async () => {
     if (!user) return;
-    
+
     try {
       // 1. Fetch general notifications from backend (acceptance/rejection)
       const notifRes = await api.getNotifications(user.id);
@@ -69,33 +69,41 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
       setNotifications([...backendNotifs, ...deduped]);
 
       // 3. Fetch meetings (for specific roles)
-      if (user.role === 'ENSEIGNANT' || user.role === 'CHEF_DEPARTEMENT') {
-        const userRes = await fetch(`http://localhost:8081/api/utilisateurs/${user.id}`, {
-          headers: {
-            'Authorization': `Bearer ${user.accessToken}`,
-            'Content-Type': 'application/json'
-          }
-        });
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          if (userData.departementId) {
-            const reunionsRes = await api.getReunionsByDepartement(userData.departementId);
-            if (reunionsRes.ok) {
-              const allReunions = await reunionsRes.json();
-              const now = new Date();
-              const twoDaysFromNow = new Date(now.getTime() + (2 * 24 * 60 * 60 * 1000));
-              
-              const upcoming = allReunions
-                .filter((r: any) => r.statut === 'PLANIFIEE')
-                .map((r: any) => ({
-                  ...r,
-                  dateTime: new Date(`${r.date}T${r.heure.length === 5 ? r.heure + ':00' : r.heure}`)
-                }))
-                .filter((r: any) => r.dateTime > now && r.dateTime <= twoDaysFromNow)
-                .sort((a: any, b: any) => a.dateTime.getTime() - b.dateTime.getTime());
-              setMeetings(upcoming);
+      if (user.role === 'ENSEIGNANT' || user.role === 'CHEF_DEPARTEMENT' || user.role === 'RESPONSABLE') {
+        let allReunions: any[] = [];
+        
+        if (user.role === 'RESPONSABLE') {
+          const res = await api.getAllReunions();
+          if (res.ok) allReunions = await res.json();
+        } else {
+          const userRes = await fetch(`http://localhost:8081/api/utilisateurs/${user.id}`, {
+            headers: {
+              'Authorization': `Bearer ${user.accessToken}`,
+              'Content-Type': 'application/json'
+            }
+          });
+          if (userRes.ok) {
+            const userData = await userRes.json();
+            if (userData.departementId) {
+              const reunionsRes = await api.getReunionsByDepartement(userData.departementId);
+              if (reunionsRes.ok) allReunions = await reunionsRes.json();
             }
           }
+        }
+
+        if (allReunions.length > 0) {
+          const now = new Date();
+          const twoDaysFromNow = new Date(now.getTime() + (2 * 24 * 60 * 60 * 1000));
+
+          const upcoming = allReunions
+            .filter((r: any) => r.statut === 'PLANIFIEE')
+            .map((r: any) => ({
+              ...r,
+              dateTime: new Date(`${r.date}T${r.heure.length === 5 ? r.heure + ':00' : r.heure}`)
+            }))
+            .filter((r: any) => r.dateTime > now && r.dateTime <= twoDaysFromNow)
+            .sort((a: any, b: any) => a.dateTime.getTime() - b.dateTime.getTime());
+          setMeetings(upcoming);
         }
       }
     } catch (error) {
@@ -171,21 +179,30 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
 
       <div className="flex items-center gap-3">
         <div className="hidden sm:flex items-center gap-2 border-r border-gray-100 pr-3 mr-1 relative" ref={dropdownRef}>
-          <button 
+          <button
             onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-            className={`p-2 rounded-lg transition-all relative ${isNotificationsOpen ? 'text-purple-600 bg-purple-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
+            className={`p-2 rounded-lg transition-all relative flex items-center gap-2 ${isNotificationsOpen ? 'text-purple-600 bg-purple-50' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-50'}`}
           >
-            <Bell size={18} />
-            {totalCount > 0 && (
-              <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">
-                {totalCount}
+            {timeLeft && meetings.length > 0 && (
+              <span className="hidden lg:flex items-center gap-1.5 px-2 py-1 bg-indigo-50 text-indigo-600 rounded-md border border-indigo-100 text-[10px] font-mono font-black animate-in fade-in slide-in-from-right-2">
+                <Clock size={12} className="animate-pulse" />
+                {timeLeft.days > 0 ? `${timeLeft.days}j ` : ''}
+                {String(timeLeft.hours).padStart(2, '0')}:{String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
               </span>
             )}
+            <div className="relative">
+              <Bell size={18} />
+              {totalCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white animate-pulse">
+                  {totalCount}
+                </span>
+              )}
+            </div>
           </button>
 
           {isNotificationsOpen && (
             <div className="absolute top-full right-0 mt-2 w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden z-50">
-              
+
               {/* Header */}
               <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -233,7 +250,7 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
                           <div className="flex items-center gap-1 text-indigo-600 font-mono text-xs font-bold bg-white border border-indigo-100 px-2 py-1 rounded-lg">
                             <Clock size={11} className="animate-pulse" />
                             {timeLeft.days > 0 ? `${timeLeft.days}j ` : ''}
-                            {String(timeLeft.hours).padStart(2,'0')}:{String(timeLeft.minutes).padStart(2,'0')}:{String(timeLeft.seconds).padStart(2,'0')}
+                            {String(timeLeft.hours).padStart(2, '0')}:{String(timeLeft.minutes).padStart(2, '0')}:{String(timeLeft.seconds).padStart(2, '0')}
                           </div>
                         </div>
                       </div>
@@ -241,15 +258,25 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
 
                     {/* Meeting list items */}
                     {meetings.map((m) => (
-                      <div key={`meet-${m.id}`} className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors">
-                        <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-500 shrink-0">
+                      <div 
+                        key={`meet-${m.id}`} 
+                        onClick={() => {
+                          const baseUrl = 
+                            user?.role === 'RESPONSABLE' ? '/responsable' :
+                            user?.role === 'CHEF_DEPARTEMENT' ? '/chef-departement' : '/enseignant';
+                          navigate(`${baseUrl}/meetings`);
+                          setIsNotificationsOpen(false);
+                        }}
+                        className="flex items-center gap-3 px-4 py-3 hover:bg-indigo-50/50 cursor-pointer transition-colors group"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-500 shrink-0 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
                           <Calendar size={14} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-xs font-semibold text-gray-800">Réunion de département</p>
                           <p className="text-[10px] text-gray-400 mt-0.5">{new Date(m.date).toLocaleDateString('fr-FR')} · {m.heure}</p>
                         </div>
-                        <div className="w-2 h-2 bg-indigo-400 rounded-full shrink-0" />
+                        <div className="w-2 h-2 bg-indigo-400 rounded-full shrink-0 group-hover:scale-125 transition-transform" />
                       </div>
                     ))}
 
@@ -263,17 +290,17 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
                       const isUnread = !n.lu;
                       const iconBg =
                         n.type === 'ACCEPTATION' ? 'bg-green-50 border-green-100 text-green-600' :
-                        n.type === 'REJET' || n.type === 'ELIMINATION' ? 'bg-red-50 border-red-100 text-red-500' :
-                        n.type === 'NOUVEL_AO' ? 'bg-purple-50 border-purple-100 text-purple-600' :
-                        'bg-blue-50 border-blue-100 text-blue-600';
+                          n.type === 'REJET' || n.type === 'ELIMINATION' ? 'bg-red-50 border-red-100 text-red-500' :
+                            n.type === 'NOUVEL_AO' ? 'bg-purple-50 border-purple-100 text-purple-600' :
+                              'bg-blue-50 border-blue-100 text-blue-600';
                       const icon =
                         n.type === 'ACCEPTATION' ? <CheckCircle size={14} /> :
-                        n.type === 'REJET' || n.type === 'ELIMINATION' ? <XCircle size={14} /> :
-                        n.type === 'NOUVEL_AO' ? <Package size={14} /> :
-                        <Info size={14} />;
+                          n.type === 'REJET' || n.type === 'ELIMINATION' ? <XCircle size={14} /> :
+                            n.type === 'NOUVEL_AO' ? <Package size={14} /> :
+                              <Info size={14} />;
                       const dateStr = n.dateEnvoi
                         ? Array.isArray(n.dateEnvoi)
-                          ? `${String(n.dateEnvoi[2]).padStart(2,'0')}/${String(n.dateEnvoi[1]).padStart(2,'0')}/${n.dateEnvoi[0]}`
+                          ? `${String(n.dateEnvoi[2]).padStart(2, '0')}/${String(n.dateEnvoi[1]).padStart(2, '0')}/${n.dateEnvoi[0]}`
                           : new Date(n.dateEnvoi).toLocaleDateString('fr-FR')
                         : '';
 
@@ -285,9 +312,8 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
                             const link = n.link || (user?.role === 'FOURNISSEUR' ? '/fournisseur/mes-soumissions' : undefined);
                             if (link) { navigate(link); setIsNotificationsOpen(false); }
                           }}
-                          className={`flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors ${
-                            isUnread ? 'bg-purple-50/60 hover:bg-purple-50' : 'hover:bg-gray-50'
-                          }`}
+                          className={`flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors ${isUnread ? 'bg-purple-50/60 hover:bg-purple-50' : 'hover:bg-gray-50'
+                            }`}
                         >
                           <div className={`w-8 h-8 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 ${iconBg}`}>
                             {icon}
@@ -335,7 +361,7 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
           </div>
         )}
 
-        <button 
+        <button
           onClick={handleLogout}
           className="ml-2 p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all group relative"
           title="Déconnexion"

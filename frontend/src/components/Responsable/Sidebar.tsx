@@ -7,7 +7,7 @@ import {
   FileText, LayoutDashboard,
   UserPlus, Plus, Sparkles, MoreHorizontal,
   Crown, GraduationCap, Wrench, Package, Video, CalendarCheck,
-  Moon, Sun, ClipboardList, Truck, ShieldAlert
+  Moon, Sun, ClipboardList, Truck, ShieldAlert, User
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -167,15 +167,16 @@ const secondaryMenus: Record<string, MenuType> = {
   },
   plus: {
     title: "Plus",
-    defaultPath: "/responsable/apps/docs",
+    defaultPath: "/responsable/profile",
     sections: [
       {
         type: "header",
-        title: "Applications"
+        title: "Profil"
       },
       {
         type: "nav",
         items: [
+          { icon: <User size={16} />, text: "Mon Profil", path: "/responsable/profile" },
           { icon: <FileText size={16} />, text: "Docs", suffix: "Nouveau", path: "/responsable/apps/docs" },
           { icon: "THEME_TOGGLE", text: "Mode de l'app", path: "theme" }
         ]

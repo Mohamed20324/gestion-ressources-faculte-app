@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import Sidebar from '../../components/Responsable/Sidebar';
-import Header from '../../components/Responsable/Header';
+import Header from '../../components/G/Header';
 import DepartmentsPage from './Departement';
 import TeachersPage from './TeachersPage';
 import TechniciansPage from './TechniciansPage';
@@ -21,14 +21,15 @@ import PartnersDashboard from './PartnersDashboard';
 import ReportsPage from './ReportsPage';
 import SoumissionsGestionPage from './SoumissionsGestionPage';
 import MeetingsDashboard from './MeetingsDashboard';
+import ProfilePage from '../Common/ProfilePage';
 
 const AppContent = () => {
   return (
     <div className='flex flex-col h-screen'>
-      <Header />
+      <Header title="Espace Responsable" />
       <div className="flex flex-1 bg-white text-sm text-gray-700 font-sans overflow-hidden">
         <Sidebar />
-        <div className="flex-1 flex flex-col h-screen overflow-auto pb-20">
+        <div className="flex-1 overflow-y-auto pb-20">
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/dashboard" element={<Dashboard />} />
@@ -55,6 +56,7 @@ const AppContent = () => {
             <Route path="/meetings/calendar" element={<MeetingCalendarPage />} />
             <Route path="/meetings/new" element={<MeetingsPage />} /> {/* Reuse for now */}
             <Route path="/meetings/archives" element={<MeetingsPage />} /> {/* Reuse for now */}
+            <Route path="/profile" element={<ProfilePage />} />
           </Routes>
         </div>
       </div>

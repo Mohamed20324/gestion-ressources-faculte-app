@@ -55,6 +55,12 @@ export const api = {
         headers: getHeaders()
     }),
 
+    changePassword: (id, data) => fetch(`${API_BASE_URL}/utilisateurs/${id}/password`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(data)
+    }),
+
     // Départements
     getAllDepartements: () => fetch(`${API_BASE_URL}/departements`, { 
         headers: getHeaders() 
@@ -297,4 +303,10 @@ export const api = {
         fetch(`${API_BASE_URL}/notifications/utilisateur/${userId}`, { headers: getHeaders() }),
     markNotificationAsRead: (id) =>
         fetch(`${API_BASE_URL}/notifications/${id}/lu`, { method: 'PUT', headers: getHeaders() }),
+    createNotification: (data) =>
+        fetch(`${API_BASE_URL}/notifications`, {
+            method: 'POST',
+            headers: getHeaders(),
+            body: JSON.stringify(data)
+        }),
 };

@@ -3,7 +3,7 @@ import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard, Calendar, FileText, Users,
   Settings, Package, Wrench, Home,
-  MoreHorizontal, Moon, Sun, Sparkles
+  MoreHorizontal, Moon, Sun, Sparkles, User
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -22,8 +22,8 @@ const SidebarIconCollapsed = ({ icon, label, isActive, onClick, badge }: {
     <div className="group relative">
       <div
         className={`flex items-center justify-center p-2 mx-2 rounded-lg cursor-pointer transition-all duration-200 ${isActive
-            ? 'bg-gray-200 text-black'
-            : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+          ? 'bg-gray-200 text-black'
+          : 'text-gray-400 hover:bg-gray-700 hover:text-white'
           }`}
         onClick={onClick}
       >
@@ -56,6 +56,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
       case 'ChefDepartement': return '/chef-departement';
       case 'Technicien': return '/technicien';
       case 'Fournisseur': return '/fournisseur';
+      case 'Responsable': return '/responsable';
       default: return '/dashboard';
     }
   };
@@ -116,7 +117,10 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
               icon={<Home size={20} />}
               label="Général"
               isActive={activeMenu === 'General'}
-              onClick={() => handleMenuClick('General')}
+              onClick={() => {
+                handleMenuClick('General');
+                navigate(`${baseUrl}/dashboard`);
+              }}
             />
           </div>
           {/* Add more categories here if needed in the future */}
@@ -125,7 +129,10 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
             icon={<MoreHorizontal size={20} />}
             label="Plus"
             isActive={activeMenu === 'Plus'}
-            onClick={() => handleMenuClick('Plus')}
+            onClick={() => {
+              handleMenuClick('Plus');
+              navigate(`${baseUrl}/profile`);
+            }}
           />
         </div>
 
@@ -180,8 +187,8 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
                       key={idx}
                       to={link.to}
                       className={`flex items-center gap-2 px-2 py-1.5 my-1 rounded-md cursor-pointer transition-colors ${isActive
-                          ? 'bg-white text-purple-700 shadow-sm'
-                          : 'text-gray-600 hover:bg-white hover:text-gray-900'
+                        ? 'bg-white text-purple-700 shadow-sm'
+                        : 'text-gray-600 hover:bg-white hover:text-gray-900'
                         }`}
                     >
                       <link.icon size={16} className={isActive ? "text-purple-600" : "text-gray-400"} />
@@ -195,6 +202,16 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
                 <div className="mt-4 mb-2 px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                   Paramètres
                 </div>
+                <NavLink
+                  to={`${baseUrl}/profile`}
+                  className={({ isActive }) => `flex items-center gap-2 px-2 py-1.5 my-1 rounded-md cursor-pointer transition-colors ${isActive
+                    ? 'bg-white text-purple-700 shadow-sm'
+                    : 'text-gray-600 hover:bg-white hover:text-gray-900'
+                  }`}
+                >
+                  <User size={16} className={location.pathname.endsWith('/profile') ? "text-purple-600" : "text-gray-400"} />
+                  <span className="text-sm font-medium">Mon Profil</span>
+                </NavLink>
                 <div
                   className="flex items-center gap-2 px-2 py-1.5 my-1 rounded-md cursor-pointer transition-colors text-gray-600 hover:bg-white hover:text-gray-900"
                   onClick={toggleTheme}
