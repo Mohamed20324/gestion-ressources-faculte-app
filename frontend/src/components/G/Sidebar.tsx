@@ -45,6 +45,7 @@ const SidebarIconCollapsed = ({ icon, label, isActive, onClick, badge }: {
 
 const Sidebar: React.FC<SidebarProps> = ({ role }) => {
   const [activeMenu, setActiveMenu] = useState('General');
+  const [isSecondaryMenuVisible, setIsSecondaryMenuVisible] = useState(true);
   const { theme, toggleTheme } = useTheme();
   const location = useLocation();
   const navigate = useNavigate();
@@ -96,6 +97,15 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
 
   const links = getLinks();
 
+  const handleMenuClick = (menu: string) => {
+    if (activeMenu === menu) {
+      setIsSecondaryMenuVisible(!isSecondaryMenuVisible);
+    } else {
+      setActiveMenu(menu);
+      setIsSecondaryMenuVisible(true);
+    }
+  };
+
   return (
     <div className="flex h-full bg-gray-50 p-2 rounded-2xl hidden md:flex">
       {/* Primary Sidebar (Slim, Dark) */}
@@ -106,7 +116,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
               icon={<Home size={20} />}
               label="Général"
               isActive={activeMenu === 'General'}
-              onClick={() => setActiveMenu('General')}
+              onClick={() => handleMenuClick('General')}
             />
           </div>
           {/* Add more categories here if needed in the future */}
@@ -115,7 +125,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
             icon={<MoreHorizontal size={20} />}
             label="Plus"
             isActive={activeMenu === 'Plus'}
-            onClick={() => setActiveMenu('Plus')}
+            onClick={() => handleMenuClick('Plus')}
           />
         </div>
 
@@ -149,63 +159,65 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
       </div>
 
       {/* Secondary Sidebar (Wider, Light) */}
-      <div className="w-64 flex-shrink-0 h-full bg-gradient-to-tr from-pink-50 to-blue-100 flex flex-col border border-gray-200 ml-2 mr-0 rounded-r-xl shadow-lg">
-        <div className="py-2 px-6 border-b border-gray-200 bg-white/50 rounded-tr-2xl">
-          <h1 className="font-semibold text-lg text-gray-900">
-            {role === 'ChefDepartement' ? 'Chef de Départ.' : role}
-          </h1>
-        </div>
+      {isSecondaryMenuVisible && (
+        <div className="w-64 flex-shrink-0 h-full bg-gradient-to-tr from-pink-50 to-blue-100 flex flex-col border border-gray-200 ml-2 mr-0 rounded-r-xl shadow-lg">
+          <div className="py-2 px-6 border-b border-gray-200 bg-white/50 rounded-tr-2xl">
+            <h1 className="font-semibold text-lg text-gray-900">
+              {role === 'ChefDepartement' ? 'Chef de Départ.' : role}
+            </h1>
+          </div>
 
-        <div className="flex-1 overflow-y-auto p-2">
-          {activeMenu === 'General' ? (
-            <>
-              <div className="mt-4 mb-2 px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Menu Principal
-              </div>
-              {links.map((link, idx) => {
-                const isActive = location.pathname === link.to || location.pathname.startsWith(link.to + '/');
-                return (
-                  <NavLink
-                    key={idx}
-                    to={link.to}
-                    className={`flex items-center gap-2 px-2 py-1.5 my-1 rounded-md cursor-pointer transition-colors ${isActive
-                        ? 'bg-white text-purple-700 shadow-sm'
-                        : 'text-gray-600 hover:bg-white hover:text-gray-900'
-                      }`}
-                  >
-                    <link.icon size={16} className={isActive ? "text-purple-600" : "text-gray-400"} />
-                    <span className="text-sm font-medium">{link.label}</span>
-                  </NavLink>
-                );
-              })}
-            </>
-          ) : (
-            <>
-              <div className="mt-4 mb-2 px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                Paramètres
-              </div>
-              <div
-                className="flex items-center gap-2 px-2 py-1.5 my-1 rounded-md cursor-pointer transition-colors text-gray-600 hover:bg-white hover:text-gray-900"
-                onClick={toggleTheme}
-              >
-                <div className={`w-8 h-4 rounded-full p-0.5 transition-colors duration-200 ease-in-out ${theme === 'dark' ? 'bg-blue-500' : 'bg-gray-300'}`}>
-                  <div className={`w-3 h-3 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out ${theme === 'dark' ? 'translate-x-4' : 'translate-x-0'}`} />
+          <div className="flex-1 overflow-y-auto p-2">
+            {activeMenu === 'General' ? (
+              <>
+                <div className="mt-4 mb-2 px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Menu Principal
                 </div>
-                <span className="text-sm font-medium">Mode de l'app</span>
-              </div>
-            </>
-          )}
+                {links.map((link, idx) => {
+                  const isActive = location.pathname === link.to || location.pathname.startsWith(link.to + '/');
+                  return (
+                    <NavLink
+                      key={idx}
+                      to={link.to}
+                      className={`flex items-center gap-2 px-2 py-1.5 my-1 rounded-md cursor-pointer transition-colors ${isActive
+                          ? 'bg-white text-purple-700 shadow-sm'
+                          : 'text-gray-600 hover:bg-white hover:text-gray-900'
+                        }`}
+                    >
+                      <link.icon size={16} className={isActive ? "text-purple-600" : "text-gray-400"} />
+                      <span className="text-sm font-medium">{link.label}</span>
+                    </NavLink>
+                  );
+                })}
+              </>
+            ) : (
+              <>
+                <div className="mt-4 mb-2 px-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Paramètres
+                </div>
+                <div
+                  className="flex items-center gap-2 px-2 py-1.5 my-1 rounded-md cursor-pointer transition-colors text-gray-600 hover:bg-white hover:text-gray-900"
+                  onClick={toggleTheme}
+                >
+                  <div className={`w-8 h-4 rounded-full p-0.5 transition-colors duration-200 ease-in-out ${theme === 'dark' ? 'bg-blue-500' : 'bg-gray-300'}`}>
+                    <div className={`w-3 h-3 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out ${theme === 'dark' ? 'translate-x-4' : 'translate-x-0'}`} />
+                  </div>
+                  <span className="text-sm font-medium">Mode de l'app</span>
+                </div>
+              </>
+            )}
 
-          <div className="mt-8 p-4 border-t border-gray-200/50">
-            <div className="bg-white/60 rounded-xl p-4 border border-white/80 shadow-sm">
-              <h4 className="text-xs font-bold text-gray-800 mb-1">Besoin d'aide ?</h4>
-              <p className="text-[10px] text-gray-500 mb-2 leading-relaxed">
-                Contactez l'administration pour toute assistance sur la plateforme.
-              </p>
+            <div className="mt-8 p-4 border-t border-gray-200/50">
+              <div className="bg-white/60 rounded-xl p-4 border border-white/80 shadow-sm">
+                <h4 className="text-xs font-bold text-gray-800 mb-1">Besoin d'aide ?</h4>
+                <p className="text-[10px] text-gray-500 mb-2 leading-relaxed">
+                  Contactez l'administration pour toute assistance sur la plateforme.
+                </p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

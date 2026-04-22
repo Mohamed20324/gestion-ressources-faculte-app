@@ -20,6 +20,7 @@ import InventoryDashboard from './InventoryDashboard';
 import PartnersDashboard from './PartnersDashboard';
 import ReportsPage from './ReportsPage';
 import SoumissionsGestionPage from './SoumissionsGestionPage';
+import MeetingsDashboard from './MeetingsDashboard';
 
 const AppContent = () => {
   return (
@@ -50,6 +51,7 @@ const AppContent = () => {
             
             {/* Routes Réunions */}
             <Route path="/meetings" element={<MeetingsPage />} />
+            <Route path="/meetings/dashboard" element={<MeetingsDashboard />} />
             <Route path="/meetings/calendar" element={<MeetingCalendarPage />} />
             <Route path="/meetings/new" element={<MeetingsPage />} /> {/* Reuse for now */}
             <Route path="/meetings/archives" element={<MeetingsPage />} /> {/* Reuse for now */}

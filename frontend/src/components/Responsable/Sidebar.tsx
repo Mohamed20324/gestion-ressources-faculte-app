@@ -138,7 +138,7 @@ const secondaryMenus: Record<string, MenuType> = {
   },
   reunions: {
     title: "Réunions",
-    defaultPath: "/responsable/meetings",
+    defaultPath: "/responsable/meetings/dashboard",
     sections: [
       {
         type: "header",
@@ -147,6 +147,7 @@ const secondaryMenus: Record<string, MenuType> = {
       {
         type: "nav",
         items: [
+          { icon: <LayoutDashboard size={16} />, text: "Tableau de bord", path: "/responsable/meetings/dashboard" },
           { icon: <Video size={16} />, text: "Liste des réunions", path: "/responsable/meetings" },
           { icon: <CalendarCheck size={16} />, text: "Planning & Calendrier", path: "/responsable/meetings/calendar" }
         ]
