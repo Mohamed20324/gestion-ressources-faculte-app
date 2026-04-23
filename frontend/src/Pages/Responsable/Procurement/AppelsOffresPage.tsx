@@ -6,7 +6,8 @@ import {
   Edit, Trash2, DollarSign, Send, 
   X, CheckCircle, Package, ArrowRight,
   Info, MoreHorizontal, LayoutGrid, List as ListIcon,
-  Archive, FileCheck
+  Archive, FileCheck, Eye, User,
+  ShieldAlert, Award, ChevronDown, ChevronUp, XCircle
 } from 'lucide-react';
 import { api } from '../../../services/api';
 import { useAuth } from '../../../hooks/useAuth';
@@ -20,6 +21,7 @@ interface AppelOffre {
   dateFin: string;
   statut: string;
   besoinIds: number[];
+  besoins: any[];
 }
 
 const AppelsOffresPage = () => {
@@ -38,6 +40,7 @@ const AppelsOffresPage = () => {
   const [selectedAO, setSelectedAO] = useState<any>(null);
   const [aoBesoins, setAoBesoins] = useState<any[]>([]);
   const [typesRessources, setTypesRessources] = useState<any[]>([]);
+  const [departments, setDepartments] = useState<any[]>([]);
   
   const [newAO, setNewAO] = useState({ 
     reference: '', 
@@ -46,6 +49,12 @@ const AppelsOffresPage = () => {
   });
   const [saving, setSaving] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [isOffresModalOpen, setIsOffresModalOpen] = useState(false);
+  const [offres, setOffres] = useState<any[]>([]);
+  const [offresLoading, setOffresLoading] = useState(false);
+  const [showMotifModal, setShowMotifModal] = useState({ show: false, offreId: null, action: '' });
+  const [motif, setMotif] = useState('');
+  const [expandedOffre, setExpandedOffre] = useState<number | null>(null);
 
   useEffect(() => {
     loadData();
@@ -54,9 +63,10 @@ const AppelsOffresPage = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [appelsRes, typesRes] = await Promise.all([
+      const [appelsRes, typesRes, deptsRes] = await Promise.all([
         api.getAllAppelsOffres(),
-        api.getAllTypesRessources()
+        api.getAllTypesRessources(),
+        api.getAllDepartements()
       ]);
       
       if (appelsRes.ok) {
@@ -64,6 +74,9 @@ const AppelsOffresPage = () => {
       }
       if (typesRes.ok) {
         setTypesRessources(await typesRes.json());
+      }
+      if (deptsRes.ok) {
+        setDepartments(await deptsRes.json());
       }
     } catch (error) {
       showNotification('error', 'Erreur de chargement');
@@ -94,24 +107,70 @@ const AppelsOffresPage = () => {
     }
   };
 
-  const handleOpenEditModal = async (ao: AppelOffre) => {
+  const handleOpenEditModal = async (ao: any) => {
     setSelectedAO(ao);
     setIsEditModalOpen(true);
-    setActionLoading(true);
+    // Directly use the needs linked in the AO object
+    setAoBesoins(ao.besoins || []);
+  };
+
+  const handleOpenOffresModal = async (ao: any) => {
+    setSelectedAO(ao);
+    setIsOffresModalOpen(true);
+    setOffresLoading(true);
     try {
-      const allBesoinsRes = await api.getAllBesoins();
-      if (allBesoinsRes.ok) {
-        const allBesoins = await allBesoinsRes.json();
-        const filtered = allBesoins.filter((b: any) => 
-          b.appelOffreId && b.appelOffreId.toString() === ao.id.toString()
-        );
-        setAoBesoins(filtered);
+      const res = await api.getOffresByAppelOffre(ao.id);
+      if (res.ok) {
+        setOffres(await res.json());
       }
     } catch (error) {
-      showNotification('error', 'Erreur de chargement');
+      showNotification('error', 'Erreur de chargement des offres');
+    } finally {
+      setOffresLoading(false);
+    }
+  };
+
+  const handleAcceptOffre = async (offreId: number) => {
+    if (!window.confirm("Accepter cette offre ? Les autres seront rejetées.")) return;
+    setActionLoading(true);
+    try {
+      const res = await api.accepterOffre(offreId);
+      if (res.ok) {
+        showNotification('success', 'Offre acceptée !');
+        handleOpenOffresModal(selectedAO);
+      }
+    } catch (error) {
+      showNotification('error', 'Erreur lors de l\'acceptation');
     } finally {
       setActionLoading(false);
     }
+  };
+
+  const handleActionWithMotif = async () => {
+    if (!motif) return;
+    setActionLoading(true);
+    try {
+      const res = showMotifModal.action === 'REJETER' 
+        ? await api.rejeterOffre(showMotifModal.offreId!, motif)
+        : await api.eliminerOffre(showMotifModal.offreId!, motif);
+      
+      if (res.ok) {
+        showNotification('success', 'Action effectuée');
+        setShowMotifModal({ show: false, offreId: null, action: '' });
+        setMotif('');
+        handleOpenOffresModal(selectedAO);
+      }
+    } catch (error) {
+      showNotification('error', 'Erreur technique');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const identifyMoinsDisant = () => {
+    if (offres.length === 0) return;
+    const sorted = [...offres].sort((a, b) => a.prixTotal - b.prixTotal);
+    showNotification('info', `Le moins disant est ${sorted[0].fournisseurNom} (${sorted[0].prixTotal} MAD)`);
   };
 
   const handleUpdateBesoinQuantity = async (besoinId: number, newQty: number) => {
@@ -297,7 +356,11 @@ const AppelsOffresPage = () => {
         {/* Items List */}
         <div className="grid grid-cols-1 gap-4">
           {currentItems.map((appel) => (
-            <div key={appel.id} className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:border-blue-200 transition-all group">
+            <div 
+              key={appel.id} 
+              onClick={() => handleOpenEditModal(appel)}
+              className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:border-blue-400 hover:shadow-md transition-all group cursor-pointer relative"
+            >
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                 <div className="flex items-center gap-5 flex-1 min-w-0">
                   <div className={`w-14 h-14 rounded-xl flex items-center justify-center border ${
@@ -330,19 +393,19 @@ const AppelsOffresPage = () => {
                   {appel.statut === 'BROUILLON' ? (
                     <>
                       <button 
-                        onClick={() => handlePublish(appel.id)}
+                        onClick={(e) => { e.stopPropagation(); handlePublish(appel.id); }}
                         className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all text-sm shadow-sm"
                       >
                         <Send size={16} /> Publier
                       </button>
                       <button 
-                        onClick={() => handleOpenEditModal(appel)}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-blue-50 text-blue-700 rounded-xl font-bold hover:bg-blue-100 transition-all text-sm border border-blue-100"
+                        onClick={(e) => { e.stopPropagation(); handleOpenEditModal(appel); }}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all text-sm shadow-md"
                       >
-                        <Edit size={16} /> Gérer
+                        <Edit size={16} /> Gérer les besoins
                       </button>
                       <button 
-                        onClick={() => handleDelete(appel.id)}
+                        onClick={(e) => { e.stopPropagation(); handleDelete(appel.id); }}
                         className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
                       >
                         <Trash2 size={20} />
@@ -351,12 +414,21 @@ const AppelsOffresPage = () => {
                   ) : (
                     <>
                       <button 
-                        onClick={() => navigate(`/responsable/appels-offres/${appel.id}/offres`)}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition-all text-sm shadow-sm"
+                        onClick={(e) => { e.stopPropagation(); handleOpenOffresModal(appel); }}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all text-sm shadow-md"
                       >
                         <DollarSign size={16} /> Consulter les Offres
                       </button>
-                      <button className="p-2.5 text-gray-400 hover:bg-gray-50 rounded-xl transition-all">
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleOpenEditModal(appel); }}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-all text-sm border border-gray-200"
+                      >
+                        <Eye size={16} /> Détails
+                      </button>
+                      <button 
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-2.5 text-gray-400 hover:bg-gray-50 rounded-xl transition-all"
+                      >
                         <MoreHorizontal size={20} />
                       </button>
                     </>
@@ -458,14 +530,16 @@ const AppelsOffresPage = () => {
                 <p className="text-sm font-medium text-blue-600 mt-0.5">{selectedAO.reference}</p>
               </div>
               <div className="flex items-center gap-3">
-                <button 
-                  onClick={handleImportAvailableNeeds}
-                  disabled={actionLoading}
-                  className="px-4 py-2 bg-blue-50 text-blue-700 rounded-xl text-xs font-bold hover:bg-blue-100 transition-all border border-blue-100 flex items-center gap-2 disabled:opacity-50"
-                  title="Rattacher tous les besoins validés en attente"
-                >
-                  <Plus size={14} /> Générer les besoins
-                </button>
+                {selectedAO.statut === 'BROUILLON' && (
+                  <button 
+                    onClick={handleImportAvailableNeeds}
+                    disabled={actionLoading}
+                    className="px-4 py-2 bg-blue-50 text-blue-700 rounded-xl text-xs font-bold hover:bg-blue-100 transition-all border border-blue-100 flex items-center gap-2 disabled:opacity-50"
+                    title="Rattacher tous les besoins validés en attente"
+                  >
+                    <Plus size={14} /> Générer les besoins
+                  </button>
+                )}
                 <button onClick={() => setIsEditModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-all">
                   <X size={24} className="text-gray-400" />
                 </button>
@@ -489,22 +563,26 @@ const AppelsOffresPage = () => {
                           </div>
                           <div>
                             <p className="font-bold text-gray-900">{typeName}</p>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Département {besoin.departementId}</p>
+                            <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">
+                              {departments.find(d => d.id === besoin.departementId)?.nom || `Département ${besoin.departementId}`}
+                            </p>
                           </div>
                         </div>
 
                         <div className="flex items-center gap-6">
                           <div className="flex items-center gap-2 bg-white rounded-lg border border-gray-200 p-1">
                             <button onClick={() => handleUpdateBesoinQuantity(besoin.id, besoin.quantite - 1)} className="w-7 h-7 flex items-center justify-center hover:bg-gray-50 rounded text-gray-500 font-bold">-</button>
-                            <input type="number" value={besoin.quantite} className="w-10 text-center font-bold text-sm outline-none" readOnly />
+                            <input type="number" value={besoin.quantite} className="w-10 text-center font-bold text-sm outline-none bg-white" readOnly />
                             <button onClick={() => handleUpdateBesoinQuantity(besoin.id, besoin.quantite + 1)} className="w-7 h-7 flex items-center justify-center hover:bg-gray-50 rounded text-gray-500 font-bold">+</button>
                           </div>
-                          <button 
-                            onClick={() => handleRemoveBesoin(besoin.id)}
-                            className="p-2 text-gray-400 hover:text-red-600 transition-all"
-                          >
-                            <Trash2 size={18} />
-                          </button>
+                          {selectedAO.statut === 'BROUILLON' && (
+                            <button 
+                              onClick={() => handleRemoveBesoin(besoin.id)}
+                              className="p-2 text-gray-400 hover:text-red-600 transition-all"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          )}
                         </div>
                       </div>
                     );
@@ -529,6 +607,180 @@ const AppelsOffresPage = () => {
           </div>
         </div>
       )}
+
+      {/* Offers Modal */}
+      {isOffresModalOpen && selectedAO && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-md">
+          <div className="bg-white w-full max-w-5xl max-h-[90vh] rounded-[2.5rem] p-10 shadow-2xl flex flex-col animate-in zoom-in-95 duration-300">
+            <div className="flex justify-between items-start mb-8">
+              <div>
+                <h2 className="text-3xl font-black text-gray-900">Gestion des Offres</h2>
+                <div className="flex items-center gap-3 mt-2">
+                  <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs font-bold border border-blue-100">
+                    {selectedAO.reference}
+                  </span>
+                  <span className="text-gray-400 font-medium text-sm">
+                    {offres.length} offre(s) reçue(s)
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={identifyMoinsDisant}
+                  disabled={offres.length === 0}
+                  className="px-5 py-2.5 bg-amber-50 text-amber-700 rounded-xl text-sm font-bold border border-amber-200 hover:bg-amber-100 transition-all flex items-center gap-2"
+                >
+                  <Award size={18} /> Moins disant
+                </button>
+                <button onClick={() => setIsOffresModalOpen(false)} className="p-3 hover:bg-gray-100 rounded-full transition-all">
+                  <X size={24} className="text-gray-400" />
+                </button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-4">
+              {offresLoading ? (
+                <div className="py-20 text-center">
+                  <Loader className="animate-spin mx-auto text-blue-600" size={40} />
+                  <p className="mt-4 text-gray-500 font-bold">Analyse des offres...</p>
+                </div>
+              ) : (
+                <>
+                  {offres.map((offre) => (
+                    <div key={offre.id} className={`rounded-3xl border transition-all ${offre.statut === 'ACCEPTEE' ? 'border-green-200 bg-green-50/20' : 'border-gray-100 bg-white shadow-sm'}`}>
+                      <div className="p-6">
+                        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+                          <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400 border border-gray-100">
+                              <User size={28} />
+                            </div>
+                            <div>
+                              <h4 className="font-black text-gray-900 text-lg">{offre.fournisseurNom}</h4>
+                              <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider ${
+                                offre.statut === 'ACCEPTEE' ? 'bg-green-100 text-green-700' : 
+                                offre.statut === 'REJETEE' ? 'bg-red-100 text-red-700' : 
+                                offre.statut === 'ELIMINEE' ? 'bg-gray-800 text-white' : 'bg-blue-100 text-blue-700'
+                              }`}>
+                                {offre.statut}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-8">
+                            <div className="text-center">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Montant Total</p>
+                              <p className="text-xl font-black text-blue-600">{offre.prixTotal.toLocaleString()} MAD</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Livraison</p>
+                              <p className="text-sm font-bold text-gray-700">{Array.isArray(offre.dateLivraison) ? `${offre.dateLivraison[2]}/${offre.dateLivraison[1]}/${offre.dateLivraison[0]}` : offre.dateLivraison}</p>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {offre.statut === 'SOUMISE' && (
+                                <div className="flex gap-2">
+                                  <button 
+                                    onClick={() => handleAcceptOffre(offre.id)}
+                                    className="px-4 py-2 bg-green-600 text-white rounded-xl text-xs font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-100 flex items-center gap-2"
+                                  >
+                                    <CheckCircle size={14} /> Accepter
+                                  </button>
+                                  <button 
+                                    onClick={() => setShowMotifModal({ show: true, offreId: offre.id, action: 'REJETER' })}
+                                    className="p-2 text-amber-600 hover:bg-amber-50 rounded-xl border border-amber-100 transition-all"
+                                    title="Rejeter"
+                                  >
+                                    <X size={18} />
+                                  </button>
+                                  <button 
+                                    onClick={() => setShowMotifModal({ show: true, offreId: offre.id, action: 'ELIMINER' })}
+                                    className="p-2 text-gray-400 hover:bg-gray-100 rounded-xl border border-gray-200 transition-all"
+                                    title="Éliminer"
+                                  >
+                                    <ShieldAlert size={18} />
+                                  </button>
+                                </div>
+                              )}
+                              <button 
+                                onClick={() => setExpandedOffre(expandedOffre === offre.id ? null : offre.id)}
+                                className="p-2 hover:bg-gray-50 rounded-xl transition-all text-gray-400"
+                              >
+                                {expandedOffre === offre.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {expandedOffre === offre.id && (
+                          <div className="mt-6 pt-6 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in slide-in-from-top-4 duration-300">
+                            {offre.lignes?.map((line: any, idx: number) => (
+                              <div key={idx} className="p-4 bg-white rounded-2xl border border-gray-100 space-y-2">
+                                <div className="flex justify-between items-start">
+                                  <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest">{line.variante}</span>
+                                  <span className="text-xs font-bold text-gray-900">{line.prixUnitaire} MAD / u</span>
+                                </div>
+                                <p className="font-bold text-gray-900 text-sm">{line.marque || 'Marque non spécifiée'}</p>
+                                <div className="flex gap-4 text-[10px] text-gray-500 font-bold">
+                                  <span>Qté: {line.quantite}</span>
+                                  {line.cpu && <span>{line.cpu}</span>}
+                                  {line.ram && <span>{line.ram}</span>}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  {offres.length === 0 && (
+                    <div className="py-24 text-center border-2 border-dashed border-gray-100 rounded-[2rem]">
+                      <Package className="mx-auto text-gray-200 mb-4" size={64} />
+                      <p className="text-gray-500 font-bold text-xl">Aucune offre soumise</p>
+                      <p className="text-gray-400 text-sm mt-1">Les fournisseurs n'ont pas encore répondu à cet appel.</p>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Motif Modal (Reject/Eliminate) */}
+      {showMotifModal.show && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-6 bg-gray-900/40 backdrop-blur-sm">
+          <div className="bg-white w-full max-w-md rounded-[2.5rem] p-10 shadow-2xl animate-in zoom-in-95 duration-200">
+            <h3 className="text-2xl font-black text-gray-900 mb-6 flex items-center gap-3">
+              {showMotifModal.action === 'ELIMINER' ? <ShieldAlert className="text-red-600" /> : <XCircle className="text-amber-600" />}
+              {showMotifModal.action === 'ELIMINER' ? 'Motif d\'élimination' : 'Motif de rejet'}
+            </h3>
+            
+            <textarea 
+              value={motif}
+              onChange={(e) => setMotif(e.target.value)}
+              placeholder="Expliquez la raison..."
+              className="w-full h-32 p-6 bg-gray-50 border border-gray-100 rounded-3xl outline-none focus:ring-4 focus:ring-blue-100 font-medium transition-all mb-8 resize-none"
+            />
+
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setShowMotifModal({ show: false, offreId: null, action: '' })}
+                className="flex-1 py-4 bg-gray-100 text-gray-600 rounded-2xl font-bold hover:bg-gray-200 transition-all"
+              >
+                Annuler
+              </button>
+              <button 
+                onClick={handleActionWithMotif}
+                disabled={!motif || actionLoading}
+                className="flex-1 py-4 bg-gray-900 text-white rounded-2xl font-bold hover:bg-black transition-all disabled:opacity-50"
+              >
+                Confirmer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Notification is already handled by showNotification */}
     </div>
   );
 };

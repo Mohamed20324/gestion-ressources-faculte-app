@@ -10,6 +10,11 @@ import { useAuth } from '../../../hooks/useAuth';
 import { NotificationContainer } from '../../../components/Notification';
 import { useNotifications } from '../../../hooks/useNotifications';
 
+interface Departement {
+  id: number;
+  nom: string;
+}
+
 interface Besoin {
   id: number;
   typeRessourceId: number;
@@ -26,6 +31,7 @@ const BesoinsGlobalPage = () => {
   const { notifications, showNotification, removeNotification } = useNotifications();
 
   const [besoins, setBesoins] = useState<Besoin[]>([]);
+  const [departments, setDepartments] = useState<Departement[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -57,11 +63,18 @@ const BesoinsGlobalPage = () => {
         api.getAllTypesRessources()
       ]);
 
-      if (besoinsRes.ok) {
-        setBesoins(await besoinsRes.json());
-      }
       if (typesRes.ok) {
         setTypesRessources(await typesRes.json());
+      }
+      if (besoinsRes.ok) {
+        const [besoinsData, deptsRes] = await Promise.all([
+          besoinsRes.json(),
+          api.getAllDepartements()
+        ]);
+        setBesoins(besoinsData);
+        if (deptsRes.ok) {
+          setDepartments(await deptsRes.json());
+        }
       }
     } catch (error) {
       showNotification('error', 'Erreur de chargement');
@@ -312,7 +325,9 @@ const BesoinsGlobalPage = () => {
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-2">
                               <div className="w-1.5 h-1.5 rounded-full bg-blue-300"></div>
-                              <span className="text-sm font-semibold text-gray-600">Département {besoin.departementId}</span>
+                              <span className="text-sm font-semibold text-gray-600">
+                                {departments.find(d => d.id === besoin.departementId)?.nom || `Département ${besoin.departementId}`}
+                              </span>
                             </div>
                           </td>
                           <td className="px-6 py-4 text-center">

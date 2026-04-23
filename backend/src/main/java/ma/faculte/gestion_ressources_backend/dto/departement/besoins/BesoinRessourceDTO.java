@@ -36,6 +36,7 @@ public class BesoinRessourceDTO {
     private int vitesseImpression;
     private String resolution;
     private String marque;
+    private Long appelOffreId;
 
     public BesoinRessourceDTO() {}
 
@@ -181,5 +182,13 @@ public class BesoinRessourceDTO {
 
     public void setMarque(String marque) {
         this.marque = marque;
+    }
+
+    public Long getAppelOffreId() {
+        return appelOffreId;
+    }
+
+    public void setAppelOffreId(Long appelOffreId) {
+        this.appelOffreId = appelOffreId;
     }
 }

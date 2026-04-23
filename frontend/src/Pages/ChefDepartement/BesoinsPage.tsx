@@ -63,6 +63,7 @@ const BesoinsPage = () => {
   const [typesRessources, setTypesRessources] = useState<any[]>([]);
   const [reunions, setReunions] = useState<any[]>([]);
   const [userData, setUserData] = useState<any>(null);
+  const [professors, setProfessors] = useState<any[]>([]);
 
   useEffect(() => {
     if (user) {
@@ -96,10 +97,14 @@ const BesoinsPage = () => {
 
       // 3. Load Data if dept exists
       if (deptId) {
-        await Promise.all([
+        const [profRes] = await Promise.all([
+          api.getUsersByRole('ENSEIGNANT'),
           loadBesoins(deptId),
           loadReunions(deptId)
         ]);
+        if (profRes.ok) {
+          setProfessors(await profRes.json());
+        }
       }
     } catch (error) {
       console.error("Initial load error:", error);
@@ -365,6 +370,7 @@ const BesoinsPage = () => {
             <thead>
               <tr className="bg-gray-50/50 border-b border-gray-100">
                 <th className="px-8 py-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Type & Catégorie</th>
+                <th className="px-8 py-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Demandeur</th>
                 <th className="px-8 py-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Quantité</th>
                 <th className="px-8 py-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Statut</th>
                 <th className="px-8 py-6 text-xs font-bold text-gray-400 uppercase tracking-widest text-right">Actions</th>
@@ -385,6 +391,22 @@ const BesoinsPage = () => {
                           <p className="font-bold text-gray-900 text-base">{typeName}</p>
                           <p className="text-xs text-gray-400 mt-0.5">{besoin.categorie}</p>
                         </div>
+                      </div>
+                    </td>
+                    <td className="px-8 py-6">
+                      <div className="flex items-center gap-2">
+                        {besoin.enseignantId ? (
+                          <div className="flex flex-col">
+                            <span className="font-bold text-gray-800">
+                              {professors.find(p => p.id === besoin.enseignantId) 
+                                ? `${professors.find(p => p.id === besoin.enseignantId).nom} ${professors.find(p => p.id === besoin.enseignantId).prenom}`
+                                : `Professeur #${besoin.enseignantId}`}
+                            </span>
+                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Enseignant</span>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 italic text-sm">Département</span>
+                        )}
                       </div>
                     </td>
                     <td className="px-8 py-6">

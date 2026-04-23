@@ -212,6 +212,11 @@ public class BesoinServiceImpl implements IBesoinService {
         } else {
             d.setCategorie("STANDARD");
         }
+
+        if (b.getAppelsOffre() != null && !b.getAppelsOffre().isEmpty()) {
+            d.setAppelOffreId(b.getAppelsOffre().get(0).getId());
+        }
+
         return d;
     }
 }
