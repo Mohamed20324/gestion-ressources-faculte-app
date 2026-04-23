@@ -1,21 +1,17 @@
 import { useState, useEffect } from 'react';
-import { 
-  Video, 
-  Search, 
-  Plus, 
-  Calendar as CalendarIcon, 
-  Clock, 
-  Edit, 
-  Trash2, 
-  ChevronLeft, 
-  ChevronRight,
+import {
+  Video,
+  Search,
+  Plus,
+  Calendar as CalendarIcon,
+  Clock,
+  Edit,
   CheckCircle2,
   Clock3,
   Building2,
   X,
   User,
-  Loader,
-  AlertTriangle
+  Loader
 } from 'lucide-react';
 import { NotificationContainer } from '../../../components/Notification';
 import { useNotifications } from '../../../hooks/useNotifications';
@@ -40,6 +36,7 @@ interface User {
   nom: string;
   prenom: string;
   role: string;
+  departementId?: number;
 }
 
 const MeetingsPage = () => {
@@ -48,15 +45,12 @@ const MeetingsPage = () => {
   const [departments, setDepartments] = useState<Departement[]>([]);
   const [chefs, setChefs] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  
+
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [editingMeeting, setEditingMeeting] = useState<Reunion | null>(null);
-  const [meetingToDelete, setMeetingToDelete] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  
+
   // Form state
   const [formData, setFormData] = useState({
     date: '',
@@ -69,7 +63,7 @@ const MeetingsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('Tous');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 3;
+  const itemsPerPage = 10;
 
   const fetchData = async () => {
     setLoading(true);
@@ -99,7 +93,7 @@ const MeetingsPage = () => {
     const today = new Date().toISOString().split('T')[0];
     const now = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }).replace('h', ':');
     setEditingMeeting(null);
-    setFormData({ date: today, heure: now, departementId: '', chefId: '', statut: 'PLANIFIEE' });
+    setFormData({ date: today, heure: '08:00', departementId: '', chefId: '', statut: 'PLANIFIEE' });
     setIsModalOpen(true);
   };
 
@@ -124,6 +118,66 @@ const MeetingsPage = () => {
     e.preventDefault();
     if (!formData.date || !formData.heure || !formData.departementId || !formData.chefId) {
       showNotification('error', 'Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+
+    const fDate = new Date(formData.date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (fDate < today) {
+      showNotification('error', 'Impossible de programmer une réunion à une date passée');
+      return;
+    }
+
+    const [hourStr, minStr] = formData.heure.split(':');
+    const hour = parseInt(hourStr);
+
+    if (hour < 8 || hour >= 18) {
+      showNotification('error', 'Les réunions doivent être programmées entre 08:00 et 18:00');
+      return;
+    }
+
+    const [h2, min2] = formData.heure.split(':').map(Number);
+    const time2 = h2 * 60 + min2;
+
+    // Validation: 1-hour separation and Chef availability
+    const conflict = meetings.find(m => {
+      // Exclude current meeting if editing
+      if (editingMeeting && m.id === editingMeeting.id) return false;
+
+      // Check if same day
+      let mDate: Date;
+      if (Array.isArray(m.date)) {
+        mDate = new Date(m.date[0], m.date[1] - 1, m.date[2]);
+      } else if (typeof m.date === 'string' && m.date.includes('-')) {
+        const parts = m.date.split('-');
+        mDate = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      } else {
+        mDate = new Date(m.date);
+      }
+
+      const fDate = new Date(formData.date);
+      const isSameDay = mDate.getFullYear() === fDate.getFullYear() &&
+        mDate.getMonth() === fDate.getMonth() &&
+        mDate.getDate() === fDate.getDate();
+
+      if (!isSameDay) return false;
+
+      const [h1, min1] = m.heure.split(':').map(Number);
+      const time1 = h1 * 60 + min1;
+      const diff = Math.abs(time1 - time2);
+
+      if (diff < 60) {
+        // If it's the same chef or same department
+        if (m.chefId === parseInt(formData.chefId)) return true;
+        if (m.departementId === parseInt(formData.departementId)) return true;
+      }
+      return false;
+    });
+
+    if (conflict) {
+      showNotification('error', 'Conflit d\'horaire : Une réunion est déjà prévue pour ce département ou ce chef dans cet intervalle (minimum 1h d\'écart).');
       return;
     }
 
@@ -157,29 +211,25 @@ const MeetingsPage = () => {
     }
   };
 
-  const handleConfirmDelete = async () => {
-    if (!meetingToDelete) return;
-    setDeleting(true);
+  const handleCancelMeeting = async (id: number) => {
+    if (!window.confirm('Voulez-vous vraiment annuler cette réunion ?')) return;
+
     try {
-      const response = await api.deleteReunion(meetingToDelete);
+      const response = await api.updateReunion(id, { statut: 'ANNULEE' });
       if (response.ok) {
-        showNotification('success', 'Réunion supprimée avec succès');
-        setIsDeleteModalOpen(false);
+        showNotification('success', 'Réunion annulée avec succès');
         fetchData();
       } else {
-        showNotification('error', 'Erreur lors de la suppression');
+        showNotification('error', 'Erreur lors de l\'annulation');
       }
     } catch (error) {
       showNotification('error', 'Erreur de connexion');
-    } finally {
-      setDeleting(false);
-      setMeetingToDelete(null);
     }
   };
 
   const filteredMeetings = meetings.filter(m => {
-    const matchesSearch = m.id.toString().includes(searchTerm) || 
-                         (m.date && JSON.stringify(m.date).includes(searchTerm));
+    const matchesSearch = m.id.toString().includes(searchTerm) ||
+      (m.date && JSON.stringify(m.date).includes(searchTerm));
     const matchesStatus = statusFilter === 'Tous' || m.statut === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -192,6 +242,7 @@ const MeetingsPage = () => {
       case 'PLANIFIEE': return 'bg-blue-50 text-blue-600 border-blue-100';
       case 'EN_COURS': return 'bg-green-50 text-green-600 border-green-100';
       case 'VALIDEE': return 'bg-gray-50 text-gray-600 border-gray-100';
+      case 'ANNULEE': return 'bg-red-50 text-red-600 border-red-100';
       default: return 'bg-gray-50 text-gray-600';
     }
   };
@@ -228,7 +279,7 @@ const MeetingsPage = () => {
           <p className="text-gray-500 mt-1">Consultez et gérez les séances de concertation</p>
         </div>
 
-        <button 
+        <button
           onClick={handleOpenCreate}
           className="fixed bottom-8 right-8 w-12 h-12 bg-blue-600 text-white rounded-full shadow-2xl hover:bg-blue-700 hover:scale-110 transition-all flex items-center justify-center z-[50] group"
           title="Programmer une réunion"
@@ -244,17 +295,17 @@ const MeetingsPage = () => {
       <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm mb-6 flex flex-col lg:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-          <input 
-            type="text" 
-            placeholder="Rechercher par ID ou date..." 
+          <input
+            type="text"
+            placeholder="Rechercher par ID ou date..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
           />
         </div>
-        
+
         <div className="flex gap-3">
-          <select 
+          <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm font-medium min-w-[150px]"
@@ -323,18 +374,21 @@ const MeetingsPage = () => {
               </div>
 
               <div className="flex items-center justify-end pt-6 border-t border-gray-50 gap-2">
-                <button 
+                <button
                   onClick={() => handleOpenEdit(meeting)}
                   className="p-2 text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"
                 >
                   <Edit size={16} />
                 </button>
-                <button 
-                  className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors" 
-                  onClick={() => { setMeetingToDelete(meeting.id); setIsDeleteModalOpen(true); }}
-                >
-                  <Trash2 size={16} />
-                </button>
+                {meeting.statut !== 'ANNULEE' && (
+                  <button
+                    onClick={() => handleCancelMeeting(meeting.id)}
+                    className="p-2 text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                    title="Annuler la réunion"
+                  >
+                    <X size={16} />
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -362,10 +416,10 @@ const MeetingsPage = () => {
                   <label className="text-sm font-bold text-gray-700 ml-1">Date</label>
                   <div className="relative group">
                     <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400 group-hover:text-blue-600 transition-colors pointer-events-none" size={18} />
-                    <input 
-                      type="date" 
+                    <input
+                      type="date"
                       value={formData.date}
-                      onChange={(e) => setFormData({...formData, date: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                       onClick={(e) => (e.target as HTMLInputElement).showPicker()}
                       className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all cursor-pointer appearance-none"
                       required
@@ -376,10 +430,12 @@ const MeetingsPage = () => {
                   <label className="text-sm font-bold text-gray-700 ml-1">Heure</label>
                   <div className="relative group">
                     <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400 group-hover:text-blue-600 transition-colors pointer-events-none" size={18} />
-                    <input 
-                      type="time" 
+                    <input
+                      type="time"
                       value={formData.heure}
-                      onChange={(e) => setFormData({...formData, heure: e.target.value})}
+                      min="08:00"
+                      max="18:00"
+                      onChange={(e) => setFormData({ ...formData, heure: e.target.value })}
                       onClick={(e) => (e.target as HTMLInputElement).showPicker()}
                       className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all cursor-pointer appearance-none"
                       required
@@ -388,25 +444,47 @@ const MeetingsPage = () => {
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-sm font-bold text-gray-700 ml-1">Statut</label>
-                <select 
-                  value={formData.statut}
-                  onChange={(e) => setFormData({...formData, statut: e.target.value})}
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-                  required
-                >
-                  <option value="PLANIFIEE">Planifiée</option>
-                  <option value="EN_COURS">En cours</option>
-                  <option value="VALIDEE">Validée</option>
-                </select>
-              </div>
+              {editingMeeting && (
+                <div className="space-y-1.5">
+                  <label className="text-sm font-bold text-gray-700 ml-1">Statut</label>
+                  <select
+                    value={formData.statut}
+                    onChange={(e) => {
+                      if (e.target.value === 'EN_COURS') {
+                        const mDate = new Date(formData.date);
+                        const [h, m] = formData.heure.split(':').map(Number);
+                        mDate.setHours(h, m, 0, 0);
+                        if (mDate > new Date()) {
+                          showNotification('error', 'Impossible de passer en cours avant l\'heure de début');
+                          return;
+                        }
+                      }
+                      setFormData({ ...formData, statut: e.target.value });
+                    }}
+                    className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                    required
+                  >
+                    <option value="PLANIFIEE">Planifiée</option>
+                    <option value="EN_COURS">En cours</option>
+                    <option value="VALIDEE">Validée</option>
+                    <option value="ANNULEE">Annulée</option>
+                  </select>
+                </div>
+              )}
 
               <div className="space-y-1.5">
                 <label className="text-sm font-bold text-gray-700 ml-1">Département</label>
-                <select 
+                <select
                   value={formData.departementId}
-                  onChange={(e) => setFormData({...formData, departementId: e.target.value})}
+                  onChange={(e) => {
+                    const deptId = e.target.value;
+                    const matchingChef = chefs.find(c => c.departementId?.toString() === deptId);
+                    setFormData({ 
+                      ...formData, 
+                      departementId: deptId,
+                      chefId: matchingChef ? matchingChef.id.toString() : ''
+                    });
+                  }}
                   className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
                   required
                 >
@@ -419,10 +497,11 @@ const MeetingsPage = () => {
 
               <div className="space-y-1.5">
                 <label className="text-sm font-bold text-gray-700 ml-1">Chef de Département</label>
-                <select 
+                <select
                   value={formData.chefId}
-                  onChange={(e) => setFormData({...formData, chefId: e.target.value})}
-                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
+                  onChange={(e) => setFormData({ ...formData, chefId: e.target.value })}
+                  className="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl cursor-not-allowed outline-none transition-all appearance-none text-gray-500"
+                  disabled
                   required
                 >
                   <option value="">Sélectionner le chef responsable</option>
@@ -446,36 +525,6 @@ const MeetingsPage = () => {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
-      {isDeleteModalOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 p-8 text-center">
-            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 text-red-600">
-              <AlertTriangle size={40} />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Confirmation</h2>
-            <p className="text-gray-500 mb-8 font-medium">
-              Voulez-vous vraiment supprimer cette réunion ? Cette action est irréversible.
-            </p>
-            <div className="flex gap-3">
-              <button 
-                onClick={() => setIsDeleteModalOpen(false)}
-                className="flex-1 py-3.5 px-4 bg-gray-50 text-gray-600 rounded-2xl font-bold hover:bg-gray-100 transition-colors"
-              >
-                Annuler
-              </button>
-              <button 
-                onClick={handleConfirmDelete}
-                disabled={deleting}
-                className="flex-1 py-3.5 px-4 bg-red-600 text-white rounded-2xl font-bold shadow-lg shadow-red-100 hover:bg-red-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                {deleting ? <Loader className="animate-spin" size={18} /> : <Trash2 size={18} />}
-                Supprimer
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

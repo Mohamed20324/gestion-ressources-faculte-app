@@ -3,7 +3,7 @@ import {
   Search, Loader, ClipboardList,
   CheckCircle, X, FileText, ShoppingCart, Filter,
   ArrowRight, ChevronLeft, ChevronRight, Package, Tag, Info,
-  Plus
+  Plus, ChevronUp, ChevronDown
 } from 'lucide-react';
 import { api } from '../../../services/api';
 import { useAuth } from '../../../hooks/useAuth';
@@ -43,6 +43,7 @@ const BesoinsGlobalPage = () => {
     dateFin: ''
   });
   const [submittingAO, setSubmittingAO] = useState(false);
+  const [isFabOpen, setIsFabOpen] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -205,20 +206,47 @@ const BesoinsGlobalPage = () => {
             <div className="h-10 w-[1px] bg-gray-200 mx-2 hidden lg:block"></div>
 
             {selectedNeeds.length > 0 && (
-              <div className="flex items-center gap-2 animate-in slide-in-from-right-4">
+              <div className="fixed bottom-24 right-8 z-[100] flex flex-col items-center gap-4">
+                {isFabOpen && (
+                  <div className="flex flex-col gap-4 animate-in slide-in-from-bottom-4 fade-in duration-200">
+                    <button
+                      onClick={handleValidateSelection}
+                      className="w-12 h-12 bg-emerald-600 text-white rounded-full font-bold hover:bg-emerald-700 transition-all shadow-xl flex items-center justify-center group relative"
+                      title="Valider la sélection"
+                    >
+                      <CheckCircle size={20} />
+                      <span className="absolute right-full mr-3 px-2 py-1 bg-gray-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                        Valider la sélection
+                      </span>
+                    </button>
+                    <button
+                      onClick={handleOpenAOModal}
+                      className="w-12 h-12 bg-blue-600 text-white rounded-full font-bold hover:bg-blue-700 transition-all shadow-xl flex items-center justify-center group relative"
+                      title="Rattacher"
+                    >
+                      <ShoppingCart size={20} />
+                      {selectedNeeds.length > 0 && (
+                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white">
+                          {selectedNeeds.length}
+                        </span>
+                      )}
+                      <span className="absolute right-full mr-3 px-2 py-1 bg-gray-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                        Rattacher ({selectedNeeds.length})
+                      </span>
+                    </button>
+                  </div>
+                )}
+                
                 <button
-                  onClick={handleValidateSelection}
-                  className="px-6 py-3 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-100 flex items-center gap-2"
+                  onClick={() => setIsFabOpen(!isFabOpen)}
+                  className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all ${isFabOpen ? 'bg-gray-800 text-white' : 'bg-blue-600 text-white hover:scale-110'}`}
                 >
-                  <CheckCircle size={18} />
-                  Valider
-                </button>
-                <button
-                  onClick={handleOpenAOModal}
-                  className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 flex items-center gap-2"
-                >
-                  <ShoppingCart size={18} />
-                  Rattacher ({selectedNeeds.length})
+                  {isFabOpen ? <ChevronDown size={28} /> : <ChevronUp size={28} />}
+                  {selectedNeeds.length > 0 && !isFabOpen && (
+                    <span className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">
+                      {selectedNeeds.length}
+                    </span>
+                  )}
                 </button>
               </div>
             )}

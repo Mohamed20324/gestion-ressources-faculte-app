@@ -120,6 +120,21 @@ public class UtilisateurServiceImpl implements IUtilisateurService {
         if (dto.getActif() != null) {
             utilisateur.setActif(dto.getActif());
         }
+        
+        // Handling role-specific fields
+        if (utilisateur instanceof ChefDepartement chef) {
+            if (dto.getMatricule() != null) chef.setMatricule(dto.getMatricule());
+            if (dto.getSpecialite() != null) chef.setSpecialite(dto.getSpecialite());
+        } else if (utilisateur instanceof Enseignant enseignant) {
+            if (dto.getMatricule() != null) enseignant.setMatricule(dto.getMatricule());
+            if (dto.getSpecialite() != null) enseignant.setSpecialite(dto.getSpecialite());
+        } else if (utilisateur instanceof Technicien tech) {
+            if (dto.getMatricule() != null) tech.setMatricule(dto.getMatricule());
+            if (dto.getSpecialite() != null) tech.setSpecialiteTechnique(dto.getSpecialite());
+        } else if (utilisateur instanceof Fournisseur f) {
+            if (dto.getNomSociete() != null) f.setNomSociete(dto.getNomSociete());
+        }
+
         utilisateurRepository.save(utilisateur);
         return convertirEnDTO(utilisateur);
     }
@@ -513,6 +528,16 @@ public class UtilisateurServiceImpl implements IUtilisateurService {
 
         fournisseurRepository.save(fournisseur);
         return convertirFournisseurEnDTO(fournisseur);
+    }
+
+    @Override
+    @Transactional
+    public void changerMotDePasse(Long id, String nouveauMotDePasse) {
+        Utilisateur utilisateur = utilisateurRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+        
+        utilisateur.setMotDePasse(passwordEncoder.encode(nouveauMotDePasse));
+        utilisateurRepository.save(utilisateur);
     }
 
     private String encoderMotDePasse(String brut) {

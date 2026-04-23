@@ -145,6 +145,36 @@ public class UtilisateurController {
         }
     }
 
+    @PutMapping("/{id}/profile")
+    public ResponseEntity<?> modifierMonProfil(
+            @PathVariable Long id,
+            @RequestBody UtilisateurDTO dto) {
+        try {
+            UtilisateurDTO result = utilisateurService.modifierUtilisateur(id, dto);
+            return ResponseEntity.ok(result);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400)
+                    .body(creerErreur(e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}/password")
+    public ResponseEntity<?> changerMotDePasse(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+        try {
+            String password = body.get("password");
+            if (password == null || password.isBlank()) {
+                return ResponseEntity.status(400).body(creerErreur("Mot de passe obligatoire"));
+            }
+            utilisateurService.changerMotDePasse(id, password);
+            return ResponseEntity.ok(Map.of("message", "Mot de passe modifié avec succès"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400)
+                    .body(creerErreur(e.getMessage()));
+        }
+    }
+
     /*
      * IMPORTANT POUR MEMBRE 4 :
      * cet endpoint est appelé après la première livraison

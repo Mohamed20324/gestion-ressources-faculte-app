@@ -31,4 +31,6 @@ public interface IUtilisateurService {
     UtilisateurDTO modifierUtilisateur(Long id, EnseignantDTO dto);
 
     FournisseurDTO completerInfosFournisseur(Long id, FournisseurDTO dto);
+
+    void changerMotDePasse(Long id, String nouveauMotDePasse);
 }

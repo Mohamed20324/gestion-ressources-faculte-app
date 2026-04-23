@@ -102,7 +102,9 @@ const AppelsOffresPage = () => {
       const allBesoinsRes = await api.getAllBesoins();
       if (allBesoinsRes.ok) {
         const allBesoins = await allBesoinsRes.json();
-        const filtered = allBesoins.filter((b: any) => b.appelOffreId === ao.id);
+        const filtered = allBesoins.filter((b: any) => 
+          b.appelOffreId && b.appelOffreId.toString() === ao.id.toString()
+        );
         setAoBesoins(filtered);
       }
     } catch (error) {
@@ -136,6 +138,34 @@ const AppelsOffresPage = () => {
       }
     } catch (error) {
       showNotification('error', 'Erreur lors du retrait');
+    }
+  };
+  const handleImportAvailableNeeds = async () => {
+    if (!selectedAO) return;
+    setActionLoading(true);
+    try {
+      const res = await api.getBesoinsByStatut('VALIDE');
+      if (res.ok) {
+        const availableBesoins = await res.json();
+        const unlinked = availableBesoins.filter((b: any) => !b.appelOffreId);
+        
+        if (unlinked.length === 0) {
+          showNotification('info', 'Aucun besoin validé disponible pour le moment');
+          return;
+        }
+
+        const ids = unlinked.map((b: any) => b.id);
+        const linkRes = await api.addBesoinsToAppelOffre(selectedAO.id, ids);
+        
+        if (linkRes.ok) {
+          showNotification('success', `${ids.length} besoins rattachés automatiquement`);
+          handleOpenEditModal(selectedAO);
+        }
+      }
+    } catch (error) {
+      showNotification('error', 'Erreur lors de l\'importation');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -427,9 +457,19 @@ const AppelsOffresPage = () => {
                 <h2 className="text-2xl font-bold text-gray-900">Gestion des Besoins</h2>
                 <p className="text-sm font-medium text-blue-600 mt-0.5">{selectedAO.reference}</p>
               </div>
-              <button onClick={() => setIsEditModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-all">
-                <X size={24} className="text-gray-400" />
-              </button>
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={handleImportAvailableNeeds}
+                  disabled={actionLoading}
+                  className="px-4 py-2 bg-blue-50 text-blue-700 rounded-xl text-xs font-bold hover:bg-blue-100 transition-all border border-blue-100 flex items-center gap-2 disabled:opacity-50"
+                  title="Rattacher tous les besoins validés en attente"
+                >
+                  <Plus size={14} /> Générer les besoins
+                </button>
+                <button onClick={() => setIsEditModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-all">
+                  <X size={24} className="text-gray-400" />
+                </button>
+              </div>
             </div>
 
             <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
