@@ -13,6 +13,9 @@ public class RessourceDTO {
     private Long offreOrigineId;
     private LocalDate dateReception;
     private String statut;
+    private Long departementId;
+    private String fournisseurNom;
+    private LocalDate dateFinGarantie;
 
     /** STANDARD, ORDINATEUR, IMPRIMANTE */
     private String categorie;
@@ -152,5 +155,29 @@ public class RessourceDTO {
 
     public void setResolution(String resolution) {
         this.resolution = resolution;
+    }
+
+    public Long getDepartementId() {
+        return departementId;
+    }
+
+    public void setDepartementId(Long departementId) {
+        this.departementId = departementId;
+    }
+
+    public String getFournisseurNom() {
+        return fournisseurNom;
+    }
+
+    public void setFournisseurNom(String fournisseurNom) {
+        this.fournisseurNom = fournisseurNom;
+    }
+
+    public LocalDate getDateFinGarantie() {
+        return dateFinGarantie;
+    }
+
+    public void setDateFinGarantie(LocalDate dateFinGarantie) {
+        this.dateFinGarantie = dateFinGarantie;
     }
 }

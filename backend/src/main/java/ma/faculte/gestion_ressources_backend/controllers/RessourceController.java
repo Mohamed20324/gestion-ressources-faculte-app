@@ -28,6 +28,16 @@ public class RessourceController {
         return ResponseEntity.ok(ressourceService.lister());
     }
 
+    @GetMapping("/departement/{departementId}")
+    public ResponseEntity<List<RessourceDTO>> parDepartement(@PathVariable Long departementId) {
+        return ResponseEntity.ok(ressourceService.listerParDepartement(departementId));
+    }
+
+    @GetMapping("/offre/{offreId}")
+    public ResponseEntity<List<RessourceDTO>> parOffre(@PathVariable Long offreId) {
+        return ResponseEntity.ok(ressourceService.listerParOffre(offreId));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<?> getById(@PathVariable Long id) {
         try {
@@ -62,6 +72,17 @@ public class RessourceController {
     public ResponseEntity<?> supprimer(@PathVariable Long id) {
         try {
             ressourceService.supprimer(id);
+            return ResponseEntity.noContent().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body(erreur(e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/offre/{offreId}")
+    @PreAuthorize("hasRole('RESPONSABLE')")
+    public ResponseEntity<?> supprimerParOffre(@PathVariable Long offreId) {
+        try {
+            ressourceService.supprimerParOffre(offreId);
             return ResponseEntity.noContent().build();
         } catch (RuntimeException e) {
             return ResponseEntity.status(400).body(erreur(e.getMessage()));

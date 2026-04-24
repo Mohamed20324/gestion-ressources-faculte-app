@@ -7,10 +7,14 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
+import { NotificationContainer } from '../../components/Notification';
+import { useNotifications } from '../../hooks/useNotifications';
 
 const TechnicienInterventionsPage = () => {
   const { user } = useAuth();
+  const { notifications, showNotification, removeNotification } = useNotifications();
   const [signalements, setSignalements] = useState<any[]>([]);
+  const [filterStatut, setFilterStatut] = useState('ALL');
   const [loading, setLoading] = useState(true);
   
   const [showConstatModal, setShowConstatModal] = useState({ show: false, signalement: null as any });
@@ -31,8 +35,7 @@ const TechnicienInterventionsPage = () => {
       const res = await api.getAllSignalements();
       if (res.ok) {
         const data = await res.json();
-        // Technicians see all for now, or filter by assigned
-        setSignalements(data.filter((s: any) => s.statut === 'SIGNALE' || s.statut === 'EN_COURS'));
+        setSignalements(data.sort((a: any, b: any) => b.id - a.id));
       }
     } catch (error) {
       console.error(error);
@@ -76,6 +79,7 @@ const TechnicienInterventionsPage = () => {
 
   return (
     <div className="p-8 bg-gray-50/30 min-h-screen">
+      <NotificationContainer notifications={notifications} removeNotification={removeNotification} />
       <div className="max-w-6xl mx-auto">
         <div className="mb-12">
           <h1 className="text-3xl font-black text-gray-900 flex items-center gap-3">
@@ -85,13 +89,30 @@ const TechnicienInterventionsPage = () => {
           <p className="text-gray-500 mt-2 font-medium">Gérez les pannes signalées et rédigez les constats techniques.</p>
         </div>
 
+        <div className="flex justify-end mb-6">
+          <select 
+            value={filterStatut}
+            onChange={(e) => setFilterStatut(e.target.value)}
+            className="px-4 py-3 bg-white border border-gray-200 rounded-xl font-bold text-gray-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all shadow-sm"
+          >
+            <option value="ALL">Toutes les pannes</option>
+            <option value="PENDING">En attente / En cours</option>
+            <option value="RESOLU">Réparées (Résolu)</option>
+            <option value="ENVOYE">Envoyées au fournisseur</option>
+          </select>
+        </div>
+
         <div className="grid gap-6">
-          {signalements.map((s) => (
-            <div key={s.id} className="bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-xl flex flex-col md:flex-row justify-between gap-8 group hover:border-blue-200 transition-all">
+          {signalements.filter(s => {
+            if (filterStatut === 'ALL') return true;
+            if (filterStatut === 'PENDING') return ['SIGNALE', 'EN_COURS'].includes(s.statut);
+            return s.statut === filterStatut;
+          }).map((s) => (
+            <div key={s.id} className={`bg-white rounded-[2.5rem] p-8 border ${s.statut === 'RESOLU' ? 'border-green-200 bg-green-50/30' : 'border-gray-100'} shadow-xl flex flex-col md:flex-row justify-between gap-8 group hover:border-blue-200 transition-all`}>
               <div className="flex-1 space-y-4">
                 <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center text-red-600 border border-red-100">
-                    <AlertCircle size={28} />
+                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border ${s.statut === 'RESOLU' ? 'bg-green-50 text-green-600 border-green-100' : 'bg-red-50 text-red-600 border-red-100'}`}>
+                    {s.statut === 'RESOLU' ? <CheckCircle size={28} /> : <AlertCircle size={28} />}
                   </div>
                   <div>
                     <h3 className="text-lg font-black text-gray-900">Panne sur RESS-{s.ressourceId}</h3>
@@ -99,12 +120,12 @@ const TechnicienInterventionsPage = () => {
                   </div>
                 </div>
                 
-                <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 italic text-gray-600 text-sm">
+                <div className={`p-4 rounded-2xl border italic text-sm ${s.statut === 'RESOLU' ? 'bg-green-50/50 border-green-100 text-green-700' : 'bg-gray-50 border-gray-100 text-gray-600'}`}>
                    "{s.description}"
                 </div>
 
                 <div className="flex gap-4">
-                  <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-lg text-[10px] font-black uppercase tracking-wider">
+                  <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${s.statut === 'RESOLU' ? 'bg-green-100 text-green-700' : 'bg-blue-50 text-blue-700'}`}>
                     {s.statut}
                   </span>
                   {s.enseignantNom && (
@@ -115,19 +136,43 @@ const TechnicienInterventionsPage = () => {
                 </div>
               </div>
 
-              <div className="flex items-center justify-center">
-                <button 
-                  onClick={() => setShowConstatModal({ show: true, signalement: s })}
-                  className="px-8 py-4 bg-gray-900 text-white rounded-2xl font-black hover:bg-gray-800 transition-all flex items-center gap-2 shadow-lg shadow-gray-200"
-                >
-                  <FileText size={20} />
-                  Rédiger un Constat
-                </button>
-              </div>
+              {s.statut !== 'RESOLU' && s.statut !== 'ENVOYE' && (
+                <div className="flex flex-col gap-3 items-center justify-center min-w-[250px]">
+                  <button 
+                    onClick={() => setShowConstatModal({ show: true, signalement: s })}
+                    className="w-full px-6 py-4 bg-gray-900 text-white rounded-2xl font-black hover:bg-gray-800 transition-all flex items-center justify-center gap-2 shadow-lg shadow-gray-200"
+                  >
+                    <FileText size={18} />
+                    Constat (Panne Sévère)
+                  </button>
+                  <button 
+                    onClick={async () => {
+                      try {
+                        const user = JSON.parse(localStorage.getItem('user') || '{}');
+                        const res = await api.resoudreSignalement(s.id, user.id);
+                        if (res.ok) {
+                          showNotification('success', 'Panne marquée comme réparée');
+                          loadSignalements();
+                        }
+                      } catch (err) {
+                        showNotification('error', 'Erreur lors de la résolution');
+                      }
+                    }}
+                    className="w-full px-6 py-4 bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-2xl font-black hover:bg-emerald-200 transition-all flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle size={18} />
+                    Réparé sur place
+                  </button>
+                </div>
+              )}
             </div>
           ))}
 
-          {signalements.length === 0 && (
+          {signalements.filter(s => {
+            if (filterStatut === 'ALL') return true;
+            if (filterStatut === 'PENDING') return ['SIGNALE', 'EN_COURS'].includes(s.statut);
+            return s.statut === filterStatut;
+          }).length === 0 && (
             <div className="py-32 text-center bg-white rounded-[3rem] border border-dashed border-gray-200">
               <CheckCircle className="mx-auto text-green-200 mb-4" size={64} />
               <p className="text-gray-500 font-bold text-xl">Aucune panne en attente de traitement.</p>

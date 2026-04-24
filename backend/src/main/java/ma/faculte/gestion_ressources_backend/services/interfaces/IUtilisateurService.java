@@ -33,4 +33,5 @@ public interface IUtilisateurService {
     FournisseurDTO completerInfosFournisseur(Long id, FournisseurDTO dto);
 
     void changerMotDePasse(Long id, String nouveauMotDePasse);
+    List<UtilisateurDTO> getEnseignantsParDepartement(Long departementId);
 }

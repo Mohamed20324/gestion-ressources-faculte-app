@@ -46,8 +46,11 @@ public class BesoinServiceImpl implements IBesoinService {
                 .orElseThrow(() -> new RuntimeException("Type de ressource introuvable"));
         Departement dep = departementRepository.findById(dto.getDepartementId())
                 .orElseThrow(() -> new RuntimeException("Département introuvable"));
-        Reunion reunion = reunionRepository.findById(dto.getReunionId())
-                .orElseThrow(() -> new RuntimeException("Réunion introuvable"));
+        Reunion reunion = null;
+        if (dto.getReunionId() != null) {
+            reunion = reunionRepository.findById(dto.getReunionId())
+                    .orElseThrow(() -> new RuntimeException("Réunion introuvable"));
+        }
 
         BesoinRessource b = instancierBesoin(dto);
         b.setTypeRessource(type);
@@ -92,8 +95,13 @@ public class BesoinServiceImpl implements IBesoinService {
     public BesoinRessourceDTO modifierBesoin(Long id, BesoinRessourceDTO dto) {
         BesoinRessource b = besoinRessourceRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Besoin introuvable"));
-        if (!Reunion.STATUT_EN_COURS.equals(b.getReunion().getStatut())) {
-            throw new RuntimeException("Modification impossible : la réunion n'est pas EN_COURS");
+        if (b.getReunion() != null) {
+            String status = b.getReunion().getStatut();
+            if (!Reunion.STATUT_EN_COURS.equals(status) && 
+                !Reunion.STATUT_PLANIFIEE.equals(status) && 
+                !Reunion.STATUT_VALIDEE.equals(status)) {
+                throw new RuntimeException("Modification impossible : la réunion est annulée ou dans un état inconnu.");
+            }
         }
         if (dto.getQuantite() > 0) {
             b.setQuantite(dto.getQuantite());
@@ -105,8 +113,34 @@ public class BesoinServiceImpl implements IBesoinService {
             b.setDescriptionTechnique(dto.getDescriptionTechnique());
         }
         if (dto.getStatut() != null) {
+            // Règle métier : Un besoin ne peut être VALIDE que s'il est rattaché à une réunion VALIDEE
+            if ("VALIDE".equals(dto.getStatut())) {
+                if (b.getReunion() == null && dto.getReunionId() == null) {
+                    throw new RuntimeException("Validation impossible : le besoin n'est rattaché à aucune réunion.");
+                }
+                
+                Reunion reunionToCheck = b.getReunion();
+                if (dto.getReunionId() != null) {
+                    reunionToCheck = reunionRepository.findById(dto.getReunionId())
+                            .orElseThrow(() -> new RuntimeException("Réunion introuvable"));
+                }
+
+                if (reunionToCheck == null || !Reunion.STATUT_VALIDEE.equals(reunionToCheck.getStatut())) {
+                    throw new RuntimeException("Validation impossible : la réunion associée n'a pas encore été validée (terminée).");
+                }
+            }
             b.setStatut(dto.getStatut());
         }
+
+        // Ajout de la mise à jour de la réunion
+        if (dto.getReunionId() != null) {
+            Reunion r = reunionRepository.findById(dto.getReunionId())
+                    .orElseThrow(() -> new RuntimeException("Réunion introuvable"));
+            b.setReunion(r);
+        } else {
+            b.setReunion(null);
+        }
+
         if (dto.getTypeRessourceId() != null) {
             TypeRessource type = typeRessourceRepository.findById(dto.getTypeRessourceId())
                     .orElseThrow(() -> new RuntimeException("Type de ressource introuvable"));
@@ -196,7 +230,9 @@ public class BesoinServiceImpl implements IBesoinService {
             d.setEnseignantId(b.getEnseignant().getId());
         }
         d.setDepartementId(b.getDepartement().getId());
-        d.setReunionId(b.getReunion().getId());
+        if (b.getReunion() != null) {
+            d.setReunionId(b.getReunion().getId());
+        }
         if (b instanceof BesoinOrdinateur bo) {
             d.setCategorie("ORDINATEUR");
             d.setCpu(bo.getCpu());

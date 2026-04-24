@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface INotificationService {
 
-    void envoyerNotification(Long destinataireId, String message, String type);
+    void envoyerNotification(Long destinataireId, Long expediteurId, String message, String type);
 
     void envoyerAcceptation(Long fournisseurId);
 
@@ -17,4 +17,10 @@ public interface INotificationService {
     List<NotificationDTO> getNotificationsUtilisateur(Long userId);
 
     void marquerCommeLu(Long notificationId);
+
+    void envoyerAvertissementRetard(Long fournisseurId, String referenceAO);
+
+    void envoyerAffectation(Long destinataireId, Long expediteurId, String ressourceMarque);
+
+    void envoyerReponseRetard(Long responsableId, Long fournisseurId, String message);
 }

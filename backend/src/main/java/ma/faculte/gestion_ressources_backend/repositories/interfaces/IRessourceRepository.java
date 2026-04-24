@@ -15,4 +15,8 @@ public interface IRessourceRepository extends JpaRepository<Ressource, Long> {
     List<Ressource> findByStatut(String statut);
 
     List<Ressource> findByTypeRessource_Id(Long typeRessourceId);
+
+    List<Ressource> findByDepartement_Id(Long departementId);
+    List<Ressource> findByOffreOrigine_Id(Long offreId);
+    void deleteByOffreOrigine_Id(Long offreId);
 }

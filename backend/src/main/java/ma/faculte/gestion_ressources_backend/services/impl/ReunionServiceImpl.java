@@ -126,7 +126,7 @@ public class ReunionServiceImpl implements IReunionService {
         reunionRepository.save(r);
         String msg = "La réunion n°" + id + " a été validée ; les besoins associés passent au statut VALIDE.";
         for (Responsable resp : responsableRepository.findAll()) {
-            notificationService.envoyerNotification(resp.getId(), msg, Notification.TYPE_INFO);
+            notificationService.envoyerNotification(resp.getId(), r.getChef().getId(), msg, Notification.TYPE_INFO);
         }
         return versDto(r);
     }

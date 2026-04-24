@@ -21,4 +21,7 @@ public interface IOffreRepository extends JpaRepository<Offre, Long> {
 
     @Query("SELECT o FROM Offre o WHERE o.appelOffre.id = :id ORDER BY o.prixTotal ASC")
     List<Offre> findByAppelOffreIdOrderByPrixTotalAsc(@Param("id") Long id);
+
+    @Query("SELECT COUNT(o) FROM Offre o WHERE o.statut = 'ACCEPTEE' AND o.dateLivraison < CURRENT_DATE")
+    long countLateDeliveries();
 }

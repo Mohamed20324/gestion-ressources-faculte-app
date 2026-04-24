@@ -31,12 +31,13 @@ import SuppliersPage from './Partners/SuppliersPage';
 import BlacklistPage from './Partners/BlacklistPage';
 
 // Meetings
-import MeetingsDashboard from './Meetings/MeetingsDashboard';
-import MeetingsPage from './Meetings/MeetingsPage';
-import CalendarPage from './Meetings/CalendarPage';
+import MeetingsDashboard from '../ChefDepartement/Meetings/MeetingsDashboard';
+import MeetingsPage from '../ChefDepartement/Meetings/MeetingsPage';
+import CalendarPage from '../ChefDepartement/Meetings/CalendarPage';
 
 // Common
 import ProfilePage from '../Common/ProfilePage';
+import NotificationsPage from '../Common/NotificationsPage';
 
 const AppContent = () => {
   return (
@@ -80,8 +81,9 @@ const AppContent = () => {
             <Route path="/meetings" element={<MeetingsPage />} />
             <Route path="/meetings/calendar" element={<CalendarPage />} />
 
-            {/* Profile */}
+            {/* Profile & Notifications */}
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
           </Routes>
         </div>
       </div>

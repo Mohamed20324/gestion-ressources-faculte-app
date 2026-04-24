@@ -19,4 +19,10 @@ public interface IOffreService {
     List<OffreDTO> getOffresByAppelOffre(Long appelOffreId);
     List<OffreDTO> getAllOffres();
     List<OffreDTO> getByFournisseur(Long fournisseurId);
+
+    long countRetards();
+
+    OffreDTO modifierStatut(Long id, String statut);
+    OffreDTO annulerAcceptation(Long id);
+    OffreDTO annulerReception(Long id);
 }

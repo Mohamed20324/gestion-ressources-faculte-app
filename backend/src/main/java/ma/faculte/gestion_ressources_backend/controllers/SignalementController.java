@@ -48,6 +48,15 @@ public class SignalementController {
         }
     }
 
+    @GetMapping("/enseignant/{enseignantId}")
+    public ResponseEntity<List<SignalementPanneDTO>> getParEnseignant(@PathVariable Long enseignantId) {
+        // Implement filtering by teacher ID in the service, or filter the full list here if service method is missing.
+        // Let's assume signalementService has listerParEnseignant, if not we will implement it.
+        return ResponseEntity.ok(signalementService.listerTous().stream()
+                .filter(s -> enseignantId.equals(s.getEnseignantId()))
+                .toList());
+    }
+
     @PutMapping("/{id}/technicien")
     @PreAuthorize("hasRole('RESPONSABLE')")
     public ResponseEntity<?> assignerTechnicien(
@@ -65,6 +74,57 @@ public class SignalementController {
     public ResponseEntity<?> fermer(@PathVariable Long id) {
         try {
             return ResponseEntity.ok(signalementService.fermer(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body(erreur(e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}/resoudre")
+    @PreAuthorize("hasRole('TECHNICIEN')")
+    public ResponseEntity<?> resoudre(@PathVariable Long id, @RequestParam Long technicienId) {
+        try {
+            return ResponseEntity.ok(signalementService.resoudre(id, technicienId));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body(erreur(e.getMessage()));
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ENSEIGNANT')")
+    public ResponseEntity<?> annuler(@PathVariable Long id) {
+        try {
+            signalementService.annuler(id);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body(erreur(e.getMessage()));
+        }
+    }
+
+    @GetMapping("/fournisseur/{fournisseurId}")
+    @PreAuthorize("hasRole('FOURNISSEUR')")
+    public ResponseEntity<?> getParFournisseur(@PathVariable Long fournisseurId) {
+        try {
+            return ResponseEntity.ok(signalementService.listerParFournisseur(fournisseurId));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body(erreur(e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}/programmer-echange")
+    @PreAuthorize("hasRole('FOURNISSEUR')")
+    public ResponseEntity<?> programmerEchange(@PathVariable Long id, @RequestParam String date) {
+        try {
+            return ResponseEntity.ok(signalementService.programmerEchange(id, java.time.LocalDate.parse(date)));
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body(erreur(e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}/receptionner-echange")
+    @PreAuthorize("hasRole('RESPONSABLE')")
+    public ResponseEntity<?> receptionnerEchange(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(signalementService.receptionnerEchange(id));
         } catch (RuntimeException e) {
             return ResponseEntity.status(400).body(erreur(e.getMessage()));
         }

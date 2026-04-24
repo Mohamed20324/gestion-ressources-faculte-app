@@ -19,4 +19,8 @@ public interface IRessourceService {
     List<RessourceDTO> listerParStatut(String statut);
 
     RessourceDTO modifierStatut(Long id, String statut);
+
+    List<RessourceDTO> listerParDepartement(Long departementId);
+    List<RessourceDTO> listerParOffre(Long offreId);
+    void supprimerParOffre(Long offreId);
 }

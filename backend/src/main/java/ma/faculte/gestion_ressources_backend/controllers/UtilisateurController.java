@@ -214,6 +214,11 @@ public class UtilisateurController {
         }
     }
 
+    @GetMapping("/departement/{id}/enseignants")
+    public ResponseEntity<List<UtilisateurDTO>> getEnseignantsParDepartement(@PathVariable Long id) {
+        return ResponseEntity.ok(utilisateurService.getEnseignantsParDepartement(id));
+    }
+
     // =====================
     // MÉTHODE PRIVÉE
     // =====================

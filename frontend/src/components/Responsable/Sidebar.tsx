@@ -7,7 +7,7 @@ import {
   FileText, LayoutDashboard,
   Plus, Sparkles, MoreHorizontal,
   Crown, GraduationCap, Wrench, Package, Video, CalendarCheck,
-  Moon, Sun, ClipboardList, Truck, ShieldAlert, User
+  Moon, Sun, ClipboardList, Truck, ShieldAlert, User, Bell
 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -94,7 +94,8 @@ const secondaryMenus: Record<string, MenuType> = {
         items: [
           { icon: <LayoutDashboard size={16} />, text: "Tableau de Bord AO", path: "/responsable/procurement/dashboard" },
           { icon: <ClipboardList size={16} />, text: "Besoins Départements", path: "/responsable/needs" },
-          { icon: <FileText size={16} />, text: "Marchés & Appels d'offres", path: "/responsable/appels-offres" }
+          { icon: <FileText size={16} />, text: "Marchés & Appels d'offres", path: "/responsable/appels-offres" },
+          { icon: <FileText size={16} />, text: "Soumissions Reçues", path: "/responsable/submissions" }
         ]
       }
     ]
@@ -112,7 +113,26 @@ const secondaryMenus: Record<string, MenuType> = {
         items: [
           { icon: <LayoutDashboard size={16} />, text: "Tableau de Bord Parc", path: "/responsable/inventory/dashboard" },
           { icon: <Package size={16} />, text: "Inventaire Global", path: "/responsable/resources" },
+          { icon: <Wrench size={16} />, text: "Maintenance", path: "/responsable/maintenance" },
           { icon: <Truck size={16} />, text: "Réception & Livraison", path: "/responsable/reception" }
+        ]
+      }
+    ]
+  },
+  Reunions: {
+    title: "Réunions & Planning",
+    defaultPath: "/responsable/meetings/dashboard",
+    sections: [
+      {
+        type: "header",
+        title: "Gestion des Réunions"
+      },
+      {
+        type: "nav",
+        items: [
+          { icon: <LayoutDashboard size={16} />, text: "Tableau de Bord", path: "/responsable/meetings/dashboard" },
+          { icon: <Video size={16} />, text: "Liste des Réunions", path: "/responsable/meetings" },
+          { icon: <CalendarCheck size={16} />, text: "Calendrier", path: "/responsable/meetings/calendar" }
         ]
       }
     ]
@@ -130,37 +150,7 @@ const secondaryMenus: Record<string, MenuType> = {
         items: [
           { icon: <LayoutDashboard size={16} />, text: "Tableau de Bord Partenaires", path: "/responsable/partners/dashboard" },
           { icon: <Users size={16} />, text: "Liste Fournisseurs", path: "/responsable/suppliers" },
-          { icon: <FileText size={16} />, text: "Soumissions Reçues", path: "/responsable/submissions" },
           { icon: <ShieldAlert size={16} />, text: "Liste Noire", path: "/responsable/blacklist" }
-        ]
-      }
-    ]
-  },
-  reunions: {
-    title: "Réunions",
-    defaultPath: "/responsable/meetings/dashboard",
-    sections: [
-      {
-        type: "header",
-        title: "Suivi des séances"
-      },
-      {
-        type: "nav",
-        items: [
-          { icon: <LayoutDashboard size={16} />, text: "Tableau de bord", path: "/responsable/meetings/dashboard" },
-          { icon: <Video size={16} />, text: "Liste des réunions", path: "/responsable/meetings" },
-          { icon: <CalendarCheck size={16} />, text: "Planning & Calendrier", path: "/responsable/meetings/calendar" }
-        ]
-      },
-      {
-        type: "header",
-        title: "Administration"
-      },
-      {
-        type: "nav",
-        items: [
-          { icon: <Plus size={16} />, text: "Programmer une réunion", path: "/responsable/meetings/new" },
-          { icon: <FileText size={16} />, text: "Comptes-rendus & Archives", path: "/responsable/meetings/archives" }
         ]
       }
     ]
@@ -177,6 +167,7 @@ const secondaryMenus: Record<string, MenuType> = {
         type: "nav",
         items: [
           { icon: <User size={16} />, text: "Mon Profil", path: "/responsable/profile" },
+          { icon: <Bell size={16} />, text: "Notifications", path: "/responsable/notifications" },
           { icon: <FileText size={16} />, text: "Docs", suffix: "Nouveau", path: "/responsable/apps/docs" },
           { icon: "THEME_TOGGLE", text: "Mode Sombre", path: "theme" }
         ]
@@ -221,13 +212,14 @@ const SidebarIconCollapsed = ({ icon, label, isActive, onClick, badge }: {
 };
 
 // Composant NavItem pour le menu secondaire avec navigation
-const NavItem = ({ icon, text, suffix, path, onClick, isActive }: {
+const NavItem = ({ icon, text, suffix, path, onClick, isActive, badge }: {
   icon: React.ReactNode,
   text: string,
   suffix?: string,
   path: string,
   onClick?: () => void,
-  isActive?: boolean
+  isActive?: boolean,
+  badge?: number | null
 }) => {
   const navigate = useNavigate();
   const { logout } = useAuth();
@@ -260,6 +252,12 @@ const NavItem = ({ icon, text, suffix, path, onClick, isActive }: {
         <span className="text-sm font-medium">{text}</span>
       </div>
 
+      {badge && (
+        <span className="bg-red-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded-full shadow-lg shadow-red-200 animate-pulse">
+          {badge}
+        </span>
+      )}
+
       {isThemeToggle ? (
         <div className={`w-8 h-4 rounded-full p-0.5 transition-colors duration-200 ease-in-out ${theme === 'dark' ? 'bg-blue-500' : 'bg-gray-300'}`}>
           <div className={`w-3 h-3 bg-white rounded-full shadow-sm transform transition-transform duration-200 ease-in-out ${theme === 'dark' ? 'translate-x-4' : 'translate-x-0'}`} />
@@ -289,11 +287,10 @@ const getFirstPathFromMenu = (menuKey: string): string => {
 };
 
 // Badges dynamiques (simulés, à remplacer par des données réelles)
-const getDynamicBadges = (plannedCount: number) => {
+const getDynamicBadges = () => {
   return {
     ressources: 0,
     tasks: 12,
-    meetings: plannedCount,
     pendingInvites: 2
   };
 };
@@ -303,11 +300,40 @@ const Sidebar = () => {
   const location = useLocation();
   const [activeMenu, setActiveMenu] = useState('Gestion');
   const [isSecondaryMenuVisible, setIsSecondaryMenuVisible] = useState(true);
-  const [plannedMeetingsCount, setPlannedMeetingsCount] = useState(0);
+  const [newNeedsCount, setNewNeedsCount] = useState(0);
+  const [lateCount, setLateCount] = useState(0);
+  const [availableCount, setAvailableCount] = useState(0);
+  const [pendingPannesCount, setPendingPannesCount] = useState(0);
+  const [unassignedResourcesCount, setUnassignedResourcesCount] = useState(0);
+  const [completedMaintenanceCount, setCompletedMaintenanceCount] = useState(0);
+
   const { theme, toggleTheme } = useTheme();
 
-  const badges = getDynamicBadges(plannedMeetingsCount);
+  const badges = getDynamicBadges();
   const currentMenu = secondaryMenus[activeMenu as keyof typeof secondaryMenus];
+
+  // Badges dynamiques
+  const getBadgeForItem = (path: string) => {
+    if (path === '/responsable/needs') return newNeedsCount;
+    if (path === '/responsable/reception') return lateCount;
+    if (path === '/responsable/maintenance') return completedMaintenanceCount;
+    if (path === '/responsable/resources') return unassignedResourcesCount;
+    return 0;
+  };
+
+  const getSectionBadgeSum = (menuKey: string) => {
+    const menu = secondaryMenus[menuKey];
+    if (!menu) return 0;
+    let sum = 0;
+    menu.sections.forEach(section => {
+      if (section.type === 'nav') {
+        section.items.forEach(item => {
+          sum += getBadgeForItem(item.path);
+        });
+      }
+    });
+    return sum;
+  };
 
   // Synchroniser le menu actif avec l'URL au chargement
   useEffect(() => {
@@ -337,24 +363,87 @@ const Sidebar = () => {
     }
   }, [location.pathname]);
 
-  // Récupérer le nombre de réunions planifiées pour le badge
+  // Fetch new needs for badge (status: ENVOYE)
   useEffect(() => {
-    const fetchMeetings = async () => {
+    const fetchNewNeedsCount = async () => {
       try {
-        const response = await api.getAllReunions();
-        if (response.ok) {
-          const data = await response.json();
-          const planned = data.filter((m: any) => m.statut === 'PLANIFIEE').length;
-          setPlannedMeetingsCount(planned);
+        const res = await api.getAllBesoins();
+        if (res.ok) {
+          const data = await res.json();
+          const count = data.filter((b: any) => b.statut === 'ENVOYE' || b.statut === 'VALIDE').length;
+          setNewNeedsCount(count);
         }
       } catch (error) {
-        console.error("Erreur badge réunions:", error);
+        console.error("Error fetching needs badge:", error);
       }
     };
-    fetchMeetings();
-    const interval = setInterval(fetchMeetings, 60000); // Rafraîchir chaque minute
-    return () => clearInterval(interval);
+
+    fetchNewNeedsCount();
+
+    const fetchPendingDeliveriesCount = async () => {
+        try {
+          const res = await api.getAllOffres();
+          if (res.ok) {
+            const data = await res.json();
+            // Count offers that are accepted but not yet delivered
+            const count = data.filter((o: any) => o.statut === 'ACCEPTEE').length;
+            setLateCount(count); 
+          }
+        } catch (e) { console.error(e); }
+      };
+
+    const fetchPendingPannesCount = async () => {
+      try {
+        const res = await api.getAllSignalements();
+        if (res.ok) {
+          const data = await res.json();
+          // "Non traité" for Responsable = technician sent constat OR no technician yet
+          const count = data.filter((s: any) => s.statut === 'CONSTAT' || s.statut === 'SIGNALE').length;
+          setPendingPannesCount(count);
+        }
+      } catch (e) { console.error(e); }
+    };
+
+    const fetchInventoryCounts = async () => {
+      try {
+        const res = await api.getAllRessources();
+        if (res.ok) {
+          const data = await res.json();
+          // 1. Unassigned resources
+          setUnassignedResourcesCount(data.filter((r: any) => !r.departementId).length);
+        }
+      } catch (e) { console.error(e); }
+    };
+
+    const fetchMaintenanceCounts = async () => {
+      try {
+        const res = await api.getAllSignalements();
+        if (res.ok) {
+          const data = await res.json();
+          // 2. Completed maintenance (RESOLU)
+          setCompletedMaintenanceCount(data.filter((s: any) => s.statut === 'RESOLU').length);
+        }
+      } catch (e) { console.error(e); }
+    };
+
+    fetchNewNeedsCount();
+    fetchPendingDeliveriesCount();
+    fetchInventoryCounts();
+    fetchMaintenanceCounts();
+
+    const interval = setInterval(() => {
+      fetchNewNeedsCount();
+      fetchPendingDeliveriesCount();
+      fetchInventoryCounts();
+      fetchMaintenanceCounts();
+    }, 10000);
+
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
+
+
 
   const handleMenuClick = (menu: string) => {
     if (activeMenu === menu) {
@@ -421,6 +510,7 @@ const Sidebar = () => {
                   suffix={item.suffix}
                   path={item.path}
                   isActive={isPathActive(item.path)}
+                  badge={getBadgeForItem(item.path) || undefined}
                 />
               ));
             }
@@ -487,6 +577,7 @@ const Sidebar = () => {
               label="Appels d'Offres"
               isActive={activeMenu === 'Procurement'}
               onClick={() => handleMenuClick('Procurement')}
+              badge={getSectionBadgeSum('Procurement') || undefined}
             />
           </div>
 
@@ -497,6 +588,17 @@ const Sidebar = () => {
               label="Inventaire"
               isActive={activeMenu === 'Inventaire'}
               onClick={() => handleMenuClick('Inventaire')}
+              badge={getSectionBadgeSum('Inventaire') || undefined}
+            />
+          </div>
+
+          {/* Réunions */}
+          <div className="mb-2">
+            <SidebarIconCollapsed
+              icon={<Video size={20} />}
+              label="Réunions"
+              isActive={activeMenu === 'Reunions'}
+              onClick={() => handleMenuClick('Reunions')}
             />
           </div>
 
@@ -510,16 +612,7 @@ const Sidebar = () => {
             />
           </div>
 
-          {/* Réunions */}
-          <div className="mb-2">
-            <SidebarIconCollapsed
-              icon={<Video size={20} />}
-              label="Réunions"
-              isActive={activeMenu === 'reunions'}
-              onClick={() => handleMenuClick('reunions')}
-              badge={badges.meetings > 0 ? badges.meetings : undefined}
-            />
-          </div>
+
 
           {/* Divider */}
           <div className="h-px bg-gray-700 my-3 mx-3"></div>

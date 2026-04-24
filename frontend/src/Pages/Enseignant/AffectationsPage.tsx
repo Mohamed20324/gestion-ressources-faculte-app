@@ -6,9 +6,12 @@ import {
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
+import { NotificationContainer } from '../../components/Notification';
+import { useNotifications } from '../../hooks/useNotifications';
 
 const AffectationsPage = () => {
   const { user } = useAuth();
+  const { notifications, showNotification, removeNotification } = useNotifications();
   const [currentAffectations, setCurrentAffectations] = useState<any[]>([]);
   const [plannedAffectations, setPlannedAffectations] = useState<any[]>([]);
   const [typesRessources, setTypesRessources] = useState<any[]>([]);
@@ -31,9 +34,11 @@ const AffectationsPage = () => {
         dateSignalement: new Date().toISOString().split('T')[0]
       });
       if (res.ok) {
-        alert('Panne signalée avec succès');
+        showNotification('success', 'Panne signalée avec succès au technicien.');
         setSignalementModal({ show: false, resId: null });
         setPanneDescription('');
+      } else {
+        showNotification('error', 'Erreur lors du signalement.');
       }
     } catch (error) {
       console.error(error);
@@ -76,6 +81,7 @@ const AffectationsPage = () => {
 
   return (
     <div className="p-8 bg-gray-50/30 min-h-screen">
+      <NotificationContainer notifications={notifications} removeNotification={removeNotification} />
       <div className="max-w-6xl mx-auto">
         <div className="mb-12">
           <h1 className="text-3xl font-black text-gray-900 flex items-center gap-3">
@@ -164,22 +170,30 @@ const AffectationsPage = () => {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {currentAffectations.map((aff) => (
-                  <tr key={aff.id} className="hover:bg-gray-50/50 transition-colors">
+                   <tr key={aff.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="px-8 py-6">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center text-green-600 border border-green-100">
                           <Package size={18} />
                         </div>
-                        <span className="font-bold text-gray-900">RESS-{aff.ressourceId}</span>
+                        <div>
+                          <p className="font-bold text-gray-900">{aff.ressourceMarque || 'Matériel'}</p>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Inv: {aff.ressourceNumeroInventaire}</p>
+                        </div>
                       </div>
                     </td>
                     <td className="px-8 py-6 text-sm font-medium text-gray-600">
                       {Array.isArray(aff.dateAffectation) ? `${aff.dateAffectation[2]}/${aff.dateAffectation[1]}/${aff.dateAffectation[0]}` : aff.dateAffectation}
                     </td>
                     <td className="px-8 py-6">
-                      <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-[10px] font-black uppercase tracking-wider">
-                        {aff.affectationCollective ? 'Collectif' : 'Individuel'}
-                      </span>
+                      <div className="flex flex-col gap-1">
+                        <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider w-fit ${
+                          aff.affectationCollective ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700'
+                        }`}>
+                          {aff.affectationCollective ? 'Stock Département' : 'Individuel'}
+                        </span>
+                        <span className="text-[10px] text-gray-400 font-medium italic">{aff.ressourceCategorie}</span>
+                      </div>
                     </td>
                     <td className="px-8 py-6 text-right">
                       <div className="flex justify-end gap-2">

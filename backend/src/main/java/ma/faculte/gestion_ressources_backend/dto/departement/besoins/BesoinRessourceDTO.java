@@ -21,7 +21,6 @@ public class BesoinRessourceDTO {
     @NotNull(message = "Le département est obligatoire")
     private Long departementId;
 
-    @NotNull(message = "La réunion est obligatoire")
     private Long reunionId;
 
     /**

@@ -3,8 +3,10 @@ import Header from '../../components/G/Header';
 import Sidebar from '../../components/G/Sidebar';
 import Dashboard from './Dashboard';
 import BesoinsPage from '../ChefDepartement/BesoinsPage';
-import MeetingsPage from '../ChefDepartement/MeetingsPage';
+import MeetingsPage from '../ChefDepartement/Meetings/MeetingsPage';
+import CalendarPage from '../ChefDepartement/Meetings/CalendarPage';
 import AffectationsPage from './AffectationsPage';
+import SignalementsPage from './SignalementsPage';
 import ProfilePage from '../Common/ProfilePage';
 
 const AppContent = () => {
@@ -19,7 +21,9 @@ const AppContent = () => {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/besoins" element={<BesoinsPage />} />
             <Route path="/meetings" element={<MeetingsPage />} />
+            <Route path="/meetings/calendar" element={<CalendarPage />} />
             <Route path="/affectations" element={<AffectationsPage />} />
+            <Route path="/signalements" element={<SignalementsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
           </Routes>
         </div>

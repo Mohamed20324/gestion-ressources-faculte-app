@@ -25,6 +25,12 @@ public class OffreController {
         return ResponseEntity.ok(offreService.getAllOffres());
     }
 
+    @GetMapping("/retards/count")
+    @PreAuthorize("hasRole('RESPONSABLE')")
+    public ResponseEntity<Long> countRetards() {
+        return ResponseEntity.ok(offreService.countRetards());
+    }
+
     @GetMapping("/fournisseur/{id}")
     @PreAuthorize("hasRole('FOURNISSEUR') or hasRole('RESPONSABLE')")
     public ResponseEntity<List<OffreDTO>> getByFournisseur(@PathVariable Long id) {
@@ -70,6 +76,36 @@ public class OffreController {
             @RequestParam String motif) {
         try {
             return ResponseEntity.ok(offreService.eliminerOffre(id, motif));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body(erreur(e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}/statut")
+    @PreAuthorize("hasRole('RESPONSABLE') or hasRole('FOURNISSEUR')")
+    public ResponseEntity<?> updateStatut(@PathVariable Long id, @RequestParam String statut) {
+        try {
+            return ResponseEntity.ok(offreService.modifierStatut(id, statut));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body(erreur(e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}/annuler-acceptation")
+    @PreAuthorize("hasRole('RESPONSABLE')")
+    public ResponseEntity<?> annulerAcceptation(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(offreService.annulerAcceptation(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body(erreur(e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}/annuler-reception")
+    @PreAuthorize("hasRole('RESPONSABLE')")
+    public ResponseEntity<?> annulerReception(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(offreService.annulerReception(id));
         } catch (RuntimeException e) {
             return ResponseEntity.status(400).body(erreur(e.getMessage()));
         }

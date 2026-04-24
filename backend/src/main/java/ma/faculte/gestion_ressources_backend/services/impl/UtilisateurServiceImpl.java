@@ -547,4 +547,12 @@ public class UtilisateurServiceImpl implements IUtilisateurService {
         // Utilisation du PasswordEncoder injecté pour hasher le mot de passe (BCrypt)
         return passwordEncoder.encode(brut);
     }
+    @Override
+    @Transactional(readOnly = true)
+    public List<UtilisateurDTO> getEnseignantsParDepartement(Long departementId) {
+        return enseignantRepository.findByDepartementId(departementId)
+                .stream()
+                .map(this::convertirEnDTO)
+                .collect(Collectors.toList());
+    }
 }

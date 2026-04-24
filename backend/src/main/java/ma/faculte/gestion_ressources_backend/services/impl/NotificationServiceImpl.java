@@ -27,18 +27,14 @@ public class NotificationServiceImpl implements INotificationService {
     @Autowired
     private IResponsableRepository responsableRepository;
 
-    private Responsable premierResponsable() {
-        return responsableRepository.findAll().stream()
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Aucun responsable enregistré"));
-    }
-
     @Override
     @Transactional
-    public void envoyerNotification(Long destinataireId, String message, String type) {
+    public void envoyerNotification(Long destinataireId, Long expediteurId, String message, String type) {
         Utilisateur dest = utilisateurRepository.findById(destinataireId)
                 .orElseThrow(() -> new RuntimeException("Destinataire introuvable : " + destinataireId));
-        Responsable exp = premierResponsable();
+        Utilisateur exp = utilisateurRepository.findById(expediteurId)
+                .orElseThrow(() -> new RuntimeException("Expéditeur introuvable : " + expediteurId));
+        
         Notification n = new Notification();
         n.setMessage(message);
         n.setType(type);
@@ -51,16 +47,18 @@ public class NotificationServiceImpl implements INotificationService {
     @Override
     @Transactional
     public void envoyerAcceptation(Long fournisseurId) {
+        Responsable exp = responsableRepository.findAll().get(0);
         String msg = "Votre offre a été acceptée pour l'appel d'offres concerné.";
-        envoyerNotification(fournisseurId, msg, Notification.TYPE_ACCEPTATION);
+        envoyerNotification(fournisseurId, exp.getId(), msg, Notification.TYPE_ACCEPTATION);
     }
 
     @Override
     @Transactional
     public void envoyerRejet(Long fournisseurId, String motif) {
+        Responsable exp = responsableRepository.findAll().get(0);
         String msg = "Votre offre n'a pas été retenue."
                 + (motif != null && !motif.isBlank() ? " Motif : " + motif : "");
-        envoyerNotification(fournisseurId, msg, Notification.TYPE_REJET);
+        envoyerNotification(fournisseurId, exp.getId(), msg, Notification.TYPE_REJET);
     }
 
     @Override
@@ -89,6 +87,29 @@ public class NotificationServiceImpl implements INotificationService {
                 .orElseThrow(() -> new RuntimeException("Notification introuvable : " + notificationId));
         n.setLu(true);
         notificationRepository.save(n);
+    }
+
+    @Override
+    @Transactional
+    public void envoyerAvertissementRetard(Long fournisseurId, String referenceAO) {
+        Responsable exp = responsableRepository.findAll().get(0);
+        String msg = "AVERTISSEMENT : Retard constaté pour la livraison liée à l'appel d'offres " + referenceAO 
+                   + ". Veuillez régulariser la situation dans les plus brefs délais.";
+        envoyerNotification(fournisseurId, exp.getId(), msg, Notification.TYPE_AVERTISSEMENT);
+    }
+
+    @Override
+    @Transactional
+    public void envoyerAffectation(Long destinataireId, Long expediteurId, String ressourceMarque) {
+        String msg = "Une nouvelle ressource (" + ressourceMarque + ") vous a été affectée.";
+        envoyerNotification(destinataireId, expediteurId, msg, Notification.TYPE_AFFECTATION);
+    }
+
+    @Override
+    @Transactional
+    public void envoyerReponseRetard(Long responsableId, Long fournisseurId, String message) {
+        String msg = "Réponse fournisseur concernant le retard : " + message;
+        envoyerNotification(responsableId, fournisseurId, msg, Notification.TYPE_REPONSE_FOURNISSEUR);
     }
 
     private NotificationDTO versDto(Notification n) {

@@ -8,6 +8,7 @@ import ma.faculte.gestion_ressources_backend.entities.inventaire.RessourceOrdina
 import ma.faculte.gestion_ressources_backend.entities.referentiel.TypeRessource;
 import ma.faculte.gestion_ressources_backend.entities.utilisateurs.Fournisseur;
 import ma.faculte.gestion_ressources_backend.repositories.interfaces.IAffectationRepository;
+import ma.faculte.gestion_ressources_backend.repositories.interfaces.IDepartementRepository;
 import ma.faculte.gestion_ressources_backend.repositories.interfaces.IFournisseurRepository;
 import ma.faculte.gestion_ressources_backend.repositories.interfaces.IOffreRepository;
 import ma.faculte.gestion_ressources_backend.repositories.interfaces.IRessourceRepository;
@@ -38,6 +39,9 @@ public class RessourceServiceImpl implements IRessourceService {
 
     @Autowired
     private IAffectationRepository affectationRepository;
+
+    @Autowired
+    private IDepartementRepository departementRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -71,6 +75,7 @@ public class RessourceServiceImpl implements IRessourceService {
         r.setMarque(dto.getMarque());
         r.setTypeRessource(type);
         r.setDateReception(dto.getDateReception() != null ? dto.getDateReception() : LocalDate.now());
+        r.setDateFinGarantie(dto.getDateFinGarantie());
         r.setStatut(dto.getStatut() != null ? dto.getStatut() : Ressource.STATUT_DISPONIBLE);
 
         if (dto.getFournisseurId() != null) {
@@ -82,6 +87,10 @@ public class RessourceServiceImpl implements IRessourceService {
             Offre o = offreRepository.findById(dto.getOffreOrigineId())
                     .orElseThrow(() -> new RuntimeException("Offre introuvable"));
             r.setOffreOrigine(o);
+        }
+        if (dto.getDepartementId() != null) {
+            r.setDepartement(departementRepository.findById(dto.getDepartementId())
+                    .orElseThrow(() -> new RuntimeException("Département introuvable")));
         }
 
         return versDto(ressourceRepository.save(r));
@@ -115,6 +124,9 @@ public class RessourceServiceImpl implements IRessourceService {
         if (dto.getDateReception() != null) {
             r.setDateReception(dto.getDateReception());
         }
+        if (dto.getDateFinGarantie() != null) {
+            r.setDateFinGarantie(dto.getDateFinGarantie());
+        }
         if (dto.getFournisseurId() != null) {
             Fournisseur f = fournisseurRepository.findById(dto.getFournisseurId())
                     .orElseThrow(() -> new RuntimeException("Fournisseur introuvable"));
@@ -127,6 +139,10 @@ public class RessourceServiceImpl implements IRessourceService {
         }
         if (dto.getStatut() != null) {
             r.setStatut(dto.getStatut());
+        }
+        if (dto.getDepartementId() != null) {
+            r.setDepartement(departementRepository.findById(dto.getDepartementId())
+                    .orElseThrow(() -> new RuntimeException("Département introuvable")));
         }
         if (r instanceof RessourceOrdinateur ro) {
             if (dto.getCpu() != null) {
@@ -184,6 +200,54 @@ public class RessourceServiceImpl implements IRessourceService {
         return versDto(ressourceRepository.save(r));
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<RessourceDTO> listerParDepartement(Long departementId) {
+        // Find resources directly linked to department
+        List<Ressource> directlyLinked = ressourceRepository.findByDepartement_Id(departementId);
+        
+        // Find resources linked via affectations (to handle legacy data or double-linkage)
+        List<Ressource> linkedViaAffectation = affectationRepository.findByDepartement_Id(departementId)
+                .stream()
+                .map(ma.faculte.gestion_ressources_backend.entities.inventaire.Affectation::getRessource)
+                .collect(Collectors.toList());
+        
+        // Merge and convert to DTO
+        java.util.Set<Long> ids = new java.util.HashSet<>();
+        List<RessourceDTO> results = new java.util.ArrayList<>();
+        
+        directlyLinked.forEach(r -> {
+            if (ids.add(r.getId())) results.add(versDto(r));
+        });
+        
+        linkedViaAffectation.forEach(r -> {
+            if (ids.add(r.getId())) results.add(versDto(r));
+        });
+        
+        return results;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<RessourceDTO> listerParOffre(Long offreId) {
+        return ressourceRepository.findByOffreOrigine_Id(offreId).stream()
+                .map(this::versDto)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void supprimerParOffre(Long offreId) {
+        List<Ressource> ressources = ressourceRepository.findByOffreOrigine_Id(offreId);
+        for (Ressource r : ressources) {
+            // Check if affected
+            if (affectationRepository.findByRessource_Id(r.getId()).isPresent()) {
+                throw new RuntimeException("Impossible d'annuler : La ressource " + r.getNumeroInventaire() + " est déjà affectée.");
+            }
+            ressourceRepository.delete(r);
+        }
+    }
+
     private Ressource instancier(RessourceDTO dto) {
         String cat = dto.getCategorie() != null ? dto.getCategorie().trim() : "STANDARD";
         if ("ORDINATEUR".equalsIgnoreCase(cat)) {
@@ -212,11 +276,16 @@ public class RessourceServiceImpl implements IRessourceService {
         d.setTypeRessourceId(r.getTypeRessource().getId());
         if (r.getFournisseur() != null) {
             d.setFournisseurId(r.getFournisseur().getId());
+            d.setFournisseurNom(r.getFournisseur().getNomSociete() != null ? r.getFournisseur().getNomSociete() : r.getFournisseur().getNom());
         }
         if (r.getOffreOrigine() != null) {
             d.setOffreOrigineId(r.getOffreOrigine().getId());
         }
+        if (r.getDepartement() != null) {
+            d.setDepartementId(r.getDepartement().getId());
+        }
         d.setDateReception(r.getDateReception());
+        d.setDateFinGarantie(r.getDateFinGarantie());
         d.setStatut(r.getStatut());
         if (r instanceof RessourceOrdinateur ro) {
             d.setCategorie("ORDINATEUR");

@@ -16,20 +16,53 @@ interface Ressource {
   categorie: string;
   dateFinGarantie?: string;
   fournisseurNom?: string;
+  departementId?: number;
+  descriptionTechnique?: string;
+}
+
+interface Affectation {
+  id: number;
+  ressourceId: number;
+  departementId: number;
+  enseignantId?: number;
+  affectationCollective: boolean;
+  dateAffectation: string;
 }
 
 const ResourcesPage = () => {
   const { notifications, showNotification, removeNotification } = useNotifications();
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
   
   const [resources, setResources] = useState<Ressource[]>([]);
+  const [affectations, setAffectations] = useState<Record<number, Affectation>>({});
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [activeTab, setActiveTab] = useState<'ALL' | 'AVAILABLE'>('ALL');
+
+  const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [resToDelete, setResToDelete] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
+
+  // Edit Resource Modal
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editData, setEditData] = useState<Partial<Ressource>>({});
+  
+  // Affectation Modal (used for both Create and Edit)
+  const [isAffectModalOpen, setIsAffectModalOpen] = useState(false);
+  const [isEditingAffect, setIsEditingAffect] = useState(false);
+  const [selectedRes, setSelectedRes] = useState<Ressource | null>(null);
+  const [departments, setDepartments] = useState<any[]>([]);
+  const [teachers, setTeachers] = useState<any[]>([]);
+  const [affectData, setAffectData] = useState({
+    departementId: 0,
+    enseignantId: null as number | null,
+    isCollective: true
+  });
+  const [affecting, setAffecting] = useState(false);
 
   useEffect(() => {
     loadResources();
@@ -38,14 +71,145 @@ const ResourcesPage = () => {
   const loadResources = async () => {
     setLoading(true);
     try {
-      const response = await api.getAllRessources();
-      if (response.ok) {
-        setResources(await response.json());
+      const [resResponse, deptsResponse] = await Promise.all([
+        api.getAllRessources(),
+        api.getAllDepartements()
+      ]);
+      
+      if (resResponse.ok) {
+        const resData = await resResponse.json();
+        setResources(resData);
+        
+        // Fetch affectations for affected resources
+        const affMap: Record<number, Affectation> = {};
+        await Promise.all(resData.map(async (r: any) => {
+          if (r.statut === 'AFFECTEE') {
+            try {
+              const affRes = await api.getAffectationByRessource(r.id);
+              if (affRes.ok) {
+                affMap[r.id] = await affRes.json();
+              }
+            } catch (e) {}
+          }
+        }));
+        setAffectations(affMap);
+      }
+      
+      if (deptsResponse.ok) {
+        setDepartments(await deptsResponse.json());
       }
     } catch (error) {
       showNotification('error', 'Erreur de chargement');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleOpenEditModal = (res: Ressource) => {
+    setEditData(res);
+    setIsEditModalOpen(true);
+  };
+
+  const handleUpdateResource = async () => {
+    if (!editData.id) return;
+    setLoading(true);
+    try {
+      const res = await api.updateRessource(editData.id, editData);
+      if (res.ok) {
+        showNotification('success', 'Ressource mise à jour');
+        setIsEditModalOpen(false);
+        loadResources();
+      }
+    } catch (error) {
+      showNotification('error', 'Erreur de mise à jour');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenAffectModal = async (res: Ressource, isEdit = false) => {
+    setSelectedRes(res);
+    setIsEditingAffect(isEdit);
+    
+    if (isEdit && affectations[res.id]) {
+      const aff = affectations[res.id];
+      setAffectData({ 
+        departementId: aff.departementId, 
+        enseignantId: aff.enseignantId || null, 
+        isCollective: aff.affectationCollective 
+      });
+      const tRes = await api.getEnseignantsByDepartement(aff.departementId);
+      if (tRes.ok) setTeachers(await tRes.json());
+    } else {
+      setAffectData({ 
+        departementId: res.departementId || 0, 
+        enseignantId: null, 
+        isCollective: true 
+      });
+    }
+    
+    setIsAffectModalOpen(true);
+  };
+
+  const handleDeptChange = async (deptId: number) => {
+    setAffectData({ ...affectData, departementId: deptId, enseignantId: null });
+  };
+
+  const handleOpenBulkAffectModal = () => {
+    if (selectedIds.length === 0) return;
+    setAffectData({ 
+      departementId: 0, 
+      enseignantId: null, 
+      isCollective: true 
+    });
+    setIsEditingAffect(false);
+    setSelectedRes(null);
+    setIsAffectModalOpen(true);
+  };
+
+  const handleCreateAffectation = async () => {
+    const idsToProcess = selectedRes ? [selectedRes.id] : selectedIds;
+    if (idsToProcess.length === 0 || !affectData.departementId) return;
+    
+    setAffecting(true);
+    try {
+      let successCount = 0;
+      await Promise.all(idsToProcess.map(async (id) => {
+        const res = await api.createAffectation({
+          ressourceId: id,
+          departementId: affectData.departementId,
+          enseignantId: affectData.isCollective ? null : affectData.enseignantId,
+          affectationCollective: affectData.isCollective,
+          dateAffectation: new Date().toISOString().split('T')[0],
+          expediteurId: user.id
+        });
+        if (res.ok) successCount++;
+      }));
+      
+      showNotification('success', `${successCount} ressource(s) affectée(s) avec succès`);
+      setIsAffectModalOpen(false);
+      setSelectedIds([]);
+      loadResources();
+    } catch (error) {
+      showNotification('error', 'Erreur technique lors de l\'affectation en masse');
+    } finally {
+      setAffecting(false);
+    }
+  };
+
+  const handleRemoveAffectation = async (resId: number) => {
+    const aff = affectations[resId];
+    if (!aff) return;
+    if (!window.confirm("Voulez-vous libérer cette ressource ? Elle redeviendra disponible pour une autre affectation.")) return;
+    
+    try {
+      const res = await api.deleteAffectation(aff.id);
+      if (res.ok) {
+        showNotification('success', 'Ressource libérée');
+        loadResources();
+      }
+    } catch (error) {
+      showNotification('error', 'Erreur lors de la libération');
     }
   };
 
@@ -66,18 +230,25 @@ const ResourcesPage = () => {
     }
   };
 
-  const filteredResources = resources.filter(res => 
-    res.numeroInventaire?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    res.marque?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    res.categorie?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredResources = resources.filter(res => {
+    const matchesSearch = 
+      res.numeroInventaire?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      res.marque?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      res.categorie?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (activeTab === 'AVAILABLE') {
+      return matchesSearch && res.statut === 'DISPONIBLE';
+    }
+    return matchesSearch;
+  });
 
   const totalPages = Math.ceil(filteredResources.length / itemsPerPage);
   const currentItems = filteredResources.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const getStatusStyle = (status: string) => {
     switch (status) {
-      case 'FONCTIONNELLE': return 'bg-emerald-50 text-emerald-700 border-emerald-100';
+      case 'DISPONIBLE': return 'bg-blue-50 text-blue-700 border-blue-100';
+      case 'AFFECTEE': return 'bg-emerald-50 text-emerald-700 border-emerald-100';
       case 'EN_PANNE': return 'bg-red-50 text-red-700 border-red-100';
       case 'EN_MAINTENANCE': return 'bg-amber-50 text-amber-700 border-amber-100';
       default: return 'bg-gray-50 text-gray-600 border-gray-100';
@@ -116,6 +287,21 @@ const ResourcesPage = () => {
             </button>
           </div>
         </div>
+        {/* Filter Tabs */}
+        <div className="flex items-center gap-1 bg-white p-1 rounded-2xl border border-gray-200 w-fit mb-8 shadow-sm">
+          <button 
+            onClick={() => setActiveTab('ALL')}
+            className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'ALL' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
+          >
+            Toutes les ressources ({resources.length})
+          </button>
+          <button 
+            onClick={() => setActiveTab('AVAILABLE')}
+            className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'AVAILABLE' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
+          >
+            Non affectées ({resources.filter(r => r.statut === 'DISPONIBLE').length})
+          </button>
+        </div>
 
         {/* Inventory Table */}
         <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
@@ -130,10 +316,23 @@ const ResourcesPage = () => {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-gray-50/50 border-b border-gray-100">
+                      <th className="px-6 py-4 w-10">
+                        <input 
+                          type="checkbox" 
+                          checked={selectedIds.length === currentItems.filter(r => r.statut === 'DISPONIBLE').length && selectedIds.length > 0}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedIds(currentItems.filter(r => r.statut === 'DISPONIBLE').map(r => r.id));
+                            } else {
+                              setSelectedIds([]);
+                            }
+                          }}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                      </th>
                       <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Ressource</th>
                       <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Catégorie</th>
-                      <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Garantie</th>
-                      <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Fournisseur</th>
+                      <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Affectation</th>
                       <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Statut</th>
                       <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest text-right">Actions</th>
                     </tr>
@@ -141,9 +340,23 @@ const ResourcesPage = () => {
                   <tbody className="divide-y divide-gray-50">
                     {currentItems.map((res) => {
                       const isExpired = res.dateFinGarantie && new Date(res.dateFinGarantie) < new Date();
-                      
+                      const isSelected = selectedIds.includes(res.id);
+
                       return (
-                        <tr key={res.id} className="group transition-colors hover:bg-gray-50/50">
+                        <tr key={res.id} className={`group transition-colors ${isSelected ? 'bg-blue-50/50' : 'hover:bg-gray-50/50'}`}>
+                          <td className="px-6 py-4">
+                            {res.statut === 'DISPONIBLE' && (
+                              <input 
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={() => {
+                                  if (isSelected) setSelectedIds(selectedIds.filter(id => id !== res.id));
+                                  else setSelectedIds([...selectedIds, res.id]);
+                                }}
+                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              />
+                            )}
+                          </td>
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
                               <div className="p-2.5 bg-slate-50 text-slate-500 rounded-lg border border-slate-100 group-hover:bg-blue-50 group-hover:text-blue-600 group-hover:border-blue-100 transition-colors">
@@ -161,41 +374,65 @@ const ResourcesPage = () => {
                             </span>
                           </td>
                           <td className="px-6 py-4">
-                            {res.dateFinGarantie ? (
+                            {res.statut === 'AFFECTEE' ? (
                               <div className="flex flex-col">
-                                <span className={`text-xs font-bold ${isExpired ? 'text-red-500' : 'text-emerald-600'}`}>
-                                  {isExpired ? 'Expirée' : 'Active'}
+                                <span className="text-xs font-bold text-gray-900">
+                                  {departments.find(d => d.id === affectations[res.id]?.departementId)?.nom || 'Dpt.'}
                                 </span>
-                                <span className="text-[10px] text-gray-400 font-medium">{res.dateFinGarantie}</span>
+                                <span className="text-[10px] text-blue-600 font-bold uppercase">
+                                  {affectations[res.id]?.affectationCollective ? 'Collectif' : 'Individuel'}
+                                </span>
                               </div>
                             ) : (
-                              <span className="text-xs text-gray-400">N/A</span>
+                              <span className="text-xs text-gray-400 font-medium italic">Non affectée</span>
                             )}
                           </td>
                           <td className="px-6 py-4">
-                            <span className="text-sm font-semibold text-gray-600 truncate max-w-[150px] inline-block">
-                              {res.fournisseurNom || 'Direct'}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
                             <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border flex items-center gap-1.5 w-fit ${getStatusStyle(res.statut)}`}>
-                              <div className={`w-1.5 h-1.5 rounded-full ${res.statut === 'FONCTIONNELLE' ? 'bg-emerald-500' : (res.statut === 'EN_PANNE' ? 'bg-red-500' : 'bg-amber-500')}`} />
-                              {res.statut}
+                              <div className={`w-1.5 h-1.5 rounded-full ${res.statut === 'AFFECTEE' ? 'bg-emerald-500' : (res.statut === 'EN_PANNE' ? 'bg-red-500' : 'bg-blue-500')}`} />
+                              {res.statut === 'DISPONIBLE' ? 'PRÊT' : res.statut}
                             </span>
                           </td>
                           <td className="px-6 py-4 text-right">
                             <div className="flex justify-end gap-2">
-                              <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                              {res.statut === 'DISPONIBLE' ? (
+                                <button 
+                                  onClick={() => handleOpenAffectModal(res)}
+                                  className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[10px] font-bold hover:bg-blue-700 transition-all flex items-center gap-1.5 shadow-sm"
+                                >
+                                  <Info size={12} /> Affecter
+                                </button>
+                              ) : res.statut === 'AFFECTEE' ? (
+                                <div className="flex items-center gap-1">
+                                  <button 
+                                    onClick={() => handleOpenAffectModal(res, true)}
+                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                    title="Modifier l'affectation"
+                                  >
+                                    <Edit size={16} />
+                                  </button>
+                                  <button 
+                                    onClick={() => handleRemoveAffectation(res.id)}
+                                    className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                    title="Libérer la ressource"
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </div>
+                              ) : null}
+                              <button 
+                                onClick={() => handleOpenEditModal(res)}
+                                className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Modifier les infos ressource"
+                              >
                                 <Edit size={18} />
                               </button>
                               <button 
                                 onClick={() => { setResToDelete(res.id); setIsDeleteModalOpen(true); }}
                                 className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                title="Supprimer de l'inventaire"
                               >
                                 <Trash2 size={18} />
-                              </button>
-                              <button className="p-2 text-gray-400 hover:text-gray-900 rounded-lg transition-colors">
-                                <MoreHorizontal size={18} />
                               </button>
                             </div>
                           </td>
@@ -244,6 +481,141 @@ const ResourcesPage = () => {
           )}
         </div>
       </div>
+
+      {/* Affectation Modal */}
+      {isAffectModalOpen && selectedRes && (
+        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-[110] p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-8 shadow-2xl animate-in zoom-in duration-200">
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Affectation Ressource</h2>
+            <p className="text-sm font-medium text-blue-600 mb-8">{selectedRes.numeroInventaire} ({selectedRes.marque})</p>
+            
+            <div className="space-y-6">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Département cible</label>
+                <select 
+                  value={affectData.departementId}
+                  onChange={e => handleDeptChange(parseInt(e.target.value))}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value={0}>Sélectionner un département</option>
+                  {departments.map(d => <option key={d.id} value={d.id}>{d.nom}</option>)}
+                </select>
+              </div>
+
+              <div className="p-4 bg-blue-50 rounded-xl border border-blue-100">
+                <p className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-1">Information</p>
+                <p className="text-sm font-bold text-blue-900">
+                  L'affectation sera faite au niveau du département. Le chef de département pourra ensuite l'attribuer à un enseignant spécifique.
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button 
+                  onClick={() => setIsAffectModalOpen(false)}
+                  className="flex-1 py-4 border border-gray-200 rounded-xl font-bold text-gray-500 hover:bg-gray-50 transition-all"
+                >
+                  Annuler
+                </button>
+                <button 
+                  onClick={handleCreateAffectation}
+                  disabled={affecting || !affectData.departementId || (!affectData.isCollective && !affectData.enseignantId)}
+                  className="flex-1 py-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {affecting ? <Loader className="animate-spin" size={20} /> : (isEditingAffect ? 'Mettre à jour' : 'Affecter')}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Resource Modal */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-[110] p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md p-8 shadow-2xl animate-in zoom-in duration-200">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Modifier la Ressource</h2>
+            
+            <div className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">N° Inventaire</label>
+                <input 
+                  value={editData.numeroInventaire || ''}
+                  onChange={e => setEditData({...editData, numeroInventaire: e.target.value})}
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl font-semibold outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Marque</label>
+                <input 
+                  value={editData.marque || ''}
+                  onChange={e => setEditData({...editData, marque: e.target.value})}
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl font-semibold outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">État de fonctionnement</label>
+                <select 
+                  value={editData.statut || ''}
+                  onChange={e => setEditData({...editData, statut: e.target.value})}
+                  className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl font-semibold outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="FONCTIONNELLE">FONCTIONNELLE</option>
+                  <option value="EN_PANNE">EN_PANNE</option>
+                  <option value="EN_MAINTENANCE">EN_MAINTENANCE</option>
+                  <option value="DISPONIBLE">DISPONIBLE (Non affectée)</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 pt-6">
+                <button 
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="flex-1 py-3 border border-gray-200 rounded-xl font-bold text-gray-500 hover:bg-gray-50 transition-all"
+                >
+                  Annuler
+                </button>
+                <button 
+                  onClick={handleUpdateResource}
+                  className="flex-1 py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition-all shadow-md"
+                >
+                  Enregistrer
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Bulk Action Bar */}
+      {selectedIds.length > 0 && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] animate-in slide-in-from-bottom-10 duration-300">
+          <div className="bg-gray-900 text-white px-8 py-4 rounded-2xl shadow-2xl flex items-center gap-8">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center font-bold">
+                {selectedIds.length}
+              </div>
+              <div>
+                <p className="font-bold text-sm">Ressources sélectionnées</p>
+                <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest">Action groupée</p>
+              </div>
+            </div>
+            <div className="h-10 w-px bg-gray-800" />
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={handleOpenBulkAffectModal}
+                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold text-sm transition-all flex items-center gap-2"
+              >
+                <Info size={16} /> Affecter la sélection
+              </button>
+              <button 
+                onClick={() => setSelectedIds([])}
+                className="px-6 py-2 bg-transparent hover:bg-gray-800 rounded-xl font-bold text-sm transition-all"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Modal */}
       {isDeleteModalOpen && (

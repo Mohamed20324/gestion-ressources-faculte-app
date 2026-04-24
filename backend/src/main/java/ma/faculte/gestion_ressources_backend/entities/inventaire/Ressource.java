@@ -3,6 +3,7 @@ package ma.faculte.gestion_ressources_backend.entities.inventaire;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import ma.faculte.gestion_ressources_backend.entities.appel_offre.Offre;
+import ma.faculte.gestion_ressources_backend.entities.departement.Departement;
 import ma.faculte.gestion_ressources_backend.entities.referentiel.TypeRessource;
 import ma.faculte.gestion_ressources_backend.entities.utilisateurs.Fournisseur;
 
@@ -45,11 +46,18 @@ public class Ressource {
     @JoinColumn(name = "offre_id", nullable = true)
     private Offre offreOrigine;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "departement_id", nullable = true)
+    private Departement departement;
+
     @Column(nullable = false)
     private LocalDate dateReception;
 
     @Column(nullable = false)
     private String statut = STATUT_DISPONIBLE;
+
+    @Column(nullable = true)
+    private LocalDate dateFinGarantie;
 
     public Ressource() {}
 
@@ -123,5 +131,21 @@ public class Ressource {
 
     public void setStatut(String statut) {
         this.statut = statut;
+    }
+
+    public LocalDate getDateFinGarantie() {
+        return dateFinGarantie;
+    }
+
+    public void setDateFinGarantie(LocalDate dateFinGarantie) {
+        this.dateFinGarantie = dateFinGarantie;
+    }
+
+    public Departement getDepartement() {
+        return departement;
+    }
+
+    public void setDepartement(Departement departement) {
+        this.departement = departement;
     }
 }

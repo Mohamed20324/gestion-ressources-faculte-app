@@ -20,6 +20,8 @@ public class SignalementPanneDTO {
     private String description;
     private LocalDate dateSignalement;
     private String statut;
+    private LocalDate dateLivraisonEchange;
+    private String statutEchange;
 
     public SignalementPanneDTO() {}
 
@@ -77,5 +79,21 @@ public class SignalementPanneDTO {
 
     public void setStatut(String statut) {
         this.statut = statut;
+    }
+
+    public LocalDate getDateLivraisonEchange() {
+        return dateLivraisonEchange;
+    }
+
+    public void setDateLivraisonEchange(LocalDate dateLivraisonEchange) {
+        this.dateLivraisonEchange = dateLivraisonEchange;
+    }
+
+    public String getStatutEchange() {
+        return statutEchange;
+    }
+
+    public void setStatutEchange(String statutEchange) {
+        this.statutEchange = statutEchange;
     }
 }

@@ -21,7 +21,7 @@ public class AffectationController {
     private IAffectationService affectationService;
 
     @PostMapping
-    @PreAuthorize("hasRole('RESPONSABLE')")
+    @PreAuthorize("hasRole('RESPONSABLE') or hasRole('CHEF_DEPARTEMENT')")
     public ResponseEntity<?> affecter(@Valid @RequestBody AffectationDTO dto) {
         try {
             return ResponseEntity.status(201).body(affectationService.affecter(dto));

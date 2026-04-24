@@ -68,7 +68,7 @@ public class ConstatServiceImpl implements IConstatService {
                     .orElseThrow(() -> new RuntimeException("Aucun responsable enregistré"));
             String msg = "Nouveau constat de panne (signalement #" + s.getId() + ") : "
                     + truncate(dto.getExplication(), 200);
-            notificationService.envoyerNotification(resp.getId(), msg, Notification.TYPE_INFO);
+            notificationService.envoyerNotification(resp.getId(), t.getId(), msg, Notification.TYPE_INFO);
             sauve.setEnvoyeAuResponsable(true);
             constatRepository.save(sauve);
         }
@@ -111,5 +111,60 @@ public class ConstatServiceImpl implements IConstatService {
         d.setDateConstat(c.getDateConstat());
         d.setEnvoyeAuResponsable(c.isEnvoyeAuResponsable());
         return d;
+    }
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.List<ConstatDTO> getAll() {
+        return constatRepository.findAll().stream()
+                .map(this::versDto)
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public ConstatDTO envoyerAuFournisseur(Long constatId) {
+        Constat c = constatRepository.findById(constatId)
+                .orElseThrow(() -> new RuntimeException("Constat introuvable"));
+        
+        SignalementPanne s = c.getSignalement();
+        s.setStatut(SignalementPanne.STATUT_FOURNISSEUR);
+        signalementRepository.save(s);
+
+        s.getRessource().setStatut(ma.faculte.gestion_ressources_backend.entities.inventaire.Ressource.STATUT_MAINTENANCE);
+        
+        // Notify supplier
+        if (s.getRessource().getFournisseur() != null) {
+            Responsable resp = responsableRepository.findAll().stream().findFirst().orElse(null);
+            Long expediteurId = resp != null ? resp.getId() : 1L;
+            String msg = "Demande de réparation pour la ressource " + s.getRessource().getMarque() 
+                       + " (Inv: " + s.getRessource().getNumeroInventaire() + "). Constat: " + c.getExplication();
+            notificationService.envoyerNotification(s.getRessource().getFournisseur().getId(), expediteurId, msg, Notification.TYPE_AVERTISSEMENT);
+        }
+
+        return versDto(c);
+    }
+
+    @Override
+    @Transactional
+    public ConstatDTO demanderEchange(Long constatId) {
+        Constat c = constatRepository.findById(constatId)
+                .orElseThrow(() -> new RuntimeException("Constat introuvable"));
+        
+        SignalementPanne s = c.getSignalement();
+        s.setStatut(SignalementPanne.STATUT_ECHANGE);
+        signalementRepository.save(s);
+
+        s.getRessource().setStatut(ma.faculte.gestion_ressources_backend.entities.inventaire.Ressource.STATUT_REFORME);
+        
+        // Notify supplier
+        if (s.getRessource().getFournisseur() != null) {
+            Responsable resp = responsableRepository.findAll().stream().findFirst().orElse(null);
+            Long expediteurId = resp != null ? resp.getId() : 1L;
+            String msg = "Demande d'ÉCHANGE SOUS GARANTIE pour la ressource " + s.getRessource().getMarque() 
+                       + " (Inv: " + s.getRessource().getNumeroInventaire() + "). Constat: " + c.getExplication();
+            notificationService.envoyerNotification(s.getRessource().getFournisseur().getId(), expediteurId, msg, Notification.TYPE_AVERTISSEMENT);
+        }
+
+        return versDto(c);
     }
 }

@@ -131,16 +131,21 @@ const AppelsOffresPage = () => {
   };
 
   const handleAcceptOffre = async (offreId: number) => {
-    if (!window.confirm("Accepter cette offre ? Les autres seront rejetées.")) return;
+    if (!window.confirm("Accepter cette offre ? Cette action est définitive et rejettera automatiquement toutes les autres propositions pour ce marché.")) return;
     setActionLoading(true);
     try {
       const res = await api.accepterOffre(offreId);
       if (res.ok) {
-        showNotification('success', 'Offre acceptée !');
+        showNotification('success', 'Offre acceptée avec succès ! Le marché est désormais clôturé.');
+        // Refresh both modal and main list
         handleOpenOffresModal(selectedAO);
+        loadData();
+      } else {
+        const errorData = await res.json();
+        showNotification('error', errorData.message || 'Le serveur a refusé l\'acceptation');
       }
     } catch (error) {
-      showNotification('error', 'Erreur lors de l\'acceptation');
+      showNotification('error', 'Erreur lors de l\'acceptation (vérifiez votre connexion)');
     } finally {
       setActionLoading(false);
     }
@@ -155,13 +160,17 @@ const AppelsOffresPage = () => {
         : await api.eliminerOffre(showMotifModal.offreId!, motif);
       
       if (res.ok) {
-        showNotification('success', 'Action effectuée');
+        showNotification('success', `Action de ${showMotifModal.action.toLowerCase()} effectuée avec succès.`);
         setShowMotifModal({ show: false, offreId: null, action: '' });
         setMotif('');
         handleOpenOffresModal(selectedAO);
+        loadData();
+      } else {
+        const errorData = await res.json();
+        showNotification('error', errorData.message || 'L\'action a échoué');
       }
     } catch (error) {
-      showNotification('error', 'Erreur technique');
+      showNotification('error', 'Erreur technique lors du traitement du motif');
     } finally {
       setActionLoading(false);
     }
@@ -316,42 +325,6 @@ const AppelsOffresPage = () => {
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
-                <Archive size={24} />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Total Dossiers</p>
-                <p className="text-2xl font-bold text-gray-900">{appels.length}</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
-                <Clock size={24} />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">En Brouillon</p>
-                <p className="text-2xl font-bold text-gray-900">{appels.filter(a => a.statut === 'BROUILLON').length}</p>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
-                <FileCheck size={24} />
-              </div>
-              <div>
-                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Marchés Ouverts</p>
-                <p className="text-2xl font-bold text-gray-900">{appels.filter(a => a.statut === 'OUVERT').length}</p>
-              </div>
-            </div>
-          </div>
-        </div>
 
         {/* Items List */}
         <div className="grid grid-cols-1 gap-4">
@@ -676,28 +649,31 @@ const AppelsOffresPage = () => {
                               <p className="text-sm font-bold text-gray-700">{Array.isArray(offre.dateLivraison) ? `${offre.dateLivraison[2]}/${offre.dateLivraison[1]}/${offre.dateLivraison[0]}` : offre.dateLivraison}</p>
                             </div>
                             <div className="flex items-center gap-2">
-                              {offre.statut === 'SOUMISE' && (
-                                <div className="flex gap-2">
-                                  <button 
-                                    onClick={() => handleAcceptOffre(offre.id)}
-                                    className="px-4 py-2 bg-green-600 text-white rounded-xl text-xs font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-100 flex items-center gap-2"
-                                  >
-                                    <CheckCircle size={14} /> Accepter
-                                  </button>
-                                  <button 
-                                    onClick={() => setShowMotifModal({ show: true, offreId: offre.id, action: 'REJETER' })}
-                                    className="p-2 text-amber-600 hover:bg-amber-50 rounded-xl border border-amber-100 transition-all"
-                                    title="Rejeter"
-                                  >
-                                    <X size={18} />
-                                  </button>
-                                  <button 
-                                    onClick={() => setShowMotifModal({ show: true, offreId: offre.id, action: 'ELIMINER' })}
-                                    className="p-2 text-gray-400 hover:bg-gray-100 rounded-xl border border-gray-200 transition-all"
-                                    title="Éliminer"
-                                  >
-                                    <ShieldAlert size={18} />
-                                  </button>
+                              {offre.statut === 'SOUMISE' && !offres.some(o => o.statut === 'ACCEPTEE') && (
+                                <div className="flex flex-col items-end gap-2">
+                                  <div className="flex gap-2">
+                                    <button 
+                                      onClick={() => handleAcceptOffre(offre.id)}
+                                      className="px-4 py-2 bg-green-600 text-white rounded-xl text-xs font-bold hover:bg-green-700 transition-all shadow-lg shadow-green-100 flex items-center gap-2"
+                                    >
+                                      <CheckCircle size={14} /> Accepter
+                                    </button>
+                                    <button 
+                                      onClick={() => setShowMotifModal({ show: true, offreId: offre.id, action: 'REJETER' })}
+                                      className="p-2 text-amber-600 hover:bg-amber-50 rounded-xl border border-amber-100 transition-all"
+                                      title="Rejeter"
+                                    >
+                                      <X size={18} />
+                                    </button>
+                                    <button 
+                                      onClick={() => setShowMotifModal({ show: true, offreId: offre.id, action: 'ELIMINER' })}
+                                      className="p-2 text-gray-400 hover:bg-gray-100 rounded-xl border border-gray-200 transition-all"
+                                      title="Éliminer"
+                                    >
+                                      <ShieldAlert size={18} />
+                                    </button>
+                                  </div>
+                                  <p className="text-[9px] font-medium text-gray-400 italic">L'acceptation rejettera automatiquement les autres.</p>
                                 </div>
                               )}
                               <button 

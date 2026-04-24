@@ -55,10 +55,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             var auth = new UsernamePasswordAuthenticationToken(email, null, authorities);
             auth.setDetails(claims.get("uid"));
             SecurityContextHolder.getContext().setAuthentication(auth);
-            filterChain.doFilter(request, response);
         } catch (Exception e) {
             ecrire401(response, "Token invalide ou expiré");
+            return;
         }
+
+        filterChain.doFilter(request, response);
     }
 
     private static boolean isPublicPath(HttpServletRequest request) {

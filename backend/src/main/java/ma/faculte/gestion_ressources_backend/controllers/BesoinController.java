@@ -31,7 +31,7 @@ public class BesoinController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('ENSEIGNANT','CHEF_DEPARTEMENT')")
+    @PreAuthorize("hasAnyRole('ENSEIGNANT','CHEF_DEPARTEMENT','RESPONSABLE','ADMIN')")
     public ResponseEntity<?> modifier(@PathVariable Long id, @RequestBody BesoinRessourceDTO dto) {
         try {
             return ResponseEntity.ok(besoinService.modifierBesoin(id, dto));

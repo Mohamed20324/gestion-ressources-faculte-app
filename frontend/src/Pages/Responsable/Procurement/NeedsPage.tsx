@@ -50,6 +50,7 @@ const BesoinsGlobalPage = () => {
   });
   const [submittingAO, setSubmittingAO] = useState(false);
   const [isFabOpen, setIsFabOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState('ALL_READY');
 
   useEffect(() => {
     loadData();
@@ -106,7 +107,11 @@ const BesoinsGlobalPage = () => {
     if (selectedNeeds.length === 0) return;
     setLoading(true);
     try {
-      await Promise.all(selectedNeeds.map(id => api.updateBesoin(id, { statut: 'VALIDE' })));
+      await Promise.all(selectedNeeds.map(id => {
+        const fullBesoin = besoins.find(b => b.id === id);
+        if (!fullBesoin) return Promise.resolve();
+        return api.updateBesoin(id, { ...fullBesoin, statut: 'VALIDE' });
+      }));
       showNotification('success', `${selectedNeeds.length} besoin(s) validé(s)`);
       setSelectedNeeds([]);
       loadData();
@@ -119,7 +124,9 @@ const BesoinsGlobalPage = () => {
 
   const handleValidateOne = async (id: number) => {
     try {
-      const res = await api.updateBesoin(id, { statut: 'VALIDE' });
+      const fullBesoin = besoins.find(b => b.id === id);
+      if (!fullBesoin) return;
+      const res = await api.updateBesoin(id, { ...fullBesoin, statut: 'VALIDE' });
       if (res.ok) {
         showNotification('success', 'Besoin validé');
         loadData();
@@ -177,7 +184,15 @@ const BesoinsGlobalPage = () => {
 
   const filteredBesoins = besoins.filter(b => {
     const typeName = typesRessources.find(t => t.id === b.typeRessourceId)?.libelle || '';
-    return typeName.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = typeName.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (statusFilter === 'ALL_READY') {
+      return matchesSearch && (b.statut === 'ENVOYE' || b.statut === 'VALIDE');
+    }
+    if (statusFilter === 'EN_ATTENTE') {
+      return matchesSearch && b.statut === 'EN_ATTENTE';
+    }
+    return matchesSearch;
   });
 
   const totalPages = Math.ceil(filteredBesoins.length / itemsPerPage);
@@ -215,6 +230,16 @@ const BesoinsGlobalPage = () => {
                 className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition-all shadow-sm font-medium"
               />
             </div>
+
+            <select 
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-4 py-3 bg-white border border-gray-200 rounded-xl font-bold text-gray-600 focus:ring-2 focus:ring-blue-600 outline-none shadow-sm cursor-pointer"
+            >
+              <option value="ALL_READY">Prêts (Validés/Envoyés)</option>
+              <option value="EN_ATTENTE">En attente (Départements)</option>
+              <option value="TOUS">Tous les besoins</option>
+            </select>
             
             <div className="h-10 w-[1px] bg-gray-200 mx-2 hidden lg:block"></div>
 
@@ -222,16 +247,7 @@ const BesoinsGlobalPage = () => {
               <div className="fixed bottom-24 right-8 z-[100] flex flex-col items-center gap-4">
                 {isFabOpen && (
                   <div className="flex flex-col gap-4 animate-in slide-in-from-bottom-4 fade-in duration-200">
-                    <button
-                      onClick={handleValidateSelection}
-                      className="w-12 h-12 bg-emerald-600 text-white rounded-full font-bold hover:bg-emerald-700 transition-all shadow-xl flex items-center justify-center group relative"
-                      title="Valider la sélection"
-                    >
-                      <CheckCircle size={20} />
-                      <span className="absolute right-full mr-3 px-2 py-1 bg-gray-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                        Valider la sélection
-                      </span>
-                    </button>
+
                     <button
                       onClick={handleOpenAOModal}
                       className="w-12 h-12 bg-blue-600 text-white rounded-full font-bold hover:bg-blue-700 transition-all shadow-xl flex items-center justify-center group relative"
@@ -349,16 +365,7 @@ const BesoinsGlobalPage = () => {
                                 </div>
                               ) : (
                                 <>
-                                  {besoin.statut !== 'VALIDE' && (
-                                    <button 
-                                      onClick={() => handleValidateOne(besoin.id)}
-                                      className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                                      title="Valider"
-                                    >
-                                      <CheckCircle size={18} />
-                                    </button>
-                                  )}
-                                  <span className="text-xs text-gray-400 font-medium">Non rattaché</span>
+                                  <span className="text-xs text-gray-400 font-medium italic">En attente de validation par le Chef</span>
                                 </>
                               )}
                             </div>

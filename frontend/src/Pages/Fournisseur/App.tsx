@@ -6,7 +6,9 @@ import AppelsOffresPage from './AppelsOffresPage';
 import SoumettreOffrePage from './SoumettreOffrePage';
 import MesSoumissionsPage from './MesSoumissionsPage';
 import DossiersTraitesPage from './DossiersTraitesPage';
+import MaintenancePage from './MaintenancePage';
 import ProfilePage from '../Common/ProfilePage';
+import NotificationsPage from '../Common/NotificationsPage';
 
 const AppContent = () => {
   return (
@@ -21,8 +23,10 @@ const AppContent = () => {
             <Route path="/appels-offres" element={<AppelsOffresPage />} />
             <Route path="/mes-soumissions" element={<MesSoumissionsPage />} />
             <Route path="/dossiers-traites" element={<DossiersTraitesPage />} />
+            <Route path="/sav" element={<MaintenancePage />} />
             <Route path="/soumission/:id" element={<SoumettreOffrePage />} />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
           </Routes>
         </div>
       </div>

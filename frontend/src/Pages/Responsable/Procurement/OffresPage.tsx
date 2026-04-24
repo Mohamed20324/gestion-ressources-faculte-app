@@ -4,7 +4,8 @@ import {
   ArrowLeft, Loader, CheckCircle, 
   XCircle, AlertTriangle, DollarSign, 
   User, Calendar, Info, Package,
-  Trash2, ShieldAlert, Award
+  Trash2, ShieldAlert, Award,
+  ChevronDown, ChevronRight
 } from 'lucide-react';
 import { api } from '../../../services/api';
 import { NotificationContainer } from '../../../components/Notification';
@@ -21,6 +22,7 @@ const OffresGestionPage = () => {
   const [actionLoading, setActionLoading] = useState(false);
   const [showMotifModal, setShowMotifModal] = useState({ show: false, offreId: null, action: '' });
   const [motif, setMotif] = useState('');
+  const [expandedOffres, setExpandedOffres] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     fetchData();
@@ -90,6 +92,13 @@ const OffresGestionPage = () => {
     if (offres.length === 0) return;
     const sorted = [...offres].sort((a, b) => a.prixTotal - b.prixTotal);
     showNotification('info', `Le moins disant est ${sorted[0].fournisseurNom} avec ${sorted[0].prixTotal} MAD`);
+  };
+
+  const toggleExpand = (id: number) => {
+    const next = new Set(expandedOffres);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setExpandedOffres(next);
   };
 
   if (loading) return (
@@ -168,33 +177,46 @@ const OffresGestionPage = () => {
                   </div>
                 </div>
 
-                {/* Right: Actions */}
+                {/* Right: Actions & Expand */}
                 <div className="flex flex-col justify-center gap-3 lg:w-64">
-                  {offre.statut === 'SOUMISE' && (
-                    <>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => toggleExpand(offre.id)}
+                      className="p-3 bg-gray-50 text-gray-500 rounded-xl hover:bg-purple-50 hover:text-purple-600 transition-all border border-gray-100 flex-shrink-0"
+                      title="Voir les détails"
+                    >
+                      {expandedOffres.has(offre.id) ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                    </button>
+                    
+                    {offre.statut === 'SOUMISE' && (
                       <button 
                         onClick={() => handleAccept(offre.id)}
                         disabled={actionLoading}
-                        className="w-full py-3 bg-green-600 text-white rounded-xl font-black hover:bg-green-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-100"
+                        className="flex-1 py-3 bg-green-600 text-white rounded-xl font-black hover:bg-green-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-green-100"
                       >
                         <CheckCircle size={18} />
-                        Accepter l'offre
+                        Accepter
                       </button>
+                    )}
+                  </div>
+                  
+                  {offre.statut === 'SOUMISE' && (
+                    <div className="grid grid-cols-2 gap-2">
                       <button 
                         onClick={() => setShowMotifModal({ show: true, offreId: offre.id, action: 'REJETER' })}
-                        className="w-full py-3 bg-amber-50 text-amber-700 rounded-xl font-black hover:bg-amber-100 transition-all flex items-center justify-center gap-2 border border-amber-100"
+                        className="py-3 bg-amber-50 text-amber-700 rounded-xl font-black hover:bg-amber-100 transition-all flex items-center justify-center gap-2 border border-amber-100 text-xs"
                       >
-                        <XCircle size={18} />
+                        <XCircle size={14} />
                         Rejeter
                       </button>
                       <button 
                         onClick={() => setShowMotifModal({ show: true, offreId: offre.id, action: 'ELIMINER' })}
-                        className="w-full py-3 bg-gray-900 text-white rounded-xl font-black hover:bg-gray-800 transition-all flex items-center justify-center gap-2"
+                        className="py-3 bg-gray-900 text-white rounded-xl font-black hover:bg-gray-800 transition-all flex items-center justify-center gap-2 text-xs"
                       >
-                        <ShieldAlert size={18} />
-                        Éliminer (Liste Noire)
+                        <ShieldAlert size={14} />
+                        Éliminer
                       </button>
-                    </>
+                    </div>
                   )}
                   {offre.statut === 'ELIMINEE' && (
                     <div className="p-4 bg-gray-100 rounded-2xl text-center">
@@ -204,23 +226,25 @@ const OffresGestionPage = () => {
                 </div>
               </div>
 
-              {/* Details Expandable or shown directly */}
-              <div className="mt-8 pt-8 border-t border-gray-100 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {offre.lignes.map((line: any, idx: number) => (
-                  <div key={idx} className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100 space-y-2">
-                    <div className="flex justify-between items-start">
-                      <span className="text-[10px] font-black text-purple-600 uppercase tracking-widest">{line.variante}</span>
-                      <span className="text-xs font-bold text-gray-900">{line.prixUnitaire} MAD / u</span>
+              {/* Details Expandable Section */}
+              {expandedOffres.has(offre.id) && (
+                <div className="mt-8 pt-8 border-t border-gray-100 grid md:grid-cols-2 lg:grid-cols-3 gap-4 animate-in slide-in-from-top-4 duration-300">
+                  {offre.lignes.map((line: any, idx: number) => (
+                    <div key={idx} className="p-4 bg-gray-50/50 rounded-2xl border border-gray-100 space-y-2">
+                      <div className="flex justify-between items-start">
+                        <span className="text-[10px] font-black text-purple-600 uppercase tracking-widest">{line.variante}</span>
+                        <span className="text-xs font-bold text-gray-900">{line.prixUnitaire} MAD / u</span>
+                      </div>
+                      <p className="font-bold text-gray-900">{line.marque || 'Marque non spécifiée'}</p>
+                      <div className="flex gap-4 text-[10px] text-gray-500 font-medium">
+                        <span>Qté: {line.quantite}</span>
+                        {line.cpu && <span>CPU: {line.cpu}</span>}
+                        {line.ram && <span>RAM: {line.ram}</span>}
+                      </div>
                     </div>
-                    <p className="font-bold text-gray-900">{line.marque || 'Marque non spécifiée'}</p>
-                    <div className="flex gap-4 text-[10px] text-gray-500 font-medium">
-                      <span>Qté: {line.quantite}</span>
-                      {line.cpu && <span>CPU: {line.cpu}</span>}
-                      {line.ram && <span>RAM: {line.ram}</span>}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
 

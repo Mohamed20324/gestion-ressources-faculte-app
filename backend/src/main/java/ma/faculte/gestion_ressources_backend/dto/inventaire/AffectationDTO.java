@@ -16,6 +16,12 @@ public class AffectationDTO {
     private Long enseignantId;
     private boolean affectationCollective;
     private LocalDate dateAffectation;
+    private Long expediteurId;
+    
+    // Resource details for display
+    private String ressourceMarque;
+    private String ressourceCategorie;
+    private String ressourceNumeroInventaire;
 
     public AffectationDTO() {}
 
@@ -65,5 +71,37 @@ public class AffectationDTO {
 
     public void setDateAffectation(LocalDate dateAffectation) {
         this.dateAffectation = dateAffectation;
+    }
+
+    public Long getExpediteurId() {
+        return expediteurId;
+    }
+
+    public void setExpediteurId(Long expediteurId) {
+        this.expediteurId = expediteurId;
+    }
+
+    public String getRessourceMarque() {
+        return ressourceMarque;
+    }
+
+    public void setRessourceMarque(String ressourceMarque) {
+        this.ressourceMarque = ressourceMarque;
+    }
+
+    public String getRessourceCategorie() {
+        return ressourceCategorie;
+    }
+
+    public void setRessourceCategorie(String ressourceCategorie) {
+        this.ressourceCategorie = ressourceCategorie;
+    }
+
+    public String getRessourceNumeroInventaire() {
+        return ressourceNumeroInventaire;
+    }
+
+    public void setRessourceNumeroInventaire(String ressourceNumeroInventaire) {
+        this.ressourceNumeroInventaire = ressourceNumeroInventaire;
     }
 }

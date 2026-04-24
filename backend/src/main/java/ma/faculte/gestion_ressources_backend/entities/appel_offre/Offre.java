@@ -22,6 +22,8 @@ public class Offre {
     public static final String STATUT_ACCEPTEE = "ACCEPTEE";
     public static final String STATUT_REJETEE = "REJETEE";
     public static final String STATUT_ELIMINEE = "ELIMINEE";
+    public static final String STATUT_LIVREE = "LIVREE";
+    public static final String STATUT_LIVREE_RETARD = "LIVREE_RETARD";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

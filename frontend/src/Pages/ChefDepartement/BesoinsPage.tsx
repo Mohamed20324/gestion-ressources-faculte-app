@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { 
-  Plus, Search, Loader, FileText, Trash2, 
-  AlertTriangle, CheckCircle, Clock, XCircle, 
-  ChevronLeft, ChevronRight, Edit2, Send,
-  Package, Info, Activity
+  Plus, Search, Loader, FileText, XCircle, 
+  CheckCircle, Clock, ChevronLeft, ChevronRight, 
+  Edit2, Send, Package, Info, Monitor, Cpu, Database, HardDrive, Printer, Layers, Box, Trash2, AlertCircle, Truck, LinkIcon as Link
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
@@ -14,9 +13,9 @@ interface Besoin {
   id: number;
   typeRessourceId: number;
   quantite: number;
-  statut: 'EN_ATTENTE' | 'VALIDE' | 'REJETE' | 'ENVOYE';
+  statut: 'EN_ATTENTE' | 'VALIDE' | 'REJETE' | 'ENVOYE' | 'EN_LIVRAISON';
   departementId: number;
-  reunionId: number;
+  reunionId?: number;
   enseignantId?: number;
   description?: string;
   categorie: 'STANDARD' | 'ORDINATEUR' | 'IMPRIMANTE';
@@ -27,6 +26,7 @@ interface Besoin {
   vitesseImpression?: number;
   resolution?: string;
   marque?: string;
+  descriptionTechnique?: string;
 }
 
 const BesoinsPage = () => {
@@ -36,15 +36,16 @@ const BesoinsPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
+  const itemsPerPage = 3;
+  const [categoryFilter, setCategoryFilter] = useState<'ALL' | 'ORDINATEUR' | 'IMPRIMANTE' | 'LIVRAISON' | 'AUTRES'>('ALL');
+  const [viewFilter, setViewFilter] = useState<'ALL' | 'MINE'>('ALL');
 
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [itemToDelete, setItemToDelete] = useState<number | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<number | null>(null);
   
   const [formData, setFormData] = useState({
     typeRessourceId: '',
@@ -57,7 +58,8 @@ const BesoinsPage = () => {
     disqueDur: '',
     ecran: '',
     vitesseImpression: 0,
-    resolution: ''
+    resolution: '',
+    descriptionTechnique: ''
   });
 
   const [typesRessources, setTypesRessources] = useState<any[]>([]);
@@ -74,7 +76,6 @@ const BesoinsPage = () => {
   const fetchInitialData = async () => {
     setLoading(true);
     try {
-      // 1. Get user details via API service if possible, or direct fetch
       const userRes = await fetch(`http://localhost:8081/api/utilisateurs/${user.id}`, {
         headers: {
           'Authorization': `Bearer ${user.accessToken}`,
@@ -89,13 +90,11 @@ const BesoinsPage = () => {
         deptId = data.departementId;
       }
 
-      // 2. Load Types
       const typesRes = await api.getAllTypesRessources();
       if (typesRes.ok) {
         setTypesRessources(await typesRes.json());
       }
 
-      // 3. Load Data if dept exists
       if (deptId) {
         const [profRes] = await Promise.all([
           api.getUsersByRole('ENSEIGNANT'),
@@ -107,18 +106,40 @@ const BesoinsPage = () => {
         }
       }
     } catch (error) {
-      console.error("Initial load error:", error);
       showNotification('error', 'Erreur lors du chargement des données');
     } finally {
       setLoading(false);
     }
   };
 
-  const loadBesoins = async (deptId: number) => {
+  const loadBesoins = async (id: number) => {
     try {
-      const response = await api.getBesoinsByDepartement(deptId);
+      const response = user.role === 'ENSEIGNANT' 
+        ? await api.getBesoinsByEnseignant(user.id)
+        : await api.getBesoinsByDepartement(id);
+
       if (response.ok) {
-        setBesoins(await response.json());
+        let data = await response.json();
+        // Filter out rejected needs from the list
+        data = data.filter((b: Besoin) => b.statut !== 'REJETE');
+        
+        // Final safety filter for teachers
+        if (user.role === 'ENSEIGNANT') {
+          data = data.filter((b: Besoin) => b.enseignantId === user.id);
+        } else if (user.role === 'CHEF_DEPARTEMENT') {
+          // Filter out teacher needs that have no reunion
+          data = data.filter((b: Besoin) => !(b.enseignantId && !b.reunionId));
+          
+          // Sort: Needs WITH reunion first, then Teacher needs
+          data.sort((a: Besoin, b: Besoin) => {
+            if (a.reunionId && !b.reunionId) return -1;
+            if (!a.reunionId && b.reunionId) return 1;
+            if (a.enseignantId && !b.enseignantId) return -1;
+            if (!a.enseignantId && b.enseignantId) return 1;
+            return 0;
+          });
+        }
+        setBesoins(data);
       }
     } catch (error) {
       console.error('Error loading besoins:', error);
@@ -130,9 +151,10 @@ const BesoinsPage = () => {
       const response = await api.getReunionsByDepartement(deptId);
       if (response.ok) {
         const data = await response.json();
-        setReunions(data);
-        if (data.length > 0 && !formData.reunionId) {
-          setFormData(prev => ({ ...prev, reunionId: data[0].id.toString() }));
+        const activeReunions = data.filter((r: any) => r.statut === 'PLANIFIEE' || r.statut === 'EN_COURS');
+        setReunions(activeReunions);
+        if (activeReunions.length > 0 && !formData.reunionId) {
+          setFormData(prev => ({ ...prev, reunionId: activeReunions[0].id.toString() }));
         }
       }
     } catch (error) {
@@ -152,7 +174,8 @@ const BesoinsPage = () => {
       disqueDur: '',
       ecran: '',
       vitesseImpression: 0,
-      resolution: ''
+      resolution: '',
+      descriptionTechnique: ''
     });
     setIsEditMode(false);
     setEditingId(null);
@@ -171,11 +194,108 @@ const BesoinsPage = () => {
       disqueDur: besoin.disqueDur || '',
       ecran: besoin.ecran || '',
       vitesseImpression: besoin.vitesseImpression || 0,
-      resolution: besoin.resolution || ''
+      resolution: besoin.resolution || '',
+      descriptionTechnique: besoin.descriptionTechnique || ''
     });
     setIsEditMode(true);
     setEditingId(besoin.id);
     setIsModalOpen(true);
+  };
+
+  const handleRejectBesoin = async (besoin: Besoin) => {
+    if (!window.confirm('Voulez-vous rejeter ce besoin ? Il sera supprimé de la liste.')) return;
+    try {
+      console.log("Rejecting besoin:", besoin.id);
+      const response = await api.updateBesoin(besoin.id, {
+        ...besoin,
+        statut: 'REJETE'
+      });
+      
+      if (response.ok) {
+        showNotification('success', 'Besoin rejeté et retiré de la liste');
+        
+        if (besoin.enseignantId) {
+          api.createNotification({
+            utilisateurId: besoin.enseignantId,
+            titre: 'Besoin Rejeté',
+            message: `Votre demande de ressource (#${besoin.id}) a été rejetée.`,
+            type: 'ERROR'
+          }).catch(e => console.error("Notif error:", e));
+        }
+
+        const deptId = userData?.departementId || besoins.find(b => b.id === besoin.id)?.departementId;
+        if (deptId) loadBesoins(deptId);
+      } else {
+        const errorData = await response.text();
+        console.error("Reject failed:", errorData);
+        showNotification('error', 'Le serveur a refusé le rejet');
+      }
+    } catch (error) {
+      console.error("Error in handleRejectBesoin:", error);
+      showNotification('error', 'Erreur lors du rejet');
+    }
+  };
+
+   const handleValidateBesoin = async (besoin: Besoin) => {
+    // Vérification avant envoi
+    if (!besoin.reunionId) {
+      showNotification('error', 'Impossible de valider : Ce besoin n\'est rattaché à aucune réunion.');
+      return;
+    }
+
+    // On peut aussi vérifier le statut de la réunion si on a les données
+    const meeting = reunions.find(m => m.id === besoin.reunionId);
+    if (meeting && meeting.statut !== 'VALIDEE') {
+      showNotification('error', 'Impossible de valider : La réunion rattachée n\'est pas encore terminée.');
+      return;
+    }
+
+    try {
+      console.log("Validating besoin:", besoin.id);
+      const response = await api.updateBesoin(besoin.id, {
+        ...besoin,
+        statut: 'VALIDE'
+      });
+      
+      if (response.ok) {
+        showNotification('success', 'Besoin validé');
+        const deptId = userData?.departementId || besoins.find(b => b.id === besoin.id)?.departementId;
+        if (deptId) loadBesoins(deptId);
+      } else {
+        const errorData = await response.text();
+        console.error("Validation failed:", errorData);
+        showNotification('error', 'Le serveur a refusé la validation');
+      }
+    } catch (error) {
+      console.error("Error in handleValidateBesoin:", error);
+      showNotification('error', 'Erreur de validation');
+    }
+  };
+
+  const handleDeleteBesoin = (id: number) => {
+    setItemToDelete(id);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    setSaving(true);
+    try {
+      const response = await api.deleteBesoin(itemToDelete);
+      if (response.ok) {
+        showNotification('success', 'Besoin supprimé définitivement');
+        const deptId = userData?.departementId || besoins.find(b => b.id === itemToDelete)?.departementId;
+        if (deptId) loadBesoins(deptId);
+        setIsDeleteModalOpen(false);
+        setItemToDelete(null);
+      } else {
+        showNotification('error', 'Erreur lors de la suppression');
+      }
+    } catch (error) {
+      showNotification('error', 'Erreur technique');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSendToResponsible = async () => {
@@ -202,45 +322,38 @@ const BesoinsPage = () => {
     }
   };
 
-  const handleValidateBesoin = async (besoin: Besoin) => {
-    try {
-      const response = await api.updateBesoin(besoin.id, {
-        ...besoin,
-        statut: 'VALIDE'
-      });
-      if (response.ok) {
-        showNotification('success', 'Besoin validé');
-        loadBesoins(userData.departementId);
-      }
-    } catch (error) {
-      showNotification('error', 'Erreur de validation');
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userData?.departementId) return;
+    const deptId = userData?.departementId || (isEditMode ? besoins.find(b => b.id === editingId)?.departementId : null);
+    if (!deptId) {
+      showNotification('error', 'Erreur: Département non identifié');
+      return;
+    }
     
     setSaving(true);
     try {
       const selectedType = typesRessources.find(t => t.id === parseInt(formData.typeRessourceId));
+      const reunionId = formData.reunionId ? parseInt(formData.reunionId) : null;
       const payload = {
         typeRessourceId: parseInt(formData.typeRessourceId),
         quantite: formData.quantite,
-        reunionId: parseInt(formData.reunionId),
-        departementId: userData.departementId,
+        reunionId: reunionId,
+        departementId: deptId,
         description: formData.description,
         statut: isEditMode ? (besoins.find(b => b.id === editingId)?.statut || 'EN_ATTENTE') : 'EN_ATTENTE',
         categorie: selectedType?.code === 'ORDINATEUR' ? 'ORDINATEUR' : (selectedType?.code === 'IMPRIMANTE' ? 'IMPRIMANTE' : 'STANDARD'),
-        enseignantId: user.role === 'ENSEIGNANT' ? user.id : (isEditMode ? besoins.find(b => b.id === editingId)?.enseignantId : null),
+        enseignantId: user.role === 'CHEF_DEPARTEMENT' ? (isEditMode ? besoins.find(b => b.id === editingId)?.enseignantId : null) : user.id,
         marque: formData.marque,
         cpu: formData.cpu,
         ram: formData.ram,
         disqueDur: formData.disqueDur,
         ecran: formData.ecran,
         vitesseImpression: formData.vitesseImpression,
-        resolution: formData.resolution
+        resolution: formData.resolution,
+        descriptionTechnique: formData.descriptionTechnique
       };
+
+      console.log("Submitting payload:", payload);
 
       const response = isEditMode && editingId
         ? await api.updateBesoin(editingId, { ...payload, id: editingId })
@@ -249,42 +362,39 @@ const BesoinsPage = () => {
       if (response.ok) {
         showNotification('success', isEditMode ? 'Besoin modifié' : 'Besoin soumis');
         setIsModalOpen(false);
-        loadBesoins(userData.departementId);
+        loadBesoins(deptId);
       } else {
+        const errorMsg = await response.text();
+        console.error("Submission failed:", errorMsg);
         showNotification('error', 'Erreur lors de la soumission');
       }
     } catch (error) {
+      console.error("Error in handleSubmit:", error);
       showNotification('error', 'Erreur technique');
     } finally {
       setSaving(false);
     }
   };
 
-  const handleDeleteClick = (id: number) => {
-    setItemToDelete(id);
-    setIsDeleteModalOpen(true);
-  };
-
-  const confirmDelete = async () => {
-    if (!itemToDelete || !userData?.departementId) return;
-    setDeleting(true);
-    try {
-      const response = await api.deleteBesoin(itemToDelete);
-      if (response.ok) {
-        showNotification('success', 'Besoin supprimé');
-        setBesoins(besoins.filter(b => b.id !== itemToDelete));
-        setIsDeleteModalOpen(false);
-      }
-    } catch (error) {
-      showNotification('error', 'Erreur lors de la suppression');
-    } finally {
-      setDeleting(false);
-    }
-  };
-
   const filteredBesoins = besoins.filter(b => {
-    const typeName = typesRessources.find(t => t.id === b.typeRessourceId)?.libelle || '';
-    return typeName.toLowerCase().includes(searchTerm.toLowerCase());
+    // Role based view filter for Chef
+    if (user.role === 'CHEF_DEPARTEMENT') {
+      if (viewFilter === 'MINE' && b.enseignantId) return false;
+      if (viewFilter === 'ALL' && !b.enseignantId && besoins.some(other => other.enseignantId)) {
+        // Optionnel: On peut choisir de cacher les besoins du chef dans la vue "Tous" 
+        // s'il veut vraiment séparer les deux, mais généralement "Tous" veut dire tout.
+        // Ici je vais laisser "Tous" afficher tout, et "MINE" filtrer.
+      }
+    }
+
+    const type = typesRessources.find(t => t.id === b.typeRessourceId);
+    const typeName = type?.libelle || '';
+    const matchesSearch = typeName.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    if (categoryFilter === 'ORDINATEUR') return matchesSearch && b.categorie === 'ORDINATEUR';
+    if (categoryFilter === 'IMPRIMANTE') return matchesSearch && b.categorie === 'IMPRIMANTE';
+    if (categoryFilter === 'LIVRAISON') return matchesSearch && b.statut === 'EN_LIVRAISON';
+    return matchesSearch;
   });
 
   const totalPages = Math.ceil(filteredBesoins.length / itemsPerPage);
@@ -294,17 +404,9 @@ const BesoinsPage = () => {
     switch (status) {
       case 'VALIDE': return 'bg-green-100 text-green-700 border-green-200';
       case 'ENVOYE': return 'bg-blue-100 text-blue-700 border-blue-200';
+      case 'EN_LIVRAISON': return 'bg-purple-100 text-purple-700 border-purple-200 animate-pulse';
       case 'REJETE': return 'bg-red-100 text-red-700 border-red-200';
       default: return 'bg-amber-100 text-amber-700 border-amber-200';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'VALIDE': return <CheckCircle size={14} />;
-      case 'ENVOYE': return <Send size={14} />;
-      case 'REJETE': return <XCircle size={14} />;
-      default: return <Clock size={14} />;
     }
   };
 
@@ -312,10 +414,12 @@ const BesoinsPage = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[500px] gap-4">
         <Loader className="animate-spin text-purple-600" size={48} />
-        <p className="text-gray-500 font-medium animate-pulse">Chargement de vos besoins...</p>
+        <p className="text-gray-500 font-medium">Chargement...</p>
       </div>
     );
   }
+
+  const selectedTypeCode = typesRessources.find(t => t.id === parseInt(formData.typeRessourceId))?.code;
 
   return (
     <div className="p-8 bg-gray-50/30 min-h-screen pb-20">
@@ -324,20 +428,20 @@ const BesoinsPage = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <div className="p-2 bg-purple-600 rounded-xl text-white shadow-lg shadow-purple-200">
+            <div className="p-2 bg-purple-600 rounded-xl text-white shadow-lg">
               <FileText size={28} />
             </div>
-            Mes Besoins
+            Gestion des Besoins
           </h1>
-          <p className="text-gray-500 mt-2">Gérez et suivez vos demandes de ressources pour le département.</p>
+          <p className="text-gray-500 mt-2">Suivi et validation des demandes de ressources.</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+        <div className="flex items-center gap-3 w-full md:w-auto">
           <div className="relative flex-1 md:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input 
               type="text" 
-              placeholder="Rechercher un besoin..." 
+              placeholder="Rechercher..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-purple-500 outline-none transition-all shadow-sm"
@@ -348,9 +452,8 @@ const BesoinsPage = () => {
             className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-2xl font-bold hover:bg-purple-700 transition-all shadow-lg shadow-purple-200"
           >
             <Plus size={20} />
-            Nouveau Besoin
+            Nouveau
           </button>
-          
           {user.role === 'CHEF_DEPARTEMENT' && (
             <button 
               onClick={handleSendToResponsible}
@@ -358,279 +461,357 @@ const BesoinsPage = () => {
               className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 disabled:opacity-50"
             >
               <Send size={20} />
-              Transmettre au Responsable
+              Transmettre
             </button>
           )}
         </div>
       </div>
 
-      <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/50 overflow-hidden mb-8">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
-            <thead>
-              <tr className="bg-gray-50/50 border-b border-gray-100">
-                <th className="px-8 py-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Type & Catégorie</th>
-                <th className="px-8 py-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Demandeur</th>
-                <th className="px-8 py-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Quantité</th>
-                <th className="px-8 py-6 text-xs font-bold text-gray-400 uppercase tracking-widest">Statut</th>
-                <th className="px-8 py-6 text-xs font-bold text-gray-400 uppercase tracking-widest text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {currentItems.map((besoin) => {
-                const type = typesRessources.find(t => t.id === besoin.typeRessourceId);
-                const typeName = type?.libelle || 'Type Inconnu';
-                return (
-                  <tr key={besoin.id} className="hover:bg-gray-50/50 transition-colors group">
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-purple-50 rounded-2xl flex items-center justify-center text-purple-600 border border-purple-100 group-hover:scale-110 transition-transform">
-                          <Package size={22} />
-                        </div>
-                        <div>
-                          <p className="font-bold text-gray-900 text-base">{typeName}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">{besoin.categorie}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-2">
-                        {besoin.enseignantId ? (
-                          <div className="flex flex-col">
-                            <span className="font-bold text-gray-800">
-                              {professors.find(p => p.id === besoin.enseignantId) 
-                                ? `${professors.find(p => p.id === besoin.enseignantId).nom} ${professors.find(p => p.id === besoin.enseignantId).prenom}`
-                                : `Professeur #${besoin.enseignantId}`}
-                            </span>
-                            <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Enseignant</span>
-                          </div>
-                        ) : (
-                          <span className="text-gray-400 italic text-sm">Département</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-2">
-                        <span className="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-xl font-bold text-gray-700 border border-gray-100">
-                          {besoin.quantite}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <span className={`px-4 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider border flex items-center gap-2 w-fit ${getStatusStyle(besoin.statut)}`}>
-                        {getStatusIcon(besoin.statut)}
-                        {besoin.statut.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="px-8 py-6 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {user.role === 'CHEF_DEPARTEMENT' && besoin.statut === 'EN_ATTENTE' && (
-                          <button 
-                            onClick={() => handleValidateBesoin(besoin)}
-                            className="p-3 text-green-600 hover:bg-green-50 rounded-2xl transition-all hover:scale-110"
-                            title="Valider"
-                          >
-                            <CheckCircle size={20} />
-                          </button>
-                        )}
-                        {besoin.statut === 'EN_ATTENTE' && (user.role === 'CHEF_DEPARTEMENT' || besoin.enseignantId === user.id) && (
-                          <button 
-                            onClick={() => handleEditClick(besoin)}
-                            className="p-3 text-blue-600 hover:bg-blue-50 rounded-2xl transition-all hover:scale-110"
-                            title="Modifier"
-                          >
-                            <Edit2 size={20} />
-                          </button>
-                        )}
-                        {(
-                          (besoin.statut === 'EN_ATTENTE' && (user.role === 'CHEF_DEPARTEMENT' || besoin.enseignantId === user.id)) || 
-                          (user.role === 'CHEF_DEPARTEMENT' && besoin.statut === 'VALIDE')
-                        ) && (
-                          <button 
-                            onClick={() => handleDeleteClick(besoin.id)}
-                            className="p-3 text-red-600 hover:bg-red-50 rounded-2xl transition-all hover:scale-110"
-                            title="Supprimer"
-                          >
-                            <Trash2 size={20} />
-                          </button>
-                        )}
-                        {besoin.description && (
-                          <div className="group/info relative">
-                            <div className="p-3 text-gray-400 hover:bg-gray-50 rounded-2xl cursor-help">
-                              <Info size={20} />
-                            </div>
-                            <div className="absolute bottom-full right-0 mb-2 w-64 p-4 bg-gray-900 text-white text-xs rounded-2xl opacity-0 invisible group-hover/info:opacity-100 group-hover/info:visible transition-all z-50 shadow-xl">
-                              {besoin.description}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          
-          {filteredBesoins.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-24 text-center">
-              <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6">
-                <FileText className="text-gray-200" size={40} />
-              </div>
-              <p className="text-gray-500 text-xl font-medium">Aucun besoin trouvé</p>
-              <p className="text-gray-400 text-sm mt-2">Commencez par ajouter un nouveau besoin pour votre département.</p>
+      <div className="flex flex-col md:flex-row gap-4 mb-6 justify-between items-center">
+        <div className="flex gap-4 items-center">
+          {user.role === 'CHEF_DEPARTEMENT' && (
+            <div className="flex p-1 bg-white border border-gray-100 rounded-2xl shadow-sm">
+              <button
+                onClick={() => setViewFilter('ALL')}
+                className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${viewFilter === 'ALL' ? 'bg-purple-600 text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                Tous les Besoins
+              </button>
+              <button
+                onClick={() => setViewFilter('MINE')}
+                className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${viewFilter === 'MINE' ? 'bg-purple-600 text-white shadow-md' : 'text-gray-400 hover:text-gray-600'}`}
+              >
+                Mes Besoins
+              </button>
             </div>
           )}
+
+          <div className="flex p-1 bg-gray-100/50 rounded-2xl w-fit border border-gray-100">
+            {[
+              { id: 'ALL', label: 'Tous', icon: <Box size={14} /> },
+              { id: 'ORDINATEUR', label: 'Ordinateurs', icon: <Monitor size={14} /> },
+              { id: 'IMPRIMANTE', label: 'Imprimantes', icon: <Printer size={14} /> },
+              { id: 'LIVRAISON', label: 'En Livraison', icon: <Truck size={14} /> },
+              { id: 'AUTRES', label: 'Autres', icon: <Layers size={14} /> }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setCategoryFilter(tab.id as any);
+                  setCurrentPage(1);
+                }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  categoryFilter === tab.id 
+                    ? 'bg-white text-purple-600 shadow-sm' 
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                {tab.icon}
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
+      </div>
+
+      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden mb-8">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-gray-50/30 border-b border-gray-100">
+              <th className="px-8 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Article & Détails</th>
+              {user.role !== 'ENSEIGNANT' && <th className="px-8 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Demandeur</th>}
+              <th className="px-8 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] text-center">Quantité</th>
+              <th className="px-8 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Statut</th>
+              <th className="px-8 py-5 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-50">
+            {currentItems.map((besoin) => {
+              const type = typesRessources.find(t => t.id === besoin.typeRessourceId);
+              const prof = professors.find(p => p.id === besoin.enseignantId);
+              return (
+                <tr key={besoin.id} className={`transition-all duration-300 border-b border-gray-50 last:border-0 hover:bg-gray-50/50 ${besoin.reunionId ? 'border-l-[6px] border-l-amber-400' : 'border-l-[6px] border-l-red-400'}`}>
+                  <td className="px-8 py-6">
+                    <div className="flex items-center gap-4">
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110 ${besoin.reunionId ? 'bg-amber-50 text-amber-600' : 'bg-red-50 text-red-600'}`}>
+                        {besoin.reunionId ? <Package size={22} /> : <AlertCircle size={22} />}
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-3">
+                          <p className="font-extrabold text-gray-900 text-base">{type?.libelle || 'Article'}</p>
+                          {!besoin.reunionId && (
+                            <div className="flex flex-col gap-1">
+                              <span className="flex items-center gap-1.5 px-2 py-0.5 bg-red-100 text-red-600 text-[9px] font-black uppercase rounded-md tracking-tighter">
+                                <AlertCircle size={10} /> Urgent / Hors Réunion
+                              </span>
+                              <span className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-100 text-amber-600 text-[9px] font-black uppercase rounded-md tracking-tighter animate-pulse">
+                                <Link size={10} /> Réunion manquante
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-gray-50 px-2 py-0.5 rounded-md">{besoin.categorie}</span>
+                          {besoin.marque && <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-md italic">{besoin.marque}</span>}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  {user.role !== 'ENSEIGNANT' && (
+                    <td className="px-8 py-5">
+                      <p className="font-bold text-gray-800 text-sm">{prof ? `${prof.nom} ${prof.prenom}` : 'Département'}</p>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-widest ${prof ? 'bg-indigo-50 text-indigo-600' : 'bg-purple-50 text-purple-600'}`}>
+                        {prof ? 'Enseignant' : 'Chef / Dept'}
+                      </span>
+                    </td>
+                  )}
+                  <td className="px-8 py-6 text-center">
+                    <div className="inline-flex items-center justify-center w-10 h-10 bg-white border border-gray-100 rounded-xl shadow-sm">
+                      <span className="font-black text-gray-900 text-sm">{besoin.quantite}</span>
+                    </div>
+                  </td>
+                  <td className="px-8 py-6">
+                    <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border shadow-sm ${getStatusStyle(besoin.statut)}`}>
+                      {besoin.statut}
+                    </span>
+                  </td>
+                  <td className="px-8 py-5 text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      {besoin.cpu && (
+                        <div className="group/detail relative mr-2">
+                          <div className="p-2 text-gray-400 hover:bg-gray-50 rounded-xl cursor-help">
+                            <Info size={18} />
+                          </div>
+                          <div className="absolute bottom-full right-0 mb-2 w-48 p-3 bg-gray-900 text-white text-[10px] rounded-xl opacity-0 invisible group-hover/detail:opacity-100 group-hover/detail:visible transition-all z-50 shadow-xl">
+                            <p className="font-bold border-b border-white/20 pb-1 mb-1">Spécifications</p>
+                            {besoin.cpu && <p>CPU: {besoin.cpu}</p>}
+                            {besoin.ram && <p>RAM: {besoin.ram}</p>}
+                            {besoin.disqueDur && <p>Disque: {besoin.disqueDur}</p>}
+                          </div>
+                        </div>
+                      )}
+                      {user.role === 'CHEF_DEPARTEMENT' && besoin.statut === 'EN_ATTENTE' && (
+                        <>
+                          <button 
+                            onClick={() => handleValidateBesoin(besoin)} 
+                            disabled={!besoin.reunionId}
+                            className={`p-2.5 rounded-xl transition-all ${besoin.reunionId ? 'text-green-600 hover:bg-green-50' : 'text-gray-300 cursor-not-allowed'}`} 
+                            title={besoin.reunionId ? "Valider le besoin" : "Impossible de valider : Réunion manquante"}
+                          >
+                            <CheckCircle size={18} />
+                          </button>
+                          <button onClick={() => handleRejectBesoin(besoin)} className="p-2.5 text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Rejeter">
+                            <XCircle size={18} />
+                          </button>
+                        </>
+                      )}
+                      {besoin.statut === 'EN_ATTENTE' && (user.role === 'CHEF_DEPARTEMENT' || besoin.enseignantId === user.id) && (
+                        <>
+                          <button onClick={() => handleEditClick(besoin)} className="p-2.5 text-blue-600 hover:bg-blue-50 rounded-xl transition-all" title="Modifier">
+                            <Edit2 size={18} />
+                          </button>
+                          {(besoin.enseignantId === user.id || (!besoin.enseignantId && user.role === 'CHEF_DEPARTEMENT')) && (
+                            <button onClick={() => handleDeleteBesoin(besoin.id)} className="p-2.5 text-gray-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all" title="Supprimer">
+                              <Trash2 size={18} />
+                            </button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+        {filteredBesoins.length === 0 && (
+          <div className="py-20 text-center text-gray-400 italic">Aucun besoin trouvé.</div>
+        )}
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between bg-white px-8 py-6 rounded-[2rem] border border-gray-100 shadow-sm">
-          <p className="text-sm text-gray-500">
-            Page <span className="font-bold text-gray-900">{currentPage}</span> sur <span className="font-bold text-gray-900">{totalPages}</span>
-          </p>
-          
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={() => setCurrentPage(p => Math.max(1, p-1))}
-              disabled={currentPage === 1}
-              className="p-3 border border-gray-100 rounded-2xl disabled:opacity-30 hover:bg-gray-50 transition-all"
-            >
-              <ChevronLeft size={20} />
-            </button>
-            <button 
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))}
-              disabled={currentPage === totalPages}
-              className="p-3 border border-gray-100 rounded-2xl disabled:opacity-30 hover:bg-gray-50 transition-all"
-            >
-              <ChevronRight size={20} />
-            </button>
-          </div>
+        <div className="flex items-center justify-center gap-4">
+          <button 
+            onClick={() => setCurrentPage(p => Math.max(1, p-1))}
+            disabled={currentPage === 1}
+            className="p-2 bg-white border border-gray-100 rounded-xl disabled:opacity-30 hover:bg-gray-50 transition-all shadow-sm"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <span className="text-sm font-bold text-gray-600">Page {currentPage} / {totalPages}</span>
+          <button 
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))}
+            disabled={currentPage === totalPages}
+            className="p-2 bg-white border border-gray-100 rounded-xl disabled:opacity-30 hover:bg-gray-50 transition-all shadow-sm"
+          >
+            <ChevronRight size={20} />
+          </button>
         </div>
       )}
 
-      {/* Modals are unchanged but included for completeness in re-write */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-xl p-10 shadow-2xl animate-in fade-in zoom-in duration-300 border border-gray-100 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-10">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-purple-50 text-purple-600 rounded-2xl">
-                  <Plus size={24} />
-                </div>
-                <h2 className="text-2xl font-bold text-gray-900">{isEditMode ? 'Modifier le Besoin' : 'Nouveau Besoin'}</h2>
-              </div>
-              <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full text-gray-400 transition-colors">
-                <XCircle size={28} />
-              </button>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-5xl p-10 shadow-2xl relative">
+            <button onClick={() => setIsModalOpen(false)} className="absolute top-8 right-8 text-gray-400 hover:text-gray-600 transition-colors">
+              <XCircle size={28} />
+            </button>
+            
+            <div className="mb-8">
+              <h2 className="text-2xl font-black text-gray-900 tracking-tight">{isEditMode ? 'Modifier le Besoin' : 'Nouveau Besoin'}</h2>
+              <p className="text-gray-400 text-sm">Remplissez les informations techniques et administratives.</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-8">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-3">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Type de Ressource</label>
-                  <select 
-                    required
-                    value={formData.typeRessourceId}
-                    onChange={(e) => setFormData({...formData, typeRessourceId: e.target.value})}
-                    className="w-full px-6 py-4 bg-gray-50 border border-gray-200 rounded-[1.5rem] focus:ring-2 focus:ring-purple-500 outline-none transition-all font-bold text-gray-700"
-                  >
-                    <option value="">Choisir un type...</option>
-                    {typesRessources.map((t: any) => (
-                      <option key={t.id} value={t.id}>{t.libelle}</option>
-                    ))}
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              {/* Colonne Gauche: Informations Générales */}
+              <div className="space-y-5">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Type de Ressource</label>
+                    <select required value={formData.typeRessourceId} onChange={(e) => setFormData({...formData, typeRessourceId: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none text-sm transition-all">
+                      <option value="">Choisir...</option>
+                      {typesRessources.map((t: any) => <option key={t.id} value={t.id}>{t.libelle}</option>)}
+                    </select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Quantité</label>
+                    <input required type="number" min="1" value={formData.quantite} onChange={(e) => setFormData({...formData, quantite: parseInt(e.target.value)})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none text-sm transition-all" />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Réunion (Optionnel)</label>
+                  <select value={formData.reunionId} onChange={(e) => setFormData({...formData, reunionId: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none text-sm transition-all">
+                    <option value="">Aucune réunion associée</option>
+                    {reunions.map((r: any) => <option key={r.id} value={r.id}>Réunion #{r.id} - {Array.isArray(r.date) ? `${r.date[2]}/${r.date[1]}/${r.date[0]}` : r.date}</option>)}
                   </select>
                 </div>
 
-                <div className="space-y-3">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Quantité</label>
-                  <input 
-                    required
-                    type="number"
-                    min="1"
-                    value={formData.quantite}
-                    onChange={(e) => setFormData({...formData, quantite: parseInt(e.target.value)})}
-                    className="w-full px-6 py-4 bg-gray-50 border border-gray-200 rounded-[1.5rem] focus:ring-2 focus:ring-purple-500 outline-none transition-all font-bold text-gray-700"
-                  />
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Description / Justification</label>
+                  <textarea value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none min-h-[120px] text-sm transition-all" placeholder="Précisez l'usage ou le besoin spécifique..." />
                 </div>
               </div>
 
-              <div className="space-y-3">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Réunion Associée</label>
-                <select 
-                  required
-                  value={formData.reunionId}
-                  onChange={(e) => setFormData({...formData, reunionId: e.target.value})}
-                  className="w-full px-6 py-4 bg-gray-50 border border-gray-200 rounded-[1.5rem] focus:ring-2 focus:ring-purple-500 outline-none transition-all font-bold text-gray-700"
-                >
-                  <option value="">Associer à une réunion...</option>
-                  {reunions.map((r: any) => {
-                    const dateStr = Array.isArray(r.date) ? `${r.date[2]}/${r.date[1]}/${r.date[0]}` : r.date;
-                    return (
-                      <option key={r.id} value={r.id}>
-                        Réunion #{r.id} - {dateStr}
-                      </option>
-                    );
-                  })}
-                </select>
-              </div>
+              {/* Colonne Droite: Spécifications Techniques */}
+              <div className="flex flex-col h-full">
+                <div className="flex-1">
+                  {!selectedTypeCode && (
+                    <div className="h-full border-2 border-dashed border-gray-100 rounded-[2rem] flex flex-col items-center justify-center text-gray-300 p-8">
+                      <Box size={48} className="mb-4 opacity-20" />
+                      <p className="text-sm font-medium">Sélectionnez un type pour voir les spécifications</p>
+                    </div>
+                  )}
 
-              <div className="space-y-3">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Notes & Description</label>
-                <textarea 
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  className="w-full px-6 py-4 bg-gray-50 border border-gray-200 rounded-[1.5rem] focus:ring-2 focus:ring-purple-500 outline-none transition-all font-medium min-h-[120px]"
-                  placeholder="Détails sur l'utilisation prévue, spécificités..."
-                />
-              </div>
+                  {selectedTypeCode === 'ORDINATEUR' && (
+                    <div className="p-8 bg-purple-50/50 rounded-[2rem] space-y-5 border border-purple-100/50">
+                      <p className="text-xs font-bold text-purple-600 uppercase tracking-widest flex items-center gap-2 mb-2">
+                        <Monitor size={16} /> Caractéristiques Techniques
+                      </p>
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-4">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-gray-500">Marque</label>
+                          <input value={formData.marque} onChange={e => setFormData({...formData, marque: e.target.value})} className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm" placeholder="Dell, HP..." />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-gray-500">Processeur</label>
+                          <input value={formData.cpu} onChange={e => setFormData({...formData, cpu: e.target.value})} className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm" placeholder="i7, Ryzen 7..." />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-gray-500">RAM</label>
+                          <input value={formData.ram} onChange={e => setFormData({...formData, ram: e.target.value})} className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm" placeholder="16 Go..." />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-gray-500">Disque Dur</label>
+                          <input value={formData.disqueDur} onChange={e => setFormData({...formData, disqueDur: e.target.value})} className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm" placeholder="512 Go SSD..." />
+                        </div>
+                        <div className="col-span-2 space-y-1">
+                          <label className="text-[10px] font-bold text-gray-500">Écran / Moniteur</label>
+                          <input value={formData.ecran} onChange={e => setFormData({...formData, ecran: e.target.value})} className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm" placeholder="24 pouces Full HD..." />
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-              <div className="flex gap-4 pt-6">
-                <button 
-                  type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="flex-1 py-4 px-6 border border-gray-100 rounded-2xl font-bold text-gray-500 hover:bg-gray-50 transition-all"
-                >
-                  Annuler
-                </button>
-                <button 
-                  type="submit"
-                  disabled={saving}
-                  className="flex-[2] py-4 px-6 bg-purple-600 text-white rounded-2xl font-bold hover:bg-purple-700 transition-all shadow-xl shadow-purple-100 flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {saving ? <Loader className="animate-spin" size={20} /> : (isEditMode ? 'Sauvegarder' : 'Soumettre')}
-                </button>
+                  {selectedTypeCode === 'IMPRIMANTE' && (
+                    <div className="p-8 bg-blue-50/50 rounded-[2rem] space-y-5 border border-blue-100/50">
+                      <p className="text-xs font-bold text-blue-600 uppercase tracking-widest flex items-center gap-2 mb-2">
+                        <Printer size={16} /> Caractéristiques Techniques
+                      </p>
+                      <div className="space-y-4">
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-gray-500">Modèle / Marque</label>
+                          <input value={formData.marque} onChange={e => setFormData({...formData, marque: e.target.value})} className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm" placeholder="HP LaserJet..." />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-gray-500">Vitesse (ppm)</label>
+                            <input type="number" value={formData.vitesseImpression} onChange={e => setFormData({...formData, vitesseImpression: parseInt(e.target.value)})} className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm" placeholder="30" />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-gray-500">Résolution</label>
+                            <input value={formData.resolution} onChange={e => setFormData({...formData, resolution: e.target.value})} className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm" placeholder="1200 dpi..." />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {selectedTypeCode !== 'ORDINATEUR' && selectedTypeCode !== 'IMPRIMANTE' && selectedTypeCode && (
+                    <div className="p-8 bg-gray-50 rounded-[2rem] space-y-3 border border-gray-200">
+                      <p className="text-xs font-bold text-gray-600 uppercase tracking-widest flex items-center gap-2">
+                        <Layers size={16} /> Spécifications Libres
+                      </p>
+                      <textarea 
+                        value={formData.descriptionTechnique} 
+                        onChange={e => setFormData({...formData, descriptionTechnique: e.target.value})} 
+                        className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none min-h-[180px] text-sm" 
+                        placeholder="Détaillez les caractéristiques techniques nécessaires..." 
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-4 pt-6 mt-auto">
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-4 px-6 border border-gray-200 rounded-2xl font-bold text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-all">Annuler</button>
+                  <button type="submit" disabled={saving} className="flex-[2] py-4 px-6 bg-purple-600 text-white rounded-2xl font-bold hover:bg-purple-700 transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-100">
+                    {saving ? <Loader className="animate-spin" size={20} /> : (isEditMode ? 'Enregistrer les modifications' : 'Soumettre le besoin')}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
         </div>
       )}
-
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[70] p-4">
-          <div className="bg-white rounded-[2rem] w-full max-w-md p-10 shadow-2xl">
-            <div className="flex flex-col items-center text-center">
-              <div className="w-20 h-20 bg-red-50 rounded-3xl flex items-center justify-center text-red-600 mb-6">
-                <AlertTriangle size={40} />
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-[70] p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-md p-10 shadow-2xl transform animate-in zoom-in-95 duration-300">
+            <div className="flex flex-col items-center text-center space-y-6">
+              <div className="w-20 h-20 bg-red-50 rounded-3xl flex items-center justify-center text-red-500 shadow-inner">
+                <Trash2 size={40} />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-3">Supprimer la demande ?</h2>
-              <p className="text-gray-500 text-sm mb-10 leading-relaxed">
-                Cette action supprimera définitivement ce besoin. <br/>Vous ne pourrez pas revenir en arrière.
-              </p>
               
-              <div className="flex gap-4 w-full">
-                <button 
-                  onClick={() => setIsDeleteModalOpen(false)}
-                  className="flex-1 px-6 py-4 border border-gray-200 rounded-2xl font-bold text-gray-500 hover:bg-gray-50"
-                >
-                  Annuler
-                </button>
+              <div className="space-y-2">
+                <h2 className="text-2xl font-black text-gray-900 tracking-tight">Confirmer la suppression</h2>
+                <p className="text-gray-500 text-sm leading-relaxed px-4">
+                  Êtes-vous sûr de vouloir supprimer ce besoin ? <br/>
+                  <span className="font-bold text-red-500/80">Cette action est irréversible.</span>
+                </p>
+              </div>
+
+              <div className="flex flex-col w-full gap-3 pt-4">
                 <button 
                   onClick={confirmDelete}
-                  disabled={deleting}
-                  className="flex-1 px-6 py-4 bg-red-600 text-white rounded-2xl font-bold shadow-xl shadow-red-100 hover:bg-red-700 flex items-center justify-center gap-2 disabled:opacity-50"
+                  disabled={saving}
+                  className="w-full py-4 bg-red-600 text-white rounded-2xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-200 flex items-center justify-center gap-2 active:scale-[0.98]"
                 >
-                  {deleting ? <Loader className="animate-spin" size={20} /> : 'Confirmer'}
+                  {saving ? <Loader className="animate-spin" size={20} /> : 'Supprimer définitivement'}
+                </button>
+                <button 
+                  onClick={() => setIsDeleteModalOpen(false)}
+                  disabled={saving}
+                  className="w-full py-4 bg-gray-50 text-gray-500 rounded-2xl font-bold hover:bg-gray-100 transition-all active:scale-[0.98]"
+                >
+                  Annuler
                 </button>
               </div>
             </div>

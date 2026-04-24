@@ -55,6 +55,7 @@ public class ListeNoireServiceImpl implements IListeNoireService {
         fournisseurRepository.save(f);
         ListeNoire saved = listeNoireRepository.save(ln);
         notificationService.envoyerNotification(f.getId(),
+                resp.getId(),
                 "Votre entreprise a été ajoutée à la liste noire. Motif : " + motif,
                 Notification.TYPE_INFO);
         return versDto(saved);

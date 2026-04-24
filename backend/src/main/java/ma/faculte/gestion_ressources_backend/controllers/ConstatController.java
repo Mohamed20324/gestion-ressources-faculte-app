@@ -47,6 +47,35 @@ public class ConstatController {
         }
     }
 
+    @GetMapping
+    public ResponseEntity<?> getAll() {
+        try {
+            return ResponseEntity.ok(constatService.getAll());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(500).body(erreur(e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}/envoyer-fournisseur")
+    @PreAuthorize("hasRole('RESPONSABLE')")
+    public ResponseEntity<?> envoyerAuFournisseur(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(constatService.envoyerAuFournisseur(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body(erreur(e.getMessage()));
+        }
+    }
+
+    @PutMapping("/{id}/demander-echange")
+    @PreAuthorize("hasRole('RESPONSABLE')")
+    public ResponseEntity<?> demanderEchange(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(constatService.demanderEchange(id));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body(erreur(e.getMessage()));
+        }
+    }
+
     private Map<String, String> erreur(String message) {
         Map<String, String> m = new HashMap<>();
         m.put("message", message);

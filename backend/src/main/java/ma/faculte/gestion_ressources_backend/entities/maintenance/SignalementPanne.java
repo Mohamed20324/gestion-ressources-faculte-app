@@ -15,6 +15,9 @@ public class SignalementPanne {
     public static final String STATUT_SIGNALE = "SIGNALE";
     public static final String STATUT_EN_COURS = "EN_COURS";
     public static final String STATUT_CONSTAT = "CONSTAT";
+    public static final String STATUT_FOURNISSEUR = "FOURNISSEUR";
+    public static final String STATUT_ECHANGE = "ECHANGE";
+    public static final String STATUT_RESOLU = "RESOLU";
     public static final String STATUT_FERME = "FERME";
 
     @Id
@@ -44,6 +47,12 @@ public class SignalementPanne {
 
     @Column(nullable = false)
     private String statut = STATUT_SIGNALE;
+
+    @Column(nullable = true)
+    private LocalDate dateLivraisonEchange;
+
+    @Column(nullable = true)
+    private String statutEchange; // DEMANDE, ACCEPTEE, LIVREE
 
     public SignalementPanne() {}
 
@@ -101,5 +110,21 @@ public class SignalementPanne {
 
     public void setStatut(String statut) {
         this.statut = statut;
+    }
+
+    public LocalDate getDateLivraisonEchange() {
+        return dateLivraisonEchange;
+    }
+
+    public void setDateLivraisonEchange(LocalDate dateLivraisonEchange) {
+        this.dateLivraisonEchange = dateLivraisonEchange;
+    }
+
+    public String getStatutEchange() {
+        return statutEchange;
+    }
+
+    public void setStatutEchange(String statutEchange) {
+        this.statutEchange = statutEchange;
     }
 }

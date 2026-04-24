@@ -66,8 +66,8 @@ public class BesoinRessource {
     private Departement departement;
 
     @JsonIgnore
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "reunion_id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = true)
+    @JoinColumn(name = "reunion_id", nullable = true)
     private Reunion reunion;
 
     @JsonIgnore

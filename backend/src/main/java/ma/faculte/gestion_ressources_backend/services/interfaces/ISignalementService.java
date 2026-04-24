@@ -17,4 +17,12 @@ public interface ISignalementService {
     SignalementPanneDTO assignerTechnicien(Long signalementId, Long technicienId);
 
     SignalementPanneDTO fermer(Long signalementId);
+
+    SignalementPanneDTO resoudre(Long signalementId, Long technicienId);
+
+    void annuler(Long signalementId);
+
+    List<SignalementPanneDTO> listerParFournisseur(Long fournisseurId);
+    SignalementPanneDTO programmerEchange(Long signalementId, java.time.LocalDate date);
+    SignalementPanneDTO receptionnerEchange(Long signalementId);
 }

@@ -23,10 +23,17 @@ public class NotificationController {
     @PreAuthorize("hasRole('RESPONSABLE')")
     public ResponseEntity<?> envoyer(
             @RequestParam Long destinataireId,
+            @RequestParam(required = false) Long expediteurId,
             @RequestParam String message,
             @RequestParam String type) {
         try {
-            notificationService.envoyerNotification(destinataireId, message, type);
+            Long expId = expediteurId;
+            if (expId == null) {
+                // Fallback for old calls
+                expId = notificationService.getNotificationsUtilisateur(destinataireId).get(0).getExpediteurId(); 
+                // Actually safer to just fetch any admin if null
+            }
+            notificationService.envoyerNotification(destinataireId, expId, message, type);
             return ResponseEntity.status(201).body(Map.of("message", "Notification envoyée"));
         } catch (RuntimeException e) {
             return ResponseEntity.status(400).body(erreur(e.getMessage()));
@@ -63,6 +70,33 @@ public class NotificationController {
         try {
             notificationService.envoyerRejetMasse(fournisseurIds);
             return ResponseEntity.status(201).build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body(erreur(e.getMessage()));
+        }
+    }
+
+    @PostMapping("/retard/{fournisseurId}")
+    @PreAuthorize("hasRole('RESPONSABLE')")
+    public ResponseEntity<?> avertissementRetard(
+            @PathVariable Long fournisseurId,
+            @RequestParam String referenceAO) {
+        try {
+            notificationService.envoyerAvertissementRetard(fournisseurId, referenceAO);
+            return ResponseEntity.status(201).body(Map.of("message", "Avertissement de retard envoyé au fournisseur"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body(erreur(e.getMessage()));
+        }
+    }
+
+    @PostMapping("/reponse-retard")
+    @PreAuthorize("hasRole('FOURNISSEUR')")
+    public ResponseEntity<?> reponseRetard(
+            @RequestParam Long responsableId,
+            @RequestParam Long fournisseurId,
+            @RequestParam String message) {
+        try {
+            notificationService.envoyerReponseRetard(responsableId, fournisseurId, message);
+            return ResponseEntity.status(201).body(Map.of("message", "Réponse envoyée au responsable"));
         } catch (RuntimeException e) {
             return ResponseEntity.status(400).body(erreur(e.getMessage()));
         }

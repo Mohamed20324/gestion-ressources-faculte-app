@@ -20,6 +20,9 @@ public class Notification {
     public static final String TYPE_REJET = "REJET";
     public static final String TYPE_ELIMINATION = "ELIMINATION";
     public static final String TYPE_INFO = "INFO";
+    public static final String TYPE_AVERTISSEMENT = "AVERTISSEMENT";
+    public static final String TYPE_AFFECTATION = "AFFECTATION";
+    public static final String TYPE_REPONSE_FOURNISSEUR = "REPONSE_FOURNISSEUR";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -45,7 +48,7 @@ public class Notification {
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "expediteur_id", nullable = false)
-    private Responsable expediteur;
+    private Utilisateur expediteur;
 
     public Notification() {}
 
@@ -104,11 +107,11 @@ public class Notification {
         this.destinataire = destinataire;
     }
 
-    public Responsable getExpediteur() {
+    public Utilisateur getExpediteur() {
         return expediteur;
     }
 
-    public void setExpediteur(Responsable expediteur) {
+    public void setExpediteur(Utilisateur expediteur) {
         this.expediteur = expediteur;
     }
 }

@@ -43,6 +43,12 @@ public class OffreServiceImpl implements IOffreService {
     @Autowired
     private INotificationService notificationService;
 
+    @Autowired
+    private IResponsableRepository responsableRepository;
+
+    @Autowired
+    private IRessourceRepository ressourceRepository;
+
     @Override
     @Transactional
     public OffreDTO soumettreOffre(OffreDTO dto) {
@@ -118,6 +124,14 @@ public class OffreServiceImpl implements IOffreService {
         Offre retenue = offreRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Offre introuvable"));
         AppelOffre ao = retenue.getAppelOffre();
+
+        // Vérification : Un seul offre acceptée par AO
+        boolean dejaAcceptee = offreRepository.findByAppelOffreId(ao.getId()).stream()
+                .anyMatch(o -> Offre.STATUT_ACCEPTEE.equals(o.getStatut()));
+        if (dejaAcceptee) {
+            throw new RuntimeException("Validation impossible : Un offre a déjà été acceptée pour cet appel d'offres.");
+        }
+
         List<Offre> toutes = offreRepository.findByAppelOffreId(ao.getId());
         for (Offre o : toutes) {
             if (o.getId().equals(retenue.getId())) {
@@ -131,6 +145,13 @@ public class OffreServiceImpl implements IOffreService {
             offreRepository.save(o);
         }
         ao.setStatut(AppelOffre.STATUT_TRAITE);
+        
+        // Update needs to EN_LIVRAISON
+        for (BesoinRessource b : ao.getBesoins()) {
+            b.setStatut("EN_LIVRAISON");
+            besoinRessourceRepository.save(b);
+        }
+
         appelOffreRepository.save(ao);
         Offre miseAJour = offreRepository.findById(id).orElseThrow();
         return versDto(miseAJour);
@@ -154,7 +175,9 @@ public class OffreServiceImpl implements IOffreService {
                 .orElseThrow(() -> new RuntimeException("Offre introuvable"));
         o.setStatut(Offre.STATUT_ELIMINEE);
         o.setMotifRejet(motif);
+        Long adminId = responsableRepository.findAll().get(0).getId();
         notificationService.envoyerNotification(o.getFournisseur().getId(),
+                adminId,
                 "Votre offre a été éliminée."
                         + (motif != null ? " Motif : " + motif : ""),
                 ma.faculte.gestion_ressources_backend.entities.appel_offre.Notification.TYPE_ELIMINATION);
@@ -191,9 +214,82 @@ public class OffreServiceImpl implements IOffreService {
     @Override
     @Transactional(readOnly = true)
     public List<OffreDTO> getByFournisseur(Long fournisseurId) {
-        return offreRepository.findByFournisseurId(fournisseurId).stream()
-                .map(this::versDto)
-                .collect(Collectors.toList());
+        return offreRepository.findByFournisseurId(fournisseurId).stream().map(this::versDto).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countRetards() {
+        return offreRepository.countLateDeliveries();
+    }
+
+    @Override
+    @Transactional
+    public OffreDTO modifierStatut(Long id, String statut) {
+        Offre o = offreRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Offre introuvable"));
+        o.setStatut(statut);
+        return versDto(offreRepository.save(o));
+    }
+
+    @Override
+    @Transactional
+    public OffreDTO annulerAcceptation(Long id) {
+        Offre o = offreRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Offre introuvable"));
+        
+        if (!Offre.STATUT_ACCEPTEE.equals(o.getStatut())) {
+            throw new RuntimeException("Seule une offre acceptée peut être annulée.");
+        }
+
+        // Check if resources already created
+        if (!ressourceRepository.findByOffreOrigine_Id(id).isEmpty()) {
+            throw new RuntimeException("Impossible d'annuler l'acceptation : La réception a déjà commencé. Utilisez 'Annuler Réception' à la place.");
+        }
+
+        o.setStatut(Offre.STATUT_SOUMISE);
+        AppelOffre ao = o.getAppelOffre();
+        ao.setStatut(AppelOffre.STATUT_OUVERT); // Re-open for other bids
+        
+        // Revert needs to ENVOYE (as they are still in the AO)
+        for (BesoinRessource b : ao.getBesoins()) {
+            b.setStatut("ENVOYE");
+            besoinRessourceRepository.save(b);
+        }
+
+        appelOffreRepository.save(ao);
+        return versDto(offreRepository.save(o));
+    }
+
+    @Override
+    @Transactional
+    public OffreDTO annulerReception(Long id) {
+        Offre o = offreRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Offre introuvable"));
+        
+        // 1. Delete Resources
+        ressourceRepository.deleteByOffreOrigine_Id(id);
+
+        // 2. Handle linked needs: Revert to VALIDE (not sent yet) and detach from AO
+        AppelOffre ao = o.getAppelOffre();
+        for (BesoinRessource b : ao.getBesoins()) {
+            b.setStatut("VALIDE");
+            // Important: Needs keep their department/reunion info but are ready for a new AO
+            besoinRessourceRepository.save(b);
+        }
+        
+        // Clear needs from AO if we want to "restart" from scratch
+        ao.getBesoins().clear();
+
+        // 3. Reset AO status to OUVERT for new bids (re-opening the market)
+        ao.setStatut(AppelOffre.STATUT_OUVERT);
+        
+        // 4. Mark offer as REJETEE
+        o.setStatut(Offre.STATUT_REJETEE);
+        o.setMotifRejet("Réception annulée : Matériel non conforme ou erreur administrative.");
+
+        appelOffreRepository.save(ao);
+        return versDto(offreRepository.save(o));
     }
 
     private OffreDTO versDto(Offre o) {
