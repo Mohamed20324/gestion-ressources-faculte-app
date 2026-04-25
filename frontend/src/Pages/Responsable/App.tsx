@@ -23,7 +23,7 @@ import ProcurementDashboard from './Procurement/ProcurementDashboard';
 import NeedsPage from './Procurement/NeedsPage';
 import AppelsOffresPage from './Procurement/AppelsOffresPage';
 import OffresPage from './Procurement/OffresPage';
-import SubmissionsPage from './Procurement/SubmissionsPage';
+
 
 // Partners
 import PartnersDashboard from './Partners/PartnersDashboard';
@@ -31,8 +31,7 @@ import SuppliersPage from './Partners/SuppliersPage';
 import BlacklistPage from './Partners/BlacklistPage';
 
 // Meetings
-import MeetingsDashboard from '../ChefDepartement/Meetings/MeetingsDashboard';
-import MeetingsPage from '../ChefDepartement/Meetings/MeetingsPage';
+
 import CalendarPage from '../ChefDepartement/Meetings/CalendarPage';
 
 // Common
@@ -69,7 +68,7 @@ const AppContent = () => {
             <Route path="/needs" element={<NeedsPage />} />
             <Route path="/appels-offres" element={<AppelsOffresPage />} />
             <Route path="/appels-offres/:id/offres" element={<OffresPage />} />
-            <Route path="/submissions" element={<SubmissionsPage />} />
+
 
             {/* Partners */}
             <Route path="/partners/dashboard" element={<PartnersDashboard />} />
@@ -77,8 +76,7 @@ const AppContent = () => {
             <Route path="/blacklist" element={<BlacklistPage />} />
 
             {/* Meetings */}
-            <Route path="/meetings/dashboard" element={<MeetingsDashboard />} />
-            <Route path="/meetings" element={<MeetingsPage />} />
+
             <Route path="/meetings/calendar" element={<CalendarPage />} />
 
             {/* Profile & Notifications */}

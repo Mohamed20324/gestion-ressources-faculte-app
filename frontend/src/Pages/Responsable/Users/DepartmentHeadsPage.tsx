@@ -171,7 +171,7 @@ const DepartmentHeadPage = () => {
         return (
             <div className="flex items-center justify-center h-screen bg-gray-50/50">
                 <div className="text-center">
-                    <Loader className="animate-spin text-orange-500 mx-auto mb-4" size={48} />
+                    <Loader className="animate-spin text-blue-500 mx-auto mb-4" size={48} />
                     <p className="text-gray-500 font-medium">Chargement des responsables...</p>
                 </div>
             </div>
@@ -185,7 +185,7 @@ const DepartmentHeadPage = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
                 <div>
                     <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                        <Crown className="text-orange-500" size={32} />
+                        <Crown className="text-blue-500" size={32} />
                         Chefs de département
                     </h1>
                     <p className="text-gray-500 mt-1 ml-11">Gestion des hauts responsables académiques</p>
@@ -199,12 +199,12 @@ const DepartmentHeadPage = () => {
                             placeholder="Rechercher..." 
                             value={searchTerm}
                             onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                            className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all"
+                            className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                         />
                     </div>
                     <button 
                         onClick={() => { setEditingHead(null); setIsModalOpen(true); }}
-                        className="fixed bottom-8 right-8 w-12 h-12 bg-orange-500 text-white rounded-full shadow-2xl hover:bg-orange-600 hover:scale-110 transition-all flex items-center justify-center z-[50] group"
+                        className="fixed bottom-8 right-8 w-12 h-12 bg-blue-500 text-white rounded-full shadow-2xl hover:bg-blue-600 hover:scale-110 transition-all flex items-center justify-center z-[50] group"
                         title="Nommer un chef"
                     >
                         <Plus size={24} />
@@ -232,7 +232,7 @@ const DepartmentHeadPage = () => {
                                 <tr key={head.id} className="hover:bg-gray-50/50 transition-colors group">
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center text-orange-600 font-bold border border-orange-100">
+                                            <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 font-bold border border-blue-100">
                                                 <User size={20} />
                                             </div>
                                             <div>
@@ -270,7 +270,7 @@ const DepartmentHeadPage = () => {
                                             <button 
                                                 onClick={() => toggleAccountStatus(head)}
                                                 disabled={togglingStatus === head.id}
-                                                className={`p-2 rounded-lg transition-colors ${head.actif ? 'text-orange-500 hover:bg-orange-50' : 'text-green-600 hover:bg-green-50'}`}
+                                                className={`p-2 rounded-lg transition-colors ${head.actif ? 'text-blue-500 hover:bg-blue-50' : 'text-blue-600 hover:bg-green-50'}`}
                                                 title={head.actif ? 'Désactiver le compte' : 'Activer le compte'}
                                             >
                                                 {togglingStatus === head.id ? <Loader className="animate-spin" size={18} /> : <Power size={18} />}
@@ -330,7 +330,7 @@ const DepartmentHeadPage = () => {
                                 <button
                                     key={i + 1}
                                     onClick={() => setCurrentPage(i + 1)}
-                                    className={`w-10 h-10 rounded-lg font-bold text-sm transition-all ${currentPage === i + 1 ? 'bg-orange-500 text-white shadow-lg shadow-orange-100' : 'text-gray-600 hover:bg-gray-50'}`}
+                                    className={`w-10 h-10 rounded-lg font-bold text-sm transition-all ${currentPage === i + 1 ? 'bg-blue-500 text-white shadow-lg shadow-blue-100' : 'text-gray-600 hover:bg-gray-50'}`}
                                 >
                                     {i + 1}
                                 </button>
@@ -385,7 +385,7 @@ const HeadDetailModal = ({ isOpen, onClose, head }: any) => {
                 </button>
 
                 <div className="flex flex-col items-center mb-8">
-                    <div className="w-20 h-20 bg-orange-50 rounded-2xl flex items-center justify-center text-orange-600 mb-4 border border-orange-100">
+                    <div className="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 mb-4 border border-blue-100">
                         <Crown size={40} />
                     </div>
                     <h2 className="text-2xl font-bold text-gray-900">{head.nom} {head.prenom}</h2>
@@ -415,7 +415,7 @@ const HeadDetailModal = ({ isOpen, onClose, head }: any) => {
                             <div>
                                 <p className="text-[10px] text-gray-500 font-bold uppercase">Département Géré</p>
                                 <p className="text-sm font-bold text-gray-800 flex items-center gap-2">
-                                    <Building2 size={14} className="text-orange-500" />
+                                    <Building2 size={14} className="text-blue-500" />
                                     {head.departementNom || 'Non assigné'}
                                 </p>
                             </div>
@@ -522,36 +522,36 @@ const DepartmentHeadModal = ({ isOpen, onClose, onSave, head, saving, departemen
                 <div className="grid grid-cols-2 gap-3 mb-4">
                     <div className="col-span-1">
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Nom</label>
-                        <input type="text" value={formData.nom} onChange={(e) => setFormData({ ...formData, nom: e.target.value })} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
+                        <input type="text" value={formData.nom} onChange={(e) => setFormData({ ...formData, nom: e.target.value })} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
                     </div>
                     <div className="col-span-1">
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Prénom</label>
-                        <input type="text" value={formData.prenom} onChange={(e) => setFormData({ ...formData, prenom: e.target.value })} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
+                        <input type="text" value={formData.prenom} onChange={(e) => setFormData({ ...formData, prenom: e.target.value })} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
                     </div>
                     <div className="col-span-2">
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Email professionnel</label>
-                        <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
+                        <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
                     </div>
                     {!head && (
                         <div className="col-span-2">
                             <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Mot de passe provisoire</label>
-                            <input type="password" value={formData.motDePasse} onChange={(e) => setFormData({ ...formData, motDePasse: e.target.value })} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
+                            <input type="password" value={formData.motDePasse} onChange={(e) => setFormData({ ...formData, motDePasse: e.target.value })} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
                         </div>
                     )}
                     <div className="col-span-1">
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Matricule</label>
-                        <input type="text" value={formData.matricule} onChange={(e) => setFormData({ ...formData, matricule: e.target.value })} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all" />
+                        <input type="text" value={formData.matricule} onChange={(e) => setFormData({ ...formData, matricule: e.target.value })} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
                     </div>
                     <div className="col-span-1">
                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Date de nomination</label>
                         <div className="relative group">
-                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-orange-400 group-hover:text-orange-600 transition-colors pointer-events-none" size={16} />
+                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-blue-400 group-hover:text-blue-600 transition-colors pointer-events-none" size={16} />
                             <input 
                                 type="date" 
                                 value={formData.dateNomination} 
                                 onChange={(e) => setFormData({ ...formData, dateNomination: e.target.value })} 
                                 onClick={(e) => (e.target as HTMLInputElement).showPicker()}
-                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all cursor-pointer appearance-none" 
+                                className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all cursor-pointer appearance-none" 
                             />
                         </div>
                     </div>
@@ -560,7 +560,7 @@ const DepartmentHeadModal = ({ isOpen, onClose, onSave, head, saving, departemen
                         <select 
                             value={formData.departementId || ''} 
                             onChange={(e) => setFormData({ ...formData, departementId: parseInt(e.target.value) || undefined })} 
-                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition-all appearance-none"
+                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none"
                         >
                             <option value="">Sélectionner un département</option>
                             {departements.map((dept: any) => (
@@ -577,7 +577,7 @@ const DepartmentHeadModal = ({ isOpen, onClose, onSave, head, saving, departemen
                     <button 
                         onClick={() => onSave(formData)} 
                         disabled={saving}
-                        className="flex-1 px-6 py-3.5 bg-orange-500 text-white rounded-2xl font-bold shadow-lg shadow-orange-100 hover:bg-orange-600 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+                        className="flex-1 px-6 py-3.5 bg-blue-500 text-white rounded-2xl font-bold shadow-lg shadow-blue-100 hover:bg-blue-600 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
                     >
                         {saving ? <Loader className="animate-spin" size={20} /> : (head ? 'Mettre à jour' : 'Nommer Chef')}
                     </button>

@@ -13,7 +13,7 @@ const ReceptionPage = () => {
   const { notifications, showNotification, removeNotification } = useNotifications();
   const [offresAcceptees, setOffresAcceptees] = useState<any[]>([]);
   const [echanges, setEchanges] = useState<any[]>([]);
-  const [filterStatut, setFilterStatut] = useState('ATTENTE');
+  const [filterStatut, setFilterStatut] = useState('ALL');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   
@@ -38,7 +38,7 @@ const ReceptionPage = () => {
       });
       if (oRes.ok) {
         const allOffres = await oRes.json();
-        setOffresAcceptees(allOffres.filter((o: any) => o.statut === 'ACCEPTEE' || o.statut === 'LIVREE' || o.statut === 'LIVREE_RETARD'));
+        setOffresAcceptees(allOffres.filter((o: any) => o.statut === 'ACCEPTEE' || o.statut === 'LIVREE' || o.statut === 'LIVREE_RETARD' || o.statut === 'ANNULEE'));
       }
 
       const sRes = await api.getAllSignalements();
@@ -211,13 +211,13 @@ const ReceptionPage = () => {
   };
 
   const handleCancelReception = async (offre: any) => {
-    if (!window.confirm("Voulez-vous vraiment annuler la réception de cette offre ? Les ressources seront supprimées, l'appel d'offres sera ré-ouvert et les besoins redeviendront modifiables (non envoyés).")) return;
+    if (!window.confirm("Voulez-vous vraiment annuler la réception ? Ce marché sera archivé comme ÉCHEC, et un NOUVEAU marché sera automatiquement créé avec les mêmes besoins pour une nouvelle consultation.")) return;
     
     setLoading(true);
     try {
       const res = await api.annulerReception(offre.id);
       if (res.ok) {
-        showNotification('success', 'Réception annulée. L\'appel d\'offres est ré-ouvert et les besoins sont réinitialisés.');
+        showNotification('success', 'Acceptation annulée. L\'appel d\'offres a été réouvert.');
         loadData();
       } else {
         const err = await res.json();
@@ -236,9 +236,13 @@ const ReceptionPage = () => {
       if (res.ok) {
         const data = await res.json();
         setShowViewModal({ show: true, offre, items: data });
+      } else {
+        console.error("Failed to load resources:", res.status, res.statusText);
+        showNotification('error', `Erreur ${res.status}: Impossible de charger les ressources`);
       }
     } catch (error) {
-      showNotification('error', 'Erreur de chargement des ressources');
+      console.error("Network error:", error);
+      showNotification('error', 'Erreur technique lors du chargement des ressources');
     }
   };
 
@@ -261,6 +265,7 @@ const ReceptionPage = () => {
             { id: 'ALL', label: 'Toutes', count: offresAcceptees.length },
             { id: 'ATTENTE', label: 'En attente', count: offresAcceptees.filter(o => o.statut === 'ACCEPTEE').length },
             { id: 'RECUE', label: 'Réceptionnées', count: offresAcceptees.filter(o => o.statut === 'LIVREE' || o.statut === 'LIVREE_RETARD').length },
+            { id: 'ANNULEE', label: 'Annulées', count: offresAcceptees.filter(o => o.statut === 'ANNULEE').length },
             { id: 'ECHANGES', label: 'Échanges', count: echanges.filter(e => e.statutEchange !== 'RECUE').length }
           ].map(tab => (
             <button
@@ -281,10 +286,11 @@ const ReceptionPage = () => {
         </div>
 
         <div className="grid gap-4">
-          {offresAcceptees.filter(o => {
+          {filterStatut !== 'ECHANGES' && offresAcceptees.filter(o => {
             if (filterStatut === 'ALL') return true;
             if (filterStatut === 'ATTENTE') return o.statut === 'ACCEPTEE';
             if (filterStatut === 'RECUE') return o.statut === 'LIVREE' || o.statut === 'LIVREE_RETARD';
+            if (filterStatut === 'ANNULEE') return o.statut === 'ANNULEE';
             return true;
           }).map(o => {
             const today = new Date();
@@ -307,6 +313,8 @@ const ReceptionPage = () => {
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-emerald-50 text-emerald-600 border border-emerald-100">Réceptionnée</span>
                         ) : o.statut === 'LIVREE_RETARD' ? (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-50 text-amber-600 border border-amber-100">Reçu avec retard</span>
+                        ) : o.statut === 'ANNULEE' ? (
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-red-50 text-red-600 border border-red-100">Réception Annulée</span>
                         ) : isLate ? (
                           <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-red-50 text-red-600 border border-red-100 animate-pulse">Retard</span>
                         ) : (
@@ -338,6 +346,16 @@ const ReceptionPage = () => {
                               <RotateCcw size={18} />
                               Annuler
                             </button>
+                        </div>
+                      ) : o.statut === 'ANNULEE' ? (
+                        <div className="flex items-center gap-2">
+                          <button 
+                            disabled
+                            className="px-4 py-2.5 bg-gray-100 text-gray-500 rounded-xl font-bold text-sm flex items-center gap-2 border border-gray-200 cursor-not-allowed"
+                          >
+                            <AlertTriangle size={18} />
+                            Annulée
+                          </button>
                         </div>
                       ) : (
                         <>
@@ -374,7 +392,7 @@ const ReceptionPage = () => {
             );
           })}
           
-          {filterStatut === 'ECHANGES' && echanges.map(e => (
+          {(filterStatut === 'ECHANGES' || filterStatut === 'ALL') && echanges.map(e => (
             <div key={e.id} className="bg-white p-6 rounded-2xl border border-purple-100 shadow-sm hover:border-purple-300 transition-all group">
                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                   <div className="flex items-center gap-5">
@@ -411,14 +429,97 @@ const ReceptionPage = () => {
             </div>
           ))}
 
-          {offresAcceptees.length === 0 && echanges.length === 0 && !loading && (
-            <div className="py-24 text-center bg-white rounded-3xl border border-dashed border-gray-200">
-              <PackageCheck className="mx-auto text-gray-200 mb-4" size={48} />
-              <p className="text-gray-500 font-bold">Aucune livraison en attente de réception.</p>
-            </div>
-          )}
+          {!loading && (() => {
+            const filteredOffres = offresAcceptees.filter(o => {
+              if (filterStatut === 'ALL') return true;
+              if (filterStatut === 'ATTENTE') return o.statut === 'ACCEPTEE';
+              if (filterStatut === 'RECUE') return o.statut === 'LIVREE' || o.statut === 'LIVREE_RETARD';
+              if (filterStatut === 'ANNULEE') return o.statut === 'ANNULEE';
+              return false;
+            });
+            const showOffres = filterStatut !== 'ECHANGES' && filteredOffres.length === 0;
+            const showEchanges = (filterStatut === 'ECHANGES' || filterStatut === 'ALL') && echanges.length === 0;
+            const isEmpty = filterStatut === 'ECHANGES' ? showEchanges : filterStatut === 'ALL' ? (filteredOffres.length === 0 && echanges.length === 0) : showOffres;
+
+            return isEmpty ? (
+              <div className="py-24 text-center bg-white rounded-3xl border border-dashed border-gray-200">
+                <PackageCheck className="mx-auto text-gray-200 mb-4" size={48} />
+                <p className="text-gray-500 font-bold">
+                  {filterStatut === 'ECHANGES' ? 'Aucun échange en cours.' :
+                   filterStatut === 'ATTENTE' ? 'Aucune livraison en attente.' :
+                   filterStatut === 'RECUE' ? 'Aucune livraison réceptionnée.' :
+                   filterStatut === 'ANNULEE' ? 'Aucune livraison annulée.' :
+                   'Aucune livraison enregistrée.'}
+                </p>
+              </div>
+            ) : null;
+          })()}
         </div>
       </div>
+
+      {/* Modal de visualisation des ressources (Liste View) */}
+      {showViewModal.show && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-[2.5rem] w-full max-w-4xl max-h-[85vh] overflow-hidden shadow-2xl flex flex-col border border-gray-100">
+            <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+              <div>
+                <h2 className="text-2xl font-black text-gray-900 flex items-center gap-3">
+                  <PackageCheck className="text-emerald-600" size={28} />
+                  Détail de la réception
+                </h2>
+                <p className="text-gray-500 font-medium text-sm mt-1">
+                  Offre #{showViewModal.offre?.id} - Fournisseur: {showViewModal.offre?.fournisseurNom}
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowViewModal({ ...showViewModal, show: false })}
+                className="w-12 h-12 rounded-2xl bg-white border border-gray-200 text-gray-400 hover:text-gray-900 hover:border-gray-900 transition-all flex items-center justify-center shadow-sm"
+              >
+                ✕
+              </button>
+            </div>
+            
+            <div className="p-8 overflow-y-auto flex-1">
+              {showViewModal.items.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-500 font-bold">Aucune ressource trouvée pour cette offre.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {showViewModal.items.map((res: any) => (
+                    <div key={res.id} className="p-4 rounded-2xl border border-gray-100 bg-gray-50/50 hover:border-emerald-200 transition-all group">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-emerald-600 shadow-sm">
+                          <Archive size={20} />
+                        </div>
+                        <div className="font-bold text-gray-900 text-sm truncate">{res.marque}</div>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="text-[10px] font-black text-gray-400 uppercase tracking-wider">N° Inventaire</div>
+                        <div className="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md w-fit">
+                          {res.numeroInventaire}
+                        </div>
+                      </div>
+                      <div className="mt-3 pt-3 border-t border-gray-200/50 text-[10px] font-medium text-gray-500 line-clamp-2">
+                        {res.descriptionTechnique}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-end">
+              <button 
+                onClick={() => setShowViewModal({ ...showViewModal, show: false })}
+                className="px-8 py-3 bg-gray-900 text-white rounded-2xl font-black text-sm hover:bg-black transition-all shadow-lg"
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 

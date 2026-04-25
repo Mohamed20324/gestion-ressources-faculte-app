@@ -222,7 +222,7 @@ const DepartmentsPage = () => {
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-1.5 font-semibold text-gray-900">
-                                            <DollarSign size={16} className="text-green-500" />
+                                            <DollarSign size={16} className="text-blue-500" />
                                             {dept.budget.toLocaleString()} <span className="text-xs text-gray-400 font-normal">DH</span>
                                         </div>
                                     </td>
@@ -309,7 +309,6 @@ const DepartmentsPage = () => {
                 onClose={() => setIsDeleteModalOpen(false)}
                 onConfirm={confirmDelete}
                 title="Supprimer le département"
-                message="Êtes-vous sûr de vouloir supprimer ce département ? Cette action est irréversible et pourrait échouer si des données y sont liées."
                 loading={deleting}
             />
 
@@ -331,27 +330,29 @@ const DeleteConfirmModal = ({ isOpen, onClose, onConfirm, title, message, loadin
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-2">
             <div className="bg-white rounded-3xl w-full max-w-md p-8 relative shadow-2xl animate-in fade-in zoom-in duration-200">
-                <div className="flex flex-col items-center text-center">
-                    <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center text-red-600 mb-4">
-                        <AlertTriangle size={32} />
+                <div className="flex flex-col items-left text-left">
+                    <div className='flex gap-2 items-center justify-center'>
+
+                    <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center text-red-600 mb-4">
+                        <AlertTriangle size={22} />
                     </div>
-                    <h2 className="text-xl font-bold text-gray-900 mb-2">{title}</h2>
-                    <p className="text-gray-500 text-sm mb-8">{message}</p>
+                    <h2 className="text-lg font-bold text-gray-900 mb-2">{title}</h2>
+                    </div>
 
                     <div className="flex gap-3 w-full">
                         <button
                             onClick={onClose}
                             disabled={loading}
-                            className="flex-1 px-4 py-3 border border-gray-200 rounded-xl font-semibold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                            className="flex-1 px-2 py-2 border border-gray-200 rounded-xl font-semibold text-gray-600 hover:bg-gray-50 transition-colors disabled:opacity-50"
                         >
                             Annuler
                         </button>
                         <button
                             onClick={onConfirm}
                             disabled={loading}
-                            className="flex-1 px-4 py-3 bg-red-600 text-white rounded-xl font-bold shadow-lg shadow-red-100 hover:bg-red-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                            className="flex-1 px-2 py-2 bg-red-600 text-white rounded-xl font-bold shadow-lg shadow-red-100 hover:bg-red-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                         >
                             {loading ? <Loader className="animate-spin" size={18} /> : 'Supprimer'}
                         </button>

@@ -18,6 +18,7 @@ const TechnicienInterventionsPage = () => {
   const [loading, setLoading] = useState(true);
   
   const [showConstatModal, setShowConstatModal] = useState({ show: false, signalement: null as any });
+  const [techniciens, setTechniciens] = useState<any[]>([]);
   const [constatData, setConstatData] = useState({
     explication: '',
     dateApparition: '',
@@ -32,10 +33,17 @@ const TechnicienInterventionsPage = () => {
   const loadSignalements = async () => {
     setLoading(true);
     try {
-      const res = await api.getAllSignalements();
-      if (res.ok) {
-        const data = await res.json();
+      const [sigRes, techRes] = await Promise.all([
+        api.getAllSignalements(),
+        api.getUsersByRole('TECHNICIEN')
+      ]);
+
+      if (sigRes.ok) {
+        const data = await sigRes.json();
         setSignalements(data.sort((a: any, b: any) => b.id - a.id));
+      }
+      if (techRes.ok) {
+        setTechniciens(await techRes.json());
       }
     } catch (error) {
       console.error(error);
@@ -124,45 +132,68 @@ const TechnicienInterventionsPage = () => {
                    "{s.description}"
                 </div>
 
-                <div className="flex gap-4">
-                  <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${s.statut === 'RESOLU' ? 'bg-green-100 text-green-700' : 'bg-blue-50 text-blue-700'}`}>
-                    {s.statut}
-                  </span>
-                  {s.enseignantNom && (
-                    <span className="text-[10px] font-bold text-gray-400 flex items-center gap-1">
-                      <Info size={12} /> Demandé par {s.enseignantNom}
+                  <div className="flex flex-wrap gap-4">
+                    <span className={`px-3 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider ${s.statut === 'RESOLU' ? 'bg-green-100 text-green-700' : 'bg-blue-50 text-blue-700'}`}>
+                      {s.statut}
                     </span>
-                  )}
-                </div>
+                    {s.enseignantNom && (
+                      <span className="text-[10px] font-bold text-gray-400 flex items-center gap-1">
+                        <Info size={12} /> Demandé par {s.enseignantNom}
+                      </span>
+                    )}
+                    {s.technicienId ? (
+                      <span className={`text-[10px] font-bold flex items-center gap-1 ${s.technicienId === user.id ? 'text-blue-600' : 'text-amber-600'}`}>
+                        <Wrench size={12} /> 
+                        Responsable : {techniciens.find(t => t.id === s.technicienId)?.nom || `Tech #${s.technicienId}`}
+                        {s.technicienId === user.id && " (Vous)"}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-bold text-gray-400 flex items-center gap-1">
+                        <Zap size={12} className="text-amber-500" /> Non assigné
+                      </span>
+                    )}
+                  </div>
               </div>
 
               {s.statut !== 'RESOLU' && s.statut !== 'ENVOYE' && (
                 <div className="flex flex-col gap-3 items-center justify-center min-w-[250px]">
-                  <button 
-                    onClick={() => setShowConstatModal({ show: true, signalement: s })}
-                    className="w-full px-6 py-4 bg-gray-900 text-white rounded-2xl font-black hover:bg-gray-800 transition-all flex items-center justify-center gap-2 shadow-lg shadow-gray-200"
-                  >
-                    <FileText size={18} />
-                    Constat (Panne Sévère)
-                  </button>
-                  <button 
-                    onClick={async () => {
-                      try {
-                        const user = JSON.parse(localStorage.getItem('user') || '{}');
-                        const res = await api.resoudreSignalement(s.id, user.id);
-                        if (res.ok) {
-                          showNotification('success', 'Panne marquée comme réparée');
-                          loadSignalements();
-                        }
-                      } catch (err) {
-                        showNotification('error', 'Erreur lors de la résolution');
-                      }
-                    }}
-                    className="w-full px-6 py-4 bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-2xl font-black hover:bg-emerald-200 transition-all flex items-center justify-center gap-2"
-                  >
-                    <CheckCircle size={18} />
-                    Réparé sur place
-                  </button>
+                  {(!s.technicienId || s.technicienId === user.id) ? (
+                    <>
+                      <button 
+                        onClick={() => setShowConstatModal({ show: true, signalement: s })}
+                        className="w-full px-6 py-4 bg-gray-900 text-white rounded-2xl font-black hover:bg-gray-800 transition-all flex items-center justify-center gap-2 shadow-lg shadow-gray-200"
+                      >
+                        <FileText size={18} />
+                        Constat (Panne Sévère)
+                      </button>
+                      <button 
+                        onClick={async () => {
+                          if (!user) return;
+                          try {
+                            const res = await api.resoudreSignalement(s.id, user.id);
+                            if (res.ok) {
+                              showNotification('success', 'Panne marquée comme réparée');
+                              loadSignalements();
+                            }
+                          } catch (err) {
+                            showNotification('error', 'Erreur lors de la résolution');
+                          }
+                        }}
+                        className="w-full px-6 py-4 bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-2xl font-black hover:bg-emerald-200 transition-all flex items-center justify-center gap-2"
+                      >
+                        <CheckCircle size={18} />
+                        Réparé sur place
+                      </button>
+                    </>
+                  ) : (
+                    <div className="w-full p-6 bg-amber-50 border border-amber-100 rounded-3xl text-center">
+                      <Clock className="mx-auto text-amber-500 mb-2" size={24} />
+                      <p className="text-xs font-black text-amber-700 uppercase tracking-widest">En cours de traitement</p>
+                      <p className="text-[10px] text-amber-600 font-bold mt-1">
+                        Ce signalement est géré par un autre technicien.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

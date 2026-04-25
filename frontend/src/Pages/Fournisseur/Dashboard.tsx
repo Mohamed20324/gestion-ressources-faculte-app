@@ -68,15 +68,25 @@ const Dashboard = () => {
     return new Date(d).toLocaleDateString('fr-FR');
   };
 
-  const StatCard = ({ title, value, icon: Icon, color, bgIcon }: any) => (
-    <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center justify-between group">
-      <div>
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{title}</p>
-        <h3 className="text-3xl font-black text-gray-900">{value}</h3>
-      </div>
-      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${bgIcon} ${color} transition-transform group-hover:scale-110`}>
-        <Icon size={24} />
-      </div>
+  const StatCard = ({ title, value, icon: Icon, trend, color, bgIcon }: any) => (
+    <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow group">
+        <div className="flex items-center justify-between">
+            <div>
+                <p className="text-sm text-gray-500 mb-1">{title}</p>
+                <p className="text-2xl font-bold text-gray-900 transition-colors">{value}</p>
+                {trend && (
+                    <div className="flex items-center gap-1 mt-2">
+                        <Activity size={14} className={trend > 0 ? "text-green-500" : "text-red-500"} />
+                        <span className={`text-xs ${trend > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                            {Math.abs(trend)}% vs mois dernier
+                        </span>
+                    </div>
+                )}
+            </div>
+            <div className={`p-3 rounded-lg ${bgIcon}`}>
+                <Icon size={24} className={color} />
+            </div>
+        </div>
     </div>
   );
 
@@ -142,20 +152,20 @@ const Dashboard = () => {
 
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Recent Submissions */}
-          <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
-            <div className="p-5 border-b border-gray-50 flex justify-between items-center">
-              <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+          <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+              <h2 className="font-bold text-gray-900 flex items-center gap-2">
                 <Activity size={18} className="text-purple-600" />
                 Dernières soumissions
               </h2>
               <button 
                 onClick={() => navigate('/fournisseur/mes-soumissions')}
-                className="text-xs font-semibold text-purple-600 hover:text-purple-800 transition-colors flex items-center"
+                className="text-sm font-bold text-purple-600 hover:underline transition-colors flex items-center"
               >
                 Tout voir <ChevronRight size={14} />
               </button>
             </div>
-            <div className="flex-1 p-2">
+            <div className="flex-1">
               {loading ? (
                 <div className="flex justify-center items-center h-48">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
@@ -165,13 +175,13 @@ const Dashboard = () => {
                   {recentSoumissions.map((s, idx) => {
                     const status = getStatusDisplay(s.statut);
                     return (
-                      <div key={idx} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-xl transition-colors group">
+                      <div key={idx} className="flex items-center justify-between p-4 px-6 hover:bg-gray-50 transition-colors group border-b border-gray-50 last:border-0">
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-500 shrink-0 group-hover:border-purple-200 group-hover:text-purple-600 transition-colors">
                             <FileText size={18} />
                           </div>
                           <div>
-                            <p className="text-sm font-semibold text-gray-900 group-hover:text-purple-700 transition-colors">
+                            <p className="text-sm font-bold text-gray-900 group-hover:text-purple-700 transition-colors">
                               AO : {s.appelOffreReference ?? `#${s.appelOffreId}`}
                             </p>
                             <p className="text-[11px] text-gray-500 flex items-center gap-2 mt-0.5">
@@ -199,26 +209,29 @@ const Dashboard = () => {
 
           {/* Quick Actions & Tips */}
           <div className="space-y-6">
-            <div className="bg-gradient-to-br from-purple-600 to-indigo-700 rounded-2xl p-6 text-white shadow-md relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-10 -mt-10" />
-              <div className="relative z-10">
-                <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-4 backdrop-blur-sm">
-                  <TrendingUp size={20} className="text-white" />
+            <div className="bg-gradient-to-br from-indigo-600 to-purple-700 rounded-xl p-8 text-white shadow-xl relative overflow-hidden group">
+              <div className="relative z-10 flex flex-col h-full justify-between">
+                <div>
+                  <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md mb-6">
+                    <TrendingUp size={24} className="text-white" />
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">Opportunités de Marché</h3>
+                  <p className="text-sm text-indigo-100 leading-relaxed mb-6">
+                    Consultez régulièrement les nouveaux appels d'offres et proposez des garanties étendues pour vous démarquer.
+                  </p>
+                  <button 
+                    onClick={() => navigate('/fournisseur/appels-offres')}
+                    className="w-full py-3.5 bg-white text-indigo-700 rounded-lg font-bold hover:shadow-lg transition-all flex items-center justify-center gap-2 text-sm"
+                  >
+                    Voir les opportunités
+                    <ArrowRight size={16} />
+                  </button>
                 </div>
-                <h3 className="text-lg font-bold mb-2">Augmentez vos chances</h3>
-                <p className="text-sm text-purple-100 leading-relaxed mb-5">
-                  Consultez régulièrement les nouveaux appels d'offres et proposez des garanties étendues pour vous démarquer.
-                </p>
-                <button 
-                  onClick={() => navigate('/fournisseur/appels-offres')}
-                  className="w-full py-2.5 bg-white text-purple-700 rounded-xl text-sm font-bold hover:bg-gray-50 transition-colors shadow-sm"
-                >
-                  Voir les opportunités
-                </button>
               </div>
+              <Package className="absolute -bottom-10 -right-10 text-white opacity-[0.05] group-hover:scale-110 transition-transform duration-700" size={150} />
             </div>
 
-            <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
+            <div className="bg-white rounded-xl border border-gray-100 p-6 shadow-sm">
               <h3 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
                 <Clock size={16} className="text-gray-400" />
                 Raccourcis
@@ -226,10 +239,10 @@ const Dashboard = () => {
               <div className="space-y-2">
                 <button 
                   onClick={() => navigate('/fournisseur/mes-soumissions')}
-                  className="w-full flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:border-purple-200 hover:bg-purple-50 text-gray-700 hover:text-purple-700 transition-all group"
+                  className="w-full flex items-center justify-between p-3.5 rounded-xl border border-gray-100 hover:border-purple-200 hover:bg-purple-50 text-gray-700 hover:text-purple-700 transition-all group"
                 >
                   <span className="text-sm font-semibold">Suivre mes dossiers</span>
-                  <ArrowRight size={16} className="text-gray-300 group-hover:text-purple-500 transition-colors" />
+                  <ChevronRight size={18} className="text-gray-300 group-hover:text-purple-500 transition-colors" />
                 </button>
               </div>
             </div>

@@ -50,7 +50,7 @@ const MaintenancePage = () => {
         </div>
 
         <div className="space-y-6">
-          {signalements.map((s) => (
+          {signalements.map((s: any) => (
             <div key={s.id} className="bg-white p-8 rounded-[2rem] border border-gray-100 shadow-xl flex flex-col md:flex-row justify-between gap-6 group hover:border-purple-200 transition-all">
               <div className="flex-1 space-y-4">
                 <div className="flex justify-between items-start">
@@ -118,9 +118,26 @@ const MaintenancePage = () => {
                       <p className="text-[10px] font-bold text-purple-400 mt-2">Dossier en attente de réception</p>
                     </div>
                   ) : (
-                    <div className="text-center w-full">
-                      <p className="text-sm text-gray-900 font-black mb-1">Dossier en cours</p>
-                      <p className="text-xs text-gray-500 font-medium leading-relaxed">Veuillez traiter cette demande et prendre contact avec le responsable.</p>
+                    <div className="text-center w-full space-y-4">
+                      <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                        <p className="text-sm text-blue-900 font-black mb-1 uppercase tracking-wider">Réparation en cours</p>
+                        <p className="text-[10px] text-blue-600 font-medium leading-relaxed">Veuillez traiter cette demande. Une fois terminée, marquez-la comme réparée.</p>
+                      </div>
+                      <button 
+                        onClick={async () => {
+                          if (window.confirm("Confirmez-vous que la ressource a été réparée et est prête à être retournée ?")) {
+                            const res = await api.resoudreSignalement(s.id, 0); // Logic for supplier resolution
+                            if (res.ok) {
+                              alert("Signalement marqué comme réparé !");
+                              loadSignalements();
+                            }
+                          }
+                        }}
+                        className="w-full bg-emerald-600 text-white font-black py-3.5 rounded-2xl hover:bg-emerald-700 transition-all text-xs uppercase tracking-widest shadow-lg shadow-emerald-200 active:scale-95 flex items-center justify-center gap-2"
+                      >
+                        <CheckCircle size={16} />
+                        Marquer comme réparé
+                      </button>
                     </div>
                   )}
               </div>

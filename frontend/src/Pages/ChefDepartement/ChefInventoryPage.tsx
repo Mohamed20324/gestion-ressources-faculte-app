@@ -17,7 +17,8 @@ import {
   Loader,
   Edit,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  X
 } from 'lucide-react';
 
 interface Ressource {
@@ -219,80 +220,80 @@ const ChefInventoryPage: React.FC = () => {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in duration-500">
+    <div className="p-8 max-w-7xl mx-auto space-y-8 ">
       <NotificationContainer notifications={notifications} removeNotification={removeNotification} />
 
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-purple-600 rounded-2xl shadow-lg shadow-purple-200">
-              <Package className="text-white" size={24} />
+            <div className="p-2.5 bg-blue-600 rounded-xl shadow-md">
+              <Package className="text-white" size={20} />
             </div>
-            <h1 className="text-3xl font-black text-gray-900 tracking-tight">Inventaire Département</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Gestion de l'Inventaire</h1>
           </div>
-          <p className="text-gray-500 font-medium ml-1">Gérez et affectez les ressources de votre département</p>
+          <p className="text-sm text-gray-500">Gérez et affectez les ressources de votre département</p>
         </div>
 
-        <div className="flex items-center gap-4 bg-white p-2 rounded-2xl shadow-sm border border-gray-100">
-          <div className="flex items-center gap-2 px-4 py-2 bg-purple-50 text-purple-700 rounded-xl font-bold text-sm">
-            <Building2 size={16} />
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-xl font-bold text-xs border border-blue-100">
+            <Building2 size={14} />
             {resources.length} Ressources
           </div>
-          <div className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-xl font-bold text-sm">
-            <CheckCircle2 size={16} />
+          <div className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-xl font-bold text-xs border border-green-100">
+            <CheckCircle2 size={14} />
             {Object.keys(affectations).length} Affectées
           </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-wrap items-center gap-6">
-        <div className="flex-1 min-w-[300px] relative group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-purple-600 transition-colors" size={20} />
+      <div className="bg-white p-2 rounded-xl flex flex-wrap items-center gap-4 border border-gray-100 shadow-sm">
+        <div className="flex-1 min-w-[300px] relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
           <input 
             type="text"
             placeholder="Rechercher par N° Inventaire ou Marque..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all font-semibold"
+            className="w-full pl-11 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium"
           />
         </div>
 
         <div className="flex items-center gap-3">
-          <div className="flex p-1 bg-gray-100 rounded-xl">
+          <div className="flex p-1 bg-gray-100 rounded-lg">
             <button 
               onClick={() => setInventoryFilter('ALL')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${inventoryFilter === 'ALL' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`px-3 py-1.5 rounded-md text-[10px] font-bold transition-all ${inventoryFilter === 'ALL' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               TOUT ({resources.length})
             </button>
             <button 
               onClick={() => setInventoryFilter('PENDING')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${inventoryFilter === 'PENDING' ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`px-3 py-1.5 rounded-md text-[10px] font-bold transition-all ${inventoryFilter === 'PENDING' ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               EN ATTENTE ({resources.filter(r => !affectations[r.id] || affectations[r.id].affectationCollective).length})
             </button>
           </div>
           
-          <div className="h-8 w-px bg-gray-200 mx-2" />
+          <div className="h-6 w-px bg-gray-200" />
 
-          <div className="flex p-1 bg-gray-100 rounded-xl">
+          <div className="flex p-1 bg-gray-100 rounded-lg">
             <button 
               onClick={() => setCategoryFilter('ALL')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${categoryFilter === 'ALL' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`px-3 py-1.5 rounded-md text-[10px] font-bold transition-all ${categoryFilter === 'ALL' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               TOUT
             </button>
             <button 
               onClick={() => setCategoryFilter('ORDINATEUR')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${categoryFilter === 'ORDINATEUR' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`px-3 py-1.5 rounded-md text-[10px] font-bold transition-all ${categoryFilter === 'ORDINATEUR' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               PC
             </button>
             <button 
               onClick={() => setCategoryFilter('IMPRIMANTE')}
-              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${categoryFilter === 'IMPRIMANTE' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`px-3 py-1.5 rounded-md text-[10px] font-bold transition-all ${categoryFilter === 'IMPRIMANTE' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
             >
               IMP
             </button>
@@ -301,14 +302,14 @@ const ChefInventoryPage: React.FC = () => {
       </div>
 
       {/* Resource Table */}
-      <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-500/5 overflow-hidden">
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
         {filteredResources.length === 0 ? (
-          <div className="py-24 text-center">
-            <div className="w-24 h-24 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Package className="text-purple-200" size={48} />
+          <div className="py-20 text-center">
+            <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Package className="text-blue-200" size={40} />
             </div>
-            <h3 className="text-2xl font-black text-gray-900 tracking-tight">Inventaire vide</h3>
-            <p className="text-gray-500 font-medium mt-2 max-w-sm mx-auto">
+            <h3 className="text-xl font-bold text-gray-900">Inventaire vide</h3>
+            <p className="text-gray-500 text-sm mt-1 max-w-sm mx-auto">
               {deptId 
                 ? "Aucune ressource n'est actuellement affectée à votre département." 
                 : "Erreur : Aucun département n'est associé à votre compte."}
@@ -316,14 +317,14 @@ const ChefInventoryPage: React.FC = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left">
               <thead>
-                <tr className="border-b border-gray-50">
-                  <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Ressource</th>
-                  <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Catégorie</th>
-                  <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Affectation</th>
-                  <th className="px-8 py-6 text-[10px] font-black text-gray-400 uppercase tracking-widest">Statut</th>
-                  <th className="px-8 py-6 text-right text-[10px] font-black text-gray-400 uppercase tracking-widest">Actions</th>
+                <tr className="bg-gray-50 border-b border-gray-100">
+                  <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Ressource</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Catégorie</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Affectation</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Statut</th>
+                  <th className="px-6 py-4 text-right text-[10px] font-bold text-gray-500 uppercase tracking-widest">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -331,61 +332,61 @@ const ChefInventoryPage: React.FC = () => {
                   const aff = affectations[res.id];
                   return (
                     <tr key={res.id} className="group hover:bg-gray-50/50 transition-colors">
-                      <td className="px-8 py-6">
-                        <div className="flex items-center gap-4">
-                          <div className="p-3 bg-gray-50 text-gray-500 rounded-2xl group-hover:bg-purple-50 group-hover:text-purple-600 transition-colors">
-                            <Package size={24} />
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-gray-50 text-gray-400 rounded-lg group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
+                            <Package size={18} />
                           </div>
                           <div>
-                            <p className="font-bold text-gray-900 leading-none">{res.marque}</p>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1.5">Inv: {res.numeroInventaire}</p>
+                            <p className="text-sm font-bold text-gray-900 leading-tight">{res.marque}</p>
+                            <p className="text-[10px] text-gray-400 font-medium mt-0.5">N° {res.numeroInventaire}</p>
                           </div>
                         </div>
                       </td>
-                      <td className="px-8 py-6">
-                        <span className="px-3 py-1 bg-gray-100 text-gray-600 rounded-lg text-[10px] font-bold uppercase tracking-widest">
+                      <td className="px-6 py-4">
+                        <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-[10px] font-bold uppercase tracking-wider">
                           {res.categorie}
                         </span>
                       </td>
-                      <td className="px-8 py-6">
+                      <td className="px-6 py-4">
                         {aff ? (
-                          <div className="flex flex-col gap-1">
-                            <span className={`text-xs font-bold flex items-center gap-1.5 ${aff.affectationCollective ? 'text-blue-600' : 'text-purple-600'}`}>
-                              {aff.affectationCollective ? <Building2 size={14} /> : <User size={14} />}
+                          <div className="flex flex-col">
+                            <span className={`text-[11px] font-bold flex items-center gap-1.5 ${aff.affectationCollective ? 'text-blue-600' : 'text-indigo-600'}`}>
+                              {aff.affectationCollective ? <Building2 size={12} /> : <User size={12} />}
                               {aff.affectationCollective ? 'Stock Département' : aff.enseignantNom || 'Enseignant'}
                             </span>
                             {!aff.affectationCollective && (
-                              <span className="text-[10px] text-gray-400 font-medium italic">Assigné individuellement</span>
+                              <span className="text-[9px] text-gray-400 font-medium">Assigné individuellement</span>
                             )}
                           </div>
                         ) : (
-                          <span className="text-amber-500 text-xs font-bold italic flex items-center gap-1.5">
-                            <Clock size={14} /> En attente
+                          <span className="text-amber-500 text-[10px] font-bold italic flex items-center gap-1.5">
+                            <Clock size={12} /> En attente
                           </span>
                         )}
                       </td>
-                      <td className="px-8 py-6">
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest ${
-                          res.statut === 'AFFECTEE' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'
+                      <td className="px-6 py-4">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                          res.statut === 'AFFECTEE' || res.statut === 'FONCTIONNELLE' ? 'bg-green-50 text-green-600' : 'bg-blue-50 text-blue-600'
                         }`}>
                           {res.statut}
                         </span>
                       </td>
-                      <td className="px-8 py-6 text-right">
+                      <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">
                           <button 
                             onClick={() => handleOpenModal(res)}
-                            className="p-3 bg-white border border-gray-200 text-gray-400 rounded-xl hover:text-purple-600 hover:border-purple-200 hover:bg-purple-50 transition-all shadow-sm group/btn"
+                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                             title={aff ? 'Modifier l\'affectation' : 'Affecter'}
                           >
-                            <Edit size={18} className="group-hover/btn:scale-110 transition-transform" />
+                            <Edit size={16} />
                           </button>
                           <button 
                             onClick={() => setSignalementModal({ show: true, resId: res.id })}
-                            className="p-3 bg-white border border-red-200 text-red-500 rounded-xl hover:bg-red-50 transition-all shadow-sm group/btn"
+                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                             title="Signaler une panne"
                           >
-                            <AlertTriangle size={18} className="group-hover/btn:scale-110 transition-transform" />
+                            <AlertTriangle size={16} />
                           </button>
                         </div>
                       </td>
@@ -400,15 +401,15 @@ const ChefInventoryPage: React.FC = () => {
 
       {/* Affectation Modal */}
       {isModalOpen && selectedRes && (
-        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-md flex items-center justify-center z-[110] p-4">
-          <div className="bg-white rounded-[2.5rem] w-full max-w-lg p-10 shadow-2xl animate-in zoom-in duration-300">
-            <div className="flex justify-between items-start mb-8">
-              <div className="space-y-1">
-                <h2 className="text-3xl font-black text-gray-900 tracking-tight">Affectation</h2>
-                <p className="text-gray-500 font-medium">Pour : {selectedRes.marque} ({selectedRes.numeroInventaire})</p>
+        <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-[110] p-4">
+          <div className="bg-white rounded-xl w-full max-w-md p-8 shadow-2xl animate-in fade-in zoom-in duration-200">
+            <div className="flex justify-between items-start mb-6">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Affectation</h2>
+                <p className="text-sm text-gray-500">Pour : {selectedRes.marque} ({selectedRes.numeroInventaire})</p>
               </div>
               <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                <MoreVertical size={24} />
+                <X size={20} />
               </button>
             </div>
             

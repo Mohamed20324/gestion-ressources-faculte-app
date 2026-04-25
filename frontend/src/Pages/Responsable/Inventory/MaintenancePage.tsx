@@ -139,46 +139,92 @@ const MaintenancePage = () => {
                 : new Date(resource.dateFinGarantie) >= new Date()
             );
             
-            const isFixedOrChanged = s.statut === 'RESOLU' || s.statut === 'ECHANGE';
+            const getStatusTheme = (s: any) => {
+              if (s.statut === 'RESOLU' || s.statut === 'FERME') {
+                return {
+                  card: 'bg-emerald-50 border-emerald-200 shadow-emerald-100/50',
+                  icon: 'bg-emerald-100 text-emerald-600 border-emerald-200',
+                  title: 'text-emerald-900',
+                  sub: 'text-emerald-700',
+                  badge: 'bg-emerald-200 text-emerald-800',
+                  quote: 'bg-emerald-100/50 border-emerald-200 text-emerald-800'
+                };
+              }
+              if (s.statut === 'ECHANGE') {
+                if (s.statutEchange === 'ACCEPTEE') {
+                  return {
+                    card: 'bg-sky-50 border-sky-200 shadow-sky-100/50',
+                    icon: 'bg-sky-100 text-sky-600 border-sky-200',
+                    title: 'text-sky-900',
+                    sub: 'text-sky-700',
+                    badge: 'bg-sky-200 text-sky-800',
+                    quote: 'bg-sky-100/50 border-sky-200 text-sky-800'
+                  };
+                }
+                return {
+                  card: 'bg-amber-50 border-amber-200 shadow-amber-100/50',
+                  icon: 'bg-amber-100 text-amber-600 border-amber-200',
+                  title: 'text-amber-900',
+                  sub: 'text-amber-700',
+                  badge: 'bg-amber-200 text-amber-800',
+                  quote: 'bg-amber-100/50 border-amber-200 text-amber-800'
+                };
+              }
+              if (s.statut === 'CONSTAT') {
+                return {
+                  card: 'bg-indigo-50 border-indigo-200 shadow-indigo-100/50',
+                  icon: 'bg-indigo-100 text-indigo-600 border-indigo-200',
+                  title: 'text-indigo-900',
+                  sub: 'text-indigo-700',
+                  badge: 'bg-indigo-200 text-indigo-800',
+                  quote: 'bg-indigo-100/50 border-indigo-200 text-indigo-800'
+                };
+              }
+              return {
+                card: 'bg-white border-gray-100 hover:border-purple-200',
+                icon: 'bg-purple-50 text-purple-600 border-purple-100',
+                title: 'text-gray-900',
+                sub: 'text-gray-500',
+                badge: 'bg-gray-100 text-gray-700',
+                quote: 'bg-gray-50 border-gray-100 text-gray-600'
+              };
+            };
+
+            const theme = getStatusTheme(s);
 
             return (
               <div 
                 key={s.id} 
-                className={`rounded-[2.5rem] p-8 border shadow-xl flex flex-col md:flex-row justify-between gap-8 transition-all ${
-                  isFixedOrChanged 
-                    ? 'bg-emerald-50 border-emerald-200 shadow-emerald-100/50' 
-                    : 'bg-white border-gray-100 hover:border-purple-200'
-                }`}
+                className={`rounded-[2.5rem] p-8 border shadow-xl flex flex-col md:flex-row justify-between gap-8 transition-all ${theme.card}`}
               >
                 <div className="flex-1 space-y-4">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border ${
-                        isFixedOrChanged ? 'bg-emerald-100 text-emerald-600 border-emerald-200' : 'bg-purple-50 text-purple-600 border-purple-100'
-                      }`}>
-                        {isFixedOrChanged ? <CheckCircle size={28} /> : <AlertTriangle size={28} />}
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border ${theme.icon}`}>
+                        {(s.statut === 'RESOLU' || s.statut === 'FERME' || s.statutEchange === 'ACCEPTEE') ? <CheckCircle size={28} /> : <AlertTriangle size={28} />}
                       </div>
                       <div>
-                        <h3 className={`text-lg font-black ${isFixedOrChanged ? 'text-emerald-900' : 'text-gray-900'}`}>
+                        <h3 className={`text-lg font-black ${theme.title}`}>
                           {resource?.marque || 'Ressource'} (Inv: {resource?.numeroInventaire})
                         </h3>
-                        <p className={`text-sm font-medium ${isFixedOrChanged ? 'text-emerald-700' : 'text-gray-500'}`}>
+                        <p className={`text-sm font-medium ${theme.sub}`}>
                           Signalé le {Array.isArray(s.dateSignalement) ? `${s.dateSignalement[2]}/${s.dateSignalement[1]}/${s.dateSignalement[0]}` : s.dateSignalement}
                         </p>
                       </div>
                     </div>
-                    <span className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider ${
-                      s.statut === 'RESOLU' && s.statutEchange === 'ACCEPTEE' 
-                        ? 'bg-blue-200 text-blue-800' 
-                        : (isFixedOrChanged ? 'bg-emerald-200 text-emerald-800' : 'bg-gray-100 text-gray-700')
-                    }`}>
-                      {s.statut === 'RESOLU' && s.statutEchange === 'ACCEPTEE' ? 'ÉCHANGE ACCEPTÉ' : s.statut}
-                    </span>
+                    <div className="flex flex-col items-end gap-2">
+                      <span className={`px-4 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider ${theme.badge}`}>
+                        {s.statut === 'RESOLU' && s.statutEchange === 'ACCEPTEE' ? 'ÉCHANGE ACCEPTÉ' : s.statut}
+                      </span>
+                      {s.technicienId && (
+                        <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg flex items-center gap-1">
+                          <Wrench size={12} /> Tech: {techniciens.find(t => t.id === s.technicienId)?.nom || `ID: ${s.technicienId}`}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   
-                  <div className={`p-4 rounded-2xl border italic text-sm ${
-                    isFixedOrChanged ? 'bg-emerald-100/50 border-emerald-200 text-emerald-800' : 'bg-gray-50 border-gray-100 text-gray-600'
-                  }`}>
+                  <div className={`p-4 rounded-2xl border italic text-sm ${theme.quote}`}>
                      "{s.description}"
                   </div>
 

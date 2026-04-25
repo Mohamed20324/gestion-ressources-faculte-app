@@ -76,7 +76,8 @@ const secondaryMenus: Record<string, MenuType> = {
       {
         type: "nav",
         items: [
-          { icon: <LayoutDashboard size={16} />, text: "Signalements", path: "/responsable/reports" }
+          { icon: <LayoutDashboard size={16} />, text: "Signalements", path: "/responsable/reports" },
+          { icon: <CalendarCheck size={16} />, text: "Calendrier Réunions", path: "/responsable/meetings/calendar" }
         ]
       }
     ]
@@ -93,9 +94,8 @@ const secondaryMenus: Record<string, MenuType> = {
         type: "nav",
         items: [
           { icon: <LayoutDashboard size={16} />, text: "Tableau de Bord AO", path: "/responsable/procurement/dashboard" },
-          { icon: <ClipboardList size={16} />, text: "Besoins Départements", path: "/responsable/needs" },
-          { icon: <FileText size={16} />, text: "Marchés & Appels d'offres", path: "/responsable/appels-offres" },
-          { icon: <FileText size={16} />, text: "Soumissions Reçues", path: "/responsable/submissions" }
+          {icon: <ClipboardList size={16} />, text: "Besoins Départements", path: "/responsable/needs" },
+          { icon: <FileText size={16} />, text: "Marchés & Appels d'offres", path: "/responsable/appels-offres" }
         ]
       }
     ]
@@ -119,24 +119,7 @@ const secondaryMenus: Record<string, MenuType> = {
       }
     ]
   },
-  Reunions: {
-    title: "Réunions & Planning",
-    defaultPath: "/responsable/meetings/dashboard",
-    sections: [
-      {
-        type: "header",
-        title: "Gestion des Réunions"
-      },
-      {
-        type: "nav",
-        items: [
-          { icon: <LayoutDashboard size={16} />, text: "Tableau de Bord", path: "/responsable/meetings/dashboard" },
-          { icon: <Video size={16} />, text: "Liste des Réunions", path: "/responsable/meetings" },
-          { icon: <CalendarCheck size={16} />, text: "Calendrier", path: "/responsable/meetings/calendar" }
-        ]
-      }
-    ]
-  },
+
   Partenaires: {
     title: "Fournisseurs",
     defaultPath: "/responsable/partners/dashboard",
@@ -306,6 +289,8 @@ const Sidebar = () => {
   const [pendingPannesCount, setPendingPannesCount] = useState(0);
   const [unassignedResourcesCount, setUnassignedResourcesCount] = useState(0);
   const [completedMaintenanceCount, setCompletedMaintenanceCount] = useState(0);
+  const [newSubmissionsCount, setNewSubmissionsCount] = useState(0);
+  const [plannedMeetingsCount, setPlannedMeetingsCount] = useState(0);
 
   const { theme, toggleTheme } = useTheme();
 
@@ -318,6 +303,8 @@ const Sidebar = () => {
     if (path === '/responsable/reception') return lateCount;
     if (path === '/responsable/maintenance') return completedMaintenanceCount;
     if (path === '/responsable/resources') return unassignedResourcesCount;
+    if (path === '/responsable/submissions') return newSubmissionsCount;
+    if (path === '/responsable/meetings/calendar') return plannedMeetingsCount;
     return 0;
   };
 
@@ -370,7 +357,7 @@ const Sidebar = () => {
         const res = await api.getAllBesoins();
         if (res.ok) {
           const data = await res.json();
-          const count = data.filter((b: any) => b.statut === 'ENVOYE' || b.statut === 'VALIDE').length;
+          const count = data.filter((b: any) => (b.statut === 'ENVOYE' || b.statut === 'VALIDE') && !b.appelOffreId).length;
           setNewNeedsCount(count);
         }
       } catch (error) {
@@ -410,7 +397,7 @@ const Sidebar = () => {
         if (res.ok) {
           const data = await res.json();
           // 1. Unassigned resources
-          setUnassignedResourcesCount(data.filter((r: any) => !r.departementId).length);
+          setUnassignedResourcesCount(data.filter((r: any) => r.statut === 'DISPONIBLE').length);
         }
       } catch (e) { console.error(e); }
     };
@@ -426,16 +413,41 @@ const Sidebar = () => {
       } catch (e) { console.error(e); }
     };
 
+    const fetchSubmissionsCount = async () => {
+      try {
+        const res = await api.getAllOffres();
+        if (res.ok) {
+          const data = await res.json();
+          // New submissions are in status SOUMISE
+          setNewSubmissionsCount(data.filter((o: any) => o.statut === 'SOUMISE').length);
+        }
+      } catch (e) { console.error(e); }
+    };
+
+    const fetchPlannedMeetingsCount = async () => {
+      try {
+        const res = await api.getAllReunions();
+        if (res.ok) {
+          const data = await res.json();
+          setPlannedMeetingsCount(data.filter((m: any) => m.statut === 'PLANIFIEE').length);
+        }
+      } catch (e) { console.error(e); }
+    };
+
     fetchNewNeedsCount();
     fetchPendingDeliveriesCount();
     fetchInventoryCounts();
     fetchMaintenanceCounts();
+    fetchSubmissionsCount();
+    fetchPlannedMeetingsCount();
 
     const interval = setInterval(() => {
       fetchNewNeedsCount();
       fetchPendingDeliveriesCount();
       fetchInventoryCounts();
       fetchMaintenanceCounts();
+      fetchSubmissionsCount();
+      fetchPlannedMeetingsCount();
     }, 10000);
 
     return () => {
@@ -592,15 +604,7 @@ const Sidebar = () => {
             />
           </div>
 
-          {/* Réunions */}
-          <div className="mb-2">
-            <SidebarIconCollapsed
-              icon={<Video size={20} />}
-              label="Réunions"
-              isActive={activeMenu === 'Reunions'}
-              onClick={() => handleMenuClick('Reunions')}
-            />
-          </div>
+
 
           {/* Fournisseurs */}
           <div className="mb-2">

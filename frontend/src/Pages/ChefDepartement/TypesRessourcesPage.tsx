@@ -144,7 +144,7 @@ const TypesRessourcesPage = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <Settings className="text-purple-600" size={32} />
+            <Settings className="text-blue-600" size={32} />
             Gestion des Types de Ressources
           </h1>
           <p className="text-gray-500 mt-1">Configurez les catégories de matériel disponibles pour les besoins.</p>
@@ -158,12 +158,12 @@ const TypesRessourcesPage = () => {
               placeholder="Rechercher un type..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 outline-none transition-all"
+              className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
             />
           </div>
           <button 
             onClick={() => handleOpenModal()}
-            className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-xl font-bold hover:bg-purple-700 transition-all shadow-lg shadow-purple-100"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
           >
             <Plus size={20} />
             Nouveau Type
@@ -172,66 +172,66 @@ const TypesRessourcesPage = () => {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-20 text-purple-600">
+        <div className="flex justify-center py-20 text-blue-600">
           <Loader className="animate-spin" size={40} />
         </div>
       ) : (
         <>
-          <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden mb-6">
+          <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mb-6">
             <div className="overflow-x-auto">
               <table className="w-full text-left">
                 <thead>
-                  <tr className="bg-gray-50/50 border-b border-gray-100">
-                    <th className="px-8 py-5 text-xs font-bold text-gray-500 uppercase tracking-wider">Libellé</th>
-                    <th className="px-8 py-5 text-xs font-bold text-gray-500 uppercase tracking-wider">Code</th>
-                    <th className="px-8 py-5 text-xs font-bold text-gray-500 uppercase tracking-wider">Standard</th>
-                    <th className="px-8 py-5 text-xs font-bold text-gray-500 uppercase tracking-wider">Statut</th>
-                    <th className="px-8 py-5 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                  <tr className="bg-gray-50 border-b border-gray-100">
+                    <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Libellé</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Code</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Standard</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Statut</th>
+                    <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest text-right">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {currentItems.map((type) => (
                     <tr key={type.id} className="hover:bg-gray-50/30 transition-colors group">
-                      <td className="px-8 py-5">
+                      <td className="px-6 py-4">
                         <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center text-purple-600 border border-purple-100">
+                          <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 border border-blue-100">
                             <Box size={20} />
                           </div>
-                          <span className="font-bold text-gray-900">{type.libelle}</span>
+                          <span className="text-sm font-bold text-gray-900">{type.libelle}</span>
                         </div>
                       </td>
-                      <td className="px-8 py-5">
-                        <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded text-gray-600 uppercase">
+                      <td className="px-6 py-4">
+                        <span className="font-mono text-[10px] bg-gray-100 px-2 py-1 rounded text-gray-600 uppercase">
                           {type.code}
                         </span>
                       </td>
-                      <td className="px-8 py-5">
+                      <td className="px-6 py-4">
                         {type.estStandard ? (
-                          <span className="px-2 py-1 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-full uppercase border border-blue-100">
+                          <span className="px-2 py-1 bg-blue-50 text-blue-600 text-[9px] font-bold rounded uppercase border border-blue-100">
                             Système
                           </span>
                         ) : (
-                          <span className="text-[10px] text-gray-400 font-medium">Personnalisé</span>
+                          <span className="text-[9px] text-gray-400 font-medium">Personnalisé</span>
                         )}
                       </td>
-                      <td className="px-8 py-5">
-                        <span className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider border flex items-center gap-1.5 w-fit ${type.actif ? 'bg-green-50 text-green-700 border-green-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
-                          {type.actif ? <CheckCircle size={14} /> : <XCircle size={14} />}
+                      <td className="px-6 py-4">
+                        <span className={`px-2 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider border flex items-center gap-1.5 w-fit ${type.actif ? 'bg-green-50 text-green-700 border-green-100' : 'bg-red-50 text-red-700 border-red-100'}`}>
+                          {type.actif ? <CheckCircle size={12} /> : <XCircle size={12} />}
                           {type.actif ? 'Actif' : 'Inactif'}
                         </span>
                       </td>
-                      <td className="px-8 py-5 text-right space-x-2">
+                      <td className="px-6 py-4 text-right space-x-2">
                         <button 
                           onClick={() => handleOpenModal(type)}
-                          className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         >
-                          <Edit2 size={18} />
+                          <Edit2 size={16} />
                         </button>
                         <button 
                           onClick={() => handleDeleteClick(type.id)}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         >
-                          <Trash2 size={18} />
+                          <Trash2 size={16} />
                         </button>
                       </td>
                     </tr>
@@ -242,24 +242,24 @@ const TypesRessourcesPage = () => {
           </div>
 
           {totalPages > 1 && (
-            <div className="flex items-center justify-between bg-white px-8 py-5 rounded-3xl border border-gray-100 shadow-sm">
-              <p className="text-sm text-gray-500">
+            <div className="flex items-center justify-between bg-white px-6 py-4 rounded-xl border border-gray-100 shadow-sm">
+              <p className="text-xs text-gray-500">
                 Page <span className="font-bold text-gray-900">{currentPage}</span> sur <span className="font-bold text-gray-900">{totalPages}</span>
               </p>
               <div className="flex gap-2">
                 <button 
                   onClick={() => setCurrentPage(p => Math.max(1, p-1))}
                   disabled={currentPage === 1}
-                  className="p-2 border border-gray-100 rounded-xl disabled:opacity-30 hover:bg-gray-50"
+                  className="p-1.5 border border-gray-100 rounded-lg disabled:opacity-30 hover:bg-gray-50"
                 >
-                  <ChevronLeft size={20} />
+                  <ChevronLeft size={18} />
                 </button>
                 <button 
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))}
                   disabled={currentPage === totalPages}
-                  className="p-2 border border-gray-100 rounded-xl disabled:opacity-30 hover:bg-gray-50"
+                  className="p-1.5 border border-gray-100 rounded-lg disabled:opacity-30 hover:bg-gray-50"
                 >
-                  <ChevronRight size={20} />
+                  <ChevronRight size={18} />
                 </button>
               </div>
             </div>
@@ -269,39 +269,39 @@ const TypesRessourcesPage = () => {
 
       {/* Modal Add/Edit */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-[2rem] w-full max-w-lg p-8 shadow-2xl animate-in fade-in zoom-in duration-300 border border-gray-100">
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-2xl font-bold text-gray-900">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl w-full max-w-md p-8 shadow-2xl animate-in fade-in zoom-in duration-200 border border-gray-100">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-gray-900">
                 {editingType ? 'Modifier le Type' : 'Nouveau Type'}
               </h2>
               <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-100 rounded-full text-gray-400 transition-colors">
-                <XCircle size={24} />
+                <XCircle size={20} />
               </button>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-500 uppercase ml-1">Code (Unique)</label>
+                <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Code (Unique)</label>
                 <input 
                   required
                   type="text"
                   placeholder="Ex: LAPTOP_DELL"
                   value={formData.code}
                   onChange={(e) => setFormData({...formData, code: e.target.value.toUpperCase()})}
-                  className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-purple-500 outline-none transition-all font-mono font-medium"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono text-sm"
                 />
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-500 uppercase ml-1">Libellé (Nom affiché)</label>
+                <label className="text-[10px] font-bold text-gray-400 uppercase ml-1">Libellé (Nom affiché)</label>
                 <input 
                   required
                   type="text"
                   placeholder="Ex: Ordinateur Portable Dell"
                   value={formData.libelle}
                   onChange={(e) => setFormData({...formData, libelle: e.target.value})}
-                  className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-purple-500 outline-none transition-all font-medium"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all text-sm font-medium"
                 />
               </div>
 
@@ -314,10 +314,10 @@ const TypesRessourcesPage = () => {
                       onChange={(e) => setFormData({...formData, actif: e.target.checked})}
                       className="sr-only"
                     />
-                    <div className={`w-12 h-6 rounded-full transition-colors ${formData.actif ? 'bg-purple-600' : 'bg-gray-300'}`}></div>
-                    <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${formData.actif ? 'translate-x-6' : ''}`}></div>
+                    <div className={`w-10 h-5 rounded-full transition-colors ${formData.actif ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
+                    <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${formData.actif ? 'translate-x-5' : ''}`}></div>
                   </div>
-                  <span className="text-sm font-bold text-gray-700">Actif</span>
+                  <span className="text-xs font-bold text-gray-700">Actif</span>
                 </label>
 
                 <label className="flex items-center gap-3 cursor-pointer group">
@@ -328,10 +328,10 @@ const TypesRessourcesPage = () => {
                       onChange={(e) => setFormData({...formData, estStandard: e.target.checked})}
                       className="sr-only"
                     />
-                    <div className={`w-12 h-6 rounded-full transition-colors ${formData.estStandard ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
-                    <div className={`absolute top-1 left-1 w-4 h-4 bg-white rounded-full transition-transform ${formData.estStandard ? 'translate-x-6' : ''}`}></div>
+                    <div className={`w-10 h-5 rounded-full transition-colors ${formData.estStandard ? 'bg-blue-600' : 'bg-gray-300'}`}></div>
+                    <div className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full transition-transform ${formData.estStandard ? 'translate-x-5' : ''}`}></div>
                   </div>
-                  <span className="text-sm font-bold text-gray-700">Standard</span>
+                  <span className="text-xs font-bold text-gray-700">Standard</span>
                 </label>
               </div>
 
@@ -339,16 +339,16 @@ const TypesRessourcesPage = () => {
                 <button 
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 py-4 px-6 border border-gray-100 rounded-2xl font-bold text-gray-600 hover:bg-gray-50 transition-all"
+                  className="flex-1 py-3 px-6 border border-gray-100 rounded-xl font-bold text-gray-600 hover:bg-gray-50 transition-all text-sm"
                 >
                   Annuler
                 </button>
                 <button 
                   type="submit"
                   disabled={saving}
-                  className="flex-[2] py-4 px-6 bg-purple-600 text-white rounded-2xl font-bold hover:bg-purple-700 transition-all shadow-lg shadow-purple-100 flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="flex-[2] py-3 px-6 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 flex items-center justify-center gap-2 disabled:opacity-50 text-sm"
                 >
-                  {saving ? <Loader className="animate-spin" size={20} /> : (editingType ? 'Mettre à jour' : 'Créer le type')}
+                  {saving ? <Loader className="animate-spin" size={18} /> : (editingType ? 'Mettre à jour' : 'Créer le type')}
                 </button>
               </div>
             </form>
@@ -358,8 +358,8 @@ const TypesRessourcesPage = () => {
 
       {/* Delete Confirmation Modal */}
       {isDeleteModalOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
-          <div className="bg-white rounded-3xl w-full max-w-md p-8 shadow-2xl">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
+          <div className="bg-white rounded-xl w-full max-w-sm p-8 shadow-2xl animate-in zoom-in duration-200">
             <div className="flex flex-col items-center text-center">
               <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center text-red-600 mb-4">
                 <AlertTriangle size={32} />

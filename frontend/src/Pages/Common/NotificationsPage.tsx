@@ -82,7 +82,12 @@ const NotificationsPage: React.FC = () => {
     try {
       const res = await api.getNotifications(storedUser.id);
       if (res.ok) {
-        setNotifications(await res.json());
+        let data = await res.json();
+        // Masquer les notifications de réunion pour le Responsable
+        if (storedUser.role === 'RESPONSABLE') {
+          data = data.filter((n: Notification) => !n.message.toLowerCase().includes('réunion'));
+        }
+        setNotifications(data);
       }
     } catch (error) {
       console.error("Error fetching notifications:", error);

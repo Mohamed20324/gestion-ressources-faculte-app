@@ -81,6 +81,7 @@ const SoumissionsGestionPage = () => {
   };
 
   const filteredOffres = offres.filter(o => {
+    if (o.statut === 'ANNULEE') return false; // Ne pas afficher les annulées ici
     const matchesSearch = o.fournisseurNom.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           o.appelOffreReference.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'ALL' || o.statut === statusFilter;
@@ -93,6 +94,7 @@ const SoumissionsGestionPage = () => {
       case 'ACCEPTEE': return 'bg-emerald-50 text-emerald-700 border-emerald-100';
       case 'REJETEE': return 'bg-amber-50 text-amber-700 border-amber-100';
       case 'ELIMINEE': return 'bg-slate-900 text-white border-slate-900';
+      case 'ANNULEE': return 'bg-red-50 text-red-600 border-red-100 italic';
       default: return 'bg-gray-50 text-gray-600 border-gray-100';
     }
   };

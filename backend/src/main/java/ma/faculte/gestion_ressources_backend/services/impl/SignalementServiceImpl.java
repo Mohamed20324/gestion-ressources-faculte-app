@@ -132,10 +132,13 @@ public class SignalementServiceImpl implements ISignalementService {
     public SignalementPanneDTO resoudre(Long signalementId, Long technicienId) {
         SignalementPanne s = signalementRepository.findById(signalementId)
                 .orElseThrow(() -> new RuntimeException("Signalement introuvable"));
-        Technicien t = technicienRepository.findById(technicienId)
-                .orElseThrow(() -> new RuntimeException("Technicien introuvable"));
         
-        s.setTechnicien(t);
+        if (technicienId != null && technicienId > 0) {
+            Technicien t = technicienRepository.findById(technicienId)
+                    .orElseThrow(() -> new RuntimeException("Technicien introuvable"));
+            s.setTechnicien(t);
+        }
+        
         s.setStatut(SignalementPanne.STATUT_RESOLU);
         
         Ressource r = s.getRessource();
@@ -147,8 +150,10 @@ public class SignalementServiceImpl implements ISignalementService {
         
         // Notify Enseignant
         if (s.getEnseignant() != null) {
-            String msg = "Votre panne sur la ressource " + r.getMarque() + " (" + r.getNumeroInventaire() + ") a été résolue par le technicien " + t.getNom() + ".";
-            notificationService.envoyerNotification(s.getEnseignant().getId(), t.getId(), msg, ma.faculte.gestion_ressources_backend.entities.appel_offre.Notification.TYPE_INFO);
+            String name = s.getTechnicien() != null ? (s.getTechnicien().getNom() + " " + s.getTechnicien().getPrenom()) : "le fournisseur";
+            Long senderId = s.getTechnicien() != null ? s.getTechnicien().getId() : 1L; // Fallback to Responsable ID
+            String msg = "Votre panne sur la ressource " + r.getMarque() + " (" + r.getNumeroInventaire() + ") a été résolue par " + name + ".";
+            notificationService.envoyerNotification(s.getEnseignant().getId(), senderId, msg, ma.faculte.gestion_ressources_backend.entities.appel_offre.Notification.TYPE_INFO);
         }
 
         return versDto(signalementRepository.save(s));
@@ -193,7 +198,8 @@ public class SignalementServiceImpl implements ISignalementService {
                 .orElseThrow(() -> new RuntimeException("Signalement introuvable"));
         s.setDateLivraisonEchange(date);
         s.setStatutEchange("ACCEPTEE");
-        s.setStatut(SignalementPanne.STATUT_RESOLU);
+        // We keep the status as ECHANGE so it remains in the supplier's active list until received
+        // s.setStatut(SignalementPanne.STATUT_RESOLU); 
         
         // Notify Responsable
         String msg = "Le fournisseur a programmé l'échange de la ressource " + s.getRessource().getMarque() + " pour le " + date;

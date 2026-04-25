@@ -96,17 +96,18 @@ const NavItem = ({ icon, text, suffix, path, onClick, isActive, badge }: {
   const { logout } = useAuth();
   const { theme, toggleTheme } = useTheme();
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
     if (path === 'theme') {
+      e.preventDefault();
       toggleTheme();
       return;
     }
     if (path === '/logout') {
+      e.preventDefault();
       logout();
       navigate('/');
       return;
     }
-    navigate(path);
     if (onClick) onClick();
   };
 
@@ -114,7 +115,8 @@ const NavItem = ({ icon, text, suffix, path, onClick, isActive, badge }: {
 
   return (
     <Link
-      to={path}
+      to={path === 'theme' ? '#' : path}
+      onClick={handleClick}
       className={`flex items-center justify-between px-2 py-1.5 my-1 rounded-md cursor-pointer transition-colors ${isActive ? 'bg-white text-purple-700 shadow-sm' : 'text-gray-600 hover:bg-white hover:text-gray-900'
         }`}
     >
@@ -155,6 +157,9 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
   const [newTeacherNeedsCount, setNewTeacherNeedsCount] = useState(0);
   const [resolvedPannesCount, setResolvedPannesCount] = useState(0);
   const [recentInventoryCount, setRecentInventoryCount] = useState(0);
+  const [unsubmittedAoCount, setUnsubmittedAoCount] = useState(0);
+  const [processedSubmissionsCount, setProcessedSubmissionsCount] = useState(0);
+  const [pendingSavCount, setPendingSavCount] = useState(0);
 
   const getBaseUrl = () => {
     switch (role) {
@@ -199,9 +204,24 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
     }
 
     if (role === 'Fournisseur') {
-      gestionItems.push({ icon: <FileText size={16} />, text: "Appels d'offres", path: `${baseUrl}/appels-offres` });
-      gestionItems.push({ icon: <Package size={16} />, text: "Mes Soumissions", path: `${baseUrl}/mes-soumissions` });
-      gestionItems.push({ icon: <Wrench size={16} />, text: "Service Après-Vente", path: `${baseUrl}/sav` });
+      gestionItems.push({
+        icon: <FileText size={16} />,
+        text: "Appels d'offres",
+        path: `${baseUrl}/appels-offres`,
+        badge: unsubmittedAoCount > 0 ? unsubmittedAoCount : undefined
+      });
+      gestionItems.push({
+        icon: <Package size={16} />,
+        text: "Mes Soumissions",
+        path: `${baseUrl}/mes-soumissions`,
+        badge: processedSubmissionsCount > 0 ? processedSubmissionsCount : undefined
+      });
+      gestionItems.push({
+        icon: <Wrench size={16} />,
+        text: "Service Après-Vente",
+        path: `${baseUrl}/sav`,
+        badge: pendingSavCount > 0 ? pendingSavCount : undefined
+      });
     }
 
     menus['Gestion'] = {
@@ -226,8 +246,8 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
             type: "nav",
             items: [
               { icon: <ClipboardList size={16} />, text: "Besoins", path: `${baseUrl}/besoins`, badge: newTeacherNeedsCount > 0 ? newTeacherNeedsCount : undefined },
+              { icon: <Archive size={16} />, text: "Inventaire Global", path: `${baseUrl}/inventory` },
               { icon: <AlertTriangle size={16} />, text: "Mes Pannes", path: `${baseUrl}/signalements`, badge: resolvedPannesCount > 0 ? resolvedPannesCount : undefined },
-              { icon: <Archive size={16} />, text: "Inventaire Global", path: `${baseUrl}/inventory`, badge: recentInventoryCount > 0 ? recentInventoryCount : undefined },
               { icon: <Settings size={16} />, text: "Gestion Types", path: `${baseUrl}/types-ressources` }
             ]
           }
@@ -284,6 +304,22 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
     return menus;
   };
 
+  const getSectionBadgeSum = (menuKey: string) => {
+    const menus = getSecondaryMenus();
+    const menu = menus[menuKey];
+    if (!menu) return undefined;
+    let sum = 0;
+    menu.sections.forEach(section => {
+      if (section.type === 'nav') {
+        section.items.forEach(item => {
+          if (typeof item.badge === 'number') sum += item.badge;
+          else if (typeof item.badge === 'object' && item.badge !== null) sum += item.badge.count;
+        });
+      }
+    });
+    return sum > 0 ? sum : undefined;
+  };
+
   const secondaryMenus = getSecondaryMenus();
   const currentMenu = secondaryMenus[activeMenu as keyof typeof secondaryMenus];
 
@@ -307,64 +343,86 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
     const fetchBadges = async () => {
       if (!user) return;
       try {
-        const userRes = await fetch(`http://localhost:8081/api/utilisateurs/${user.id}`, {
-          headers: { 'Authorization': `Bearer ${user.accessToken}` }
-        });
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          const deptId = userData.departementId;
+        // 1. Details for Department-related roles (Chef/Enseignant)
+        const userRes = await api.getFournisseurById(user.id);
+        const userData = userRes.ok ? await userRes.json() : null;
+        const deptId = userData?.departementId;
 
-          if (deptId) {
-            // 1. Fetch Meetings Badge
-            const meetingsRes = await api.getReunionsByDepartement(deptId);
-            if (meetingsRes.ok) {
-              const data = await meetingsRes.json();
-              setPlannedMeetingsCount(data.filter((m: any) => m.statut === 'PLANIFIEE').length);
-            }
-
-            // 2. Fetch Pending Needs Badge (Chef only)
-            if (role === 'ChefDepartement') {
-              const besoinsRes = await api.getBesoinsByDepartement(deptId);
-              if (besoinsRes.ok) {
-                const data = await besoinsRes.json();
-                setPendingBesoinsCount(data.filter((b: any) => b.statut === 'EN_ATTENTE').length);
-                setNewTeacherNeedsCount(data.filter((b: any) => b.statut === 'EN_ATTENTE' && b.enseignantId).length);
-              }
-
-              // 3. Fetch Pannes / Signalements Badge (Chef only)
-              const pannesRes = await api.getAllSignalements();
-              if (pannesRes.ok) {
-                const data = await pannesRes.json();
-                // Resolved pannes for the department
-                setResolvedPannesCount(data.filter((s: any) => s.statut === 'RESOLU').length);
-              }
-
-              // 4. Fetch Inventory Badge (Recent resources)
-              const inventoryRes = await api.getAllRessources();
-              if (inventoryRes.ok) {
-                const data = await inventoryRes.json();
-                const today = new Date().toISOString().split('T')[0];
-                setRecentInventoryCount(data.filter((r: any) => r.dateReception && r.dateReception.toString().includes(today)).length);
-              }
-            }
+        if (deptId) {
+          const meetingsRes = await api.getReunionsByDepartement(deptId);
+          if (meetingsRes.ok) {
+            const data = await meetingsRes.json();
+            setPlannedMeetingsCount(data.filter((m: any) => m.statut === 'PLANIFIEE').length);
           }
-
-          // 3. Fetch Pending Pannes Badge (Technicien only)
-          if (role === 'Technicien') {
+          if (role === 'ChefDepartement') {
+            const besoinsRes = await api.getBesoinsByDepartement(deptId);
+            if (besoinsRes.ok) {
+              const data = await besoinsRes.json();
+              setPendingBesoinsCount(data.filter((b: any) => b.statut === 'EN_ATTENTE').length);
+              console.log("CHEF DATA:", data);
+              setNewTeacherNeedsCount(data.filter((b: any) => b.statut === 'EN_ATTENTE' && !b.reunionId).length);
+            }
             const pannesRes = await api.getAllSignalements();
             if (pannesRes.ok) {
               const data = await pannesRes.json();
-              setPendingPannesCount(data.filter((s: any) => s.statut === 'SIGNALE').length);
+              setResolvedPannesCount(data.filter((s: any) => s.statut === 'RESOLU').length);
             }
+            const [inventoryRes, affRes] = await Promise.all([
+              api.getRessourcesByDepartement(deptId),
+              api.getAffectationsByDepartement(deptId)
+            ]);
+            if (inventoryRes.ok && affRes.ok) {
+              const resources = await inventoryRes.json();
+              const affectations = await affRes.json();
+
+              const affMap: Record<number, any> = {};
+              affectations.forEach((a: any) => { affMap[a.ressourceId] = a; });
+
+              const unassignedCount = resources.filter((res: any) => {
+                const aff = affMap[res.id];
+                return !aff || aff.affectationCollective;
+              }).length;
+
+              setRecentInventoryCount(unassignedCount);
+            }
+          }
+        }
+
+        // 2. Technicien
+        if (role === 'Technicien') {
+          const pannesRes = await api.getAllSignalements();
+          if (pannesRes.ok) {
+            const data = await pannesRes.json();
+            setPendingPannesCount(data.filter((s: any) => s.statut === 'SIGNALE').length);
+          }
+        }
+
+        // 3. Fournisseur
+        if (role === 'Fournisseur') {
+          const [aoRes, myOffresRes] = await Promise.all([
+            api.getAllAppelsOffresOuverts(),
+            api.getMyOffres(user.id)
+          ]);
+          if (aoRes.ok && myOffresRes.ok) {
+            const allAo = await aoRes.json();
+            const myOffres = await myOffresRes.json();
+            const submittedAoIds = myOffres.map((o: any) => o.appelOffreId);
+            const openUnsubmitted = allAo.filter((ao: any) => !submittedAoIds.includes(ao.id));
+            setUnsubmittedAoCount(openUnsubmitted.length);
+            setProcessedSubmissionsCount(myOffres.filter((o: any) => ['ACCEPTEE', 'REJETEE', 'ANNULEE'].includes(o.statut)).length);
+          }
+          const savRes = await api.getSignalementsByFournisseur(user.id);
+          if (savRes.ok) {
+            const data = await savRes.json();
+            setPendingSavCount(data.filter((s: any) => s.statut === 'FOURNISSEUR' || s.statut === 'ECHANGE').length);
           }
         }
       } catch (error) {
         console.error("Error badges:", error);
       }
     };
-    fetchBadges();
 
-    // Refresh badges every 10 seconds
+    fetchBadges();
     const interval = setInterval(fetchBadges, 10000);
     return () => clearInterval(interval);
   }, [user, role]);
@@ -398,6 +456,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
             label="Gestion"
             isActive={activeMenu === 'Gestion'}
             onClick={() => handleMenuClick('Gestion')}
+            badge={getSectionBadgeSum('Gestion')}
           />
 
           {role === 'ChefDepartement' && (
@@ -408,7 +467,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
                   label="Activités"
                   isActive={activeMenu === 'Activités'}
                   onClick={() => handleMenuClick('Activités')}
-                  badge={(newTeacherNeedsCount + resolvedPannesCount + recentInventoryCount) > 0 ? (newTeacherNeedsCount + resolvedPannesCount + recentInventoryCount) : undefined}
+                  badge={(newTeacherNeedsCount + resolvedPannesCount) > 0 ? (newTeacherNeedsCount + resolvedPannesCount) : undefined}
                 />
               </div>
               <div className="mt-2">

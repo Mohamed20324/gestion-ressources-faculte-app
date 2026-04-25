@@ -65,11 +65,18 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
       // Merge: backend notifications first, then frontend-generated ones
       // Deduplicate: if backend already has an equivalent, skip the local one
       const backendIds = new Set(backendNotifs.map((n: any) => n.id));
+      let finalBackendNotifs = backendNotifs;
+      
+      // Masquer les notifications de réunion pour le Responsable
+      if (user.role === 'RESPONSABLE') {
+        finalBackendNotifs = backendNotifs.filter((n: any) => !n.message?.toLowerCase().includes('réunion'));
+      }
+      
       const deduped = frontendNotifs.filter(n => !backendIds.has(n.id));
-      setNotifications([...backendNotifs, ...deduped]);
+      setNotifications([...finalBackendNotifs, ...deduped]);
 
-      // 3. Fetch meetings (for specific roles)
-      if (user.role === 'ENSEIGNANT' || user.role === 'CHEF_DEPARTEMENT' || user.role === 'RESPONSABLE') {
+      // 3. Fetch meetings (for specific roles - except Responsable as requested)
+      if (user.role === 'ENSEIGNANT' || user.role === 'CHEF_DEPARTEMENT') {
         let allReunions: any[] = [];
         
         if (user.role === 'RESPONSABLE') {
@@ -97,11 +104,20 @@ const Header: React.FC<HeaderProps> = ({ title }) => {
 
           const upcoming = allReunions
             .filter((r: any) => r.statut === 'PLANIFIEE')
-            .map((r: any) => ({
-              ...r,
-              dateTime: new Date(`${r.date}T${r.heure.length === 5 ? r.heure + ':00' : r.heure}`)
-            }))
-            .filter((r: any) => r.dateTime > now && r.dateTime <= twoDaysFromNow)
+            .map((r: any) => {
+              let dateStr = '';
+              if (Array.isArray(r.date)) {
+                const [y, m, d] = r.date;
+                dateStr = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+              } else {
+                dateStr = r.date;
+              }
+              return {
+                ...r,
+                dateTime: new Date(`${dateStr}T${r.heure.length === 5 ? r.heure + ':00' : r.heure}`)
+              };
+            })
+            .filter((r: any) => r.dateTime && !isNaN(r.dateTime.getTime()) && r.dateTime > now && r.dateTime <= twoDaysFromNow)
             .sort((a: any, b: any) => a.dateTime.getTime() - b.dateTime.getTime());
           setMeetings(upcoming);
         }

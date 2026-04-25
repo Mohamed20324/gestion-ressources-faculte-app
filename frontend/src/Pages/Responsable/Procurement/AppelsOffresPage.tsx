@@ -22,6 +22,7 @@ interface AppelOffre {
   statut: string;
   besoinIds: number[];
   besoins: any[];
+  offresCount: number;
 }
 
 const AppelsOffresPage = () => {
@@ -63,15 +64,31 @@ const AppelsOffresPage = () => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [appelsRes, typesRes, deptsRes] = await Promise.all([
+      const [appelsRes, typesRes, deptsRes, allOffresRes] = await Promise.all([
         api.getAllAppelsOffres(),
         api.getAllTypesRessources(),
-        api.getAllDepartements()
+        api.getAllDepartements(),
+        api.getAllOffres()
       ]);
       
+      let allAppels: AppelOffre[] = [];
       if (appelsRes.ok) {
-        setAppels(await appelsRes.json());
+        allAppels = await appelsRes.json();
       }
+
+      let allOffres: any[] = [];
+      if (allOffresRes.ok) {
+        allOffres = await allOffresRes.json();
+      }
+
+      // Map offer counts to calls
+      const mappedAppels = allAppels.map(ao => ({
+        ...ao,
+        offresCount: allOffres.filter(o => o.appelOffreId === ao.id).length
+      }));
+
+      setAppels(mappedAppels);
+
       if (typesRes.ok) {
         setTypesRessources(await typesRes.json());
       }
@@ -276,7 +293,16 @@ const AppelsOffresPage = () => {
   const filteredAppels = appels.filter(a => 
     a.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
     a.statut.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ).sort((a, b) => {
+    const aHasOffers = a.offresCount > 0;
+    const bHasOffers = b.offresCount > 0;
+    
+    if (aHasOffers && !bHasOffers) return -1;
+    if (!aHasOffers && bHasOffers) return 1;
+    
+    // Si les deux en ont (ou aucun des deux), on trie du plus récent au plus ancien
+    return b.id - a.id;
+  });
 
   const currentItems = filteredAppels.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalPages = Math.ceil(filteredAppels.length / itemsPerPage);
@@ -286,6 +312,7 @@ const AppelsOffresPage = () => {
       case 'OUVERT': return 'bg-emerald-50 text-emerald-700 border-emerald-100';
       case 'BROUILLON': return 'bg-amber-50 text-amber-700 border-amber-100';
       case 'CLOTURE': return 'bg-slate-50 text-slate-700 border-slate-100';
+      case 'ANNULE': return 'bg-red-50 text-red-700 border-red-100 italic';
       default: return 'bg-gray-50 text-gray-600 border-gray-100';
     }
   };
@@ -315,13 +342,19 @@ const AppelsOffresPage = () => {
                 className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 font-medium transition-all shadow-sm"
               />
             </div>
-            <button 
-              onClick={() => setIsCreateModalOpen(true)}
-              className="px-6 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all flex items-center gap-2"
-            >
-              <Plus size={20} />
-              Nouveau Dossier
-            </button>
+      {/* Floating Action Button */}
+      <button 
+        onClick={() => setIsCreateModalOpen(true)}
+        className="fixed bottom-10 right-10 z-[100] group flex items-center justify-center"
+      >
+        <div className="absolute right-full mr-4 px-4 py-2 bg-gray-900 text-white text-sm font-bold rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap shadow-xl">
+          Lancer un Appel d'Offres
+        </div>
+        <div className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-2xl shadow-blue-200 hover:bg-blue-700 hover:scale-110 active:scale-95 transition-all duration-300 animate-in zoom-in slide-in-from-bottom-10">
+          <Plus size={32} />
+        </div>
+        <div className="absolute inset-0 w-16 h-16 bg-blue-600 rounded-full animate-ping opacity-20 -z-10 group-hover:hidden" />
+      </button>
           </div>
         </div>
 
@@ -331,14 +364,16 @@ const AppelsOffresPage = () => {
           {currentItems.map((appel) => (
             <div 
               key={appel.id} 
-              onClick={() => handleOpenEditModal(appel)}
+              onClick={() => handleOpenOffresModal(appel)}
               className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:border-blue-400 hover:shadow-md transition-all group cursor-pointer relative"
             >
               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                 <div className="flex items-center gap-5 flex-1 min-w-0">
                   <div className={`w-14 h-14 rounded-xl flex items-center justify-center border ${
                     appel.statut === 'BROUILLON' ? 'bg-amber-50 text-amber-600 border-amber-100' : 
-                    appel.statut === 'OUVERT' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-slate-50 text-slate-600 border-slate-200'
+                    appel.statut === 'OUVERT' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 
+                    appel.statut === 'ANNULE' ? 'bg-red-50 text-red-600 border-red-100' :
+                    'bg-slate-50 text-slate-600 border-slate-200'
                   }`}>
                     <FileText size={28} />
                   </div>
@@ -358,53 +393,44 @@ const AppelsOffresPage = () => {
                         <Package size={14} className="text-gray-400" />
                         <span>{appel.besoinIds?.length || 0} besoins rattachés</span>
                       </div>
+                      {appel.statut === 'OUVERT' && appel.offresCount > 0 && (
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100">
+                          <DollarSign size={12} />
+                          <span>{appel.offresCount} soumission(s) reçue(s)</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                  {appel.statut === 'BROUILLON' ? (
-                    <>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handlePublish(appel.id); }}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all text-sm shadow-sm"
-                      >
-                        <Send size={16} /> Publier
-                      </button>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleOpenEditModal(appel); }}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all text-sm shadow-md"
-                      >
-                        <Edit size={16} /> Gérer les besoins
-                      </button>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleDelete(appel.id); }}
-                        className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-                      >
-                        <Trash2 size={20} />
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleOpenOffresModal(appel); }}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all text-sm shadow-md"
-                      >
-                        <DollarSign size={16} /> Consulter les Offres
-                      </button>
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); handleOpenEditModal(appel); }}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-all text-sm border border-gray-200"
-                      >
-                        <Eye size={16} /> Détails
-                      </button>
-                      <button 
-                        onClick={(e) => e.stopPropagation()}
-                        className="p-2.5 text-gray-400 hover:bg-gray-50 rounded-xl transition-all"
-                      >
-                        <MoreHorizontal size={20} />
-                      </button>
-                    </>
+                  {appel.statut === 'BROUILLON' && (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handlePublish(appel.id); }}
+                      className="flex items-center gap-2 px-5 py-2.5 bg-emerald-600 text-white rounded-xl font-bold hover:bg-emerald-700 transition-all text-sm shadow-sm"
+                    >
+                      <Send size={16} /> Publier
+                    </button>
+                  )}
+                  
+                  <button 
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      handleOpenEditModal(appel);
+                    }}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all text-sm shadow-md"
+                    title="Voir les besoins rattachés"
+                  >
+                    <Package size={16} /> Besoins
+                  </button>
+
+                  {appel.statut === 'BROUILLON' && (
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleDelete(appel.id); }}
+                      className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                    >
+                      <Trash2 size={20} />
+                    </button>
                   )}
                 </div>
               </div>
@@ -478,11 +504,31 @@ const AppelsOffresPage = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Date Lancement</label>
-                  <input required type="date" value={newAO.dateDebut} onChange={e => setNewAO({...newAO, dateDebut: e.target.value})} className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl font-bold" />
+                  <input 
+                    required 
+                    type="date" 
+                    value={newAO.dateDebut} 
+                    readOnly
+                    className="w-full px-4 py-3.5 bg-gray-100 border border-gray-200 rounded-xl font-bold text-gray-500 cursor-not-allowed" 
+                    title="La date de lancement est fixée automatiquement à aujourd'hui."
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Échéance</label>
-                  <input required type="date" value={newAO.dateFin} onChange={e => setNewAO({...newAO, dateFin: e.target.value})} className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl font-bold" />
+                  <input 
+                    required 
+                    type="date" 
+                    min={newAO.dateDebut}
+                    value={newAO.dateFin} 
+                    onChange={e => setNewAO({...newAO, dateFin: e.target.value})} 
+                    onClick={(e) => {
+                      try {
+                        // Ouvre le calendrier natif au clic (supporté par les navigateurs modernes)
+                        (e.target as HTMLInputElement).showPicker();
+                      } catch (err) {}
+                    }}
+                    className="w-full px-4 py-3.5 bg-white border border-gray-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer hover:bg-gray-50" 
+                  />
                 </div>
               </div>
               <button type="submit" disabled={saving} className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 flex items-center justify-center gap-2">
@@ -543,10 +589,16 @@ const AppelsOffresPage = () => {
                         </div>
 
                         <div className="flex items-center gap-6">
-                          <div className="flex items-center gap-2 bg-white rounded-lg border border-gray-200 p-1">
-                            <button onClick={() => handleUpdateBesoinQuantity(besoin.id, besoin.quantite - 1)} className="w-7 h-7 flex items-center justify-center hover:bg-gray-50 rounded text-gray-500 font-bold">-</button>
-                            <input type="number" value={besoin.quantite} className="w-10 text-center font-bold text-sm outline-none bg-white" readOnly />
-                            <button onClick={() => handleUpdateBesoinQuantity(besoin.id, besoin.quantite + 1)} className="w-7 h-7 flex items-center justify-center hover:bg-gray-50 rounded text-gray-500 font-bold">+</button>
+                          <div className={`flex items-center gap-2 bg-white rounded-lg border border-gray-200 ${selectedAO.statut === 'BROUILLON' ? 'p-1' : 'px-3 py-1'}`}>
+                            {selectedAO.statut === 'BROUILLON' ? (
+                              <>
+                                <button onClick={() => handleUpdateBesoinQuantity(besoin.id, besoin.quantite - 1)} className="w-7 h-7 flex items-center justify-center hover:bg-gray-50 rounded text-gray-500 font-bold">-</button>
+                                <input type="number" value={besoin.quantite} className="w-10 text-center font-bold text-sm outline-none bg-white" readOnly />
+                                <button onClick={() => handleUpdateBesoinQuantity(besoin.id, besoin.quantite + 1)} className="w-7 h-7 flex items-center justify-center hover:bg-gray-50 rounded text-gray-500 font-bold">+</button>
+                              </>
+                            ) : (
+                              <span className="font-bold text-sm text-gray-700">Qté: {besoin.quantite}</span>
+                            )}
                           </div>
                           {selectedAO.statut === 'BROUILLON' && (
                             <button 
@@ -632,6 +684,7 @@ const AppelsOffresPage = () => {
                               <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-wider ${
                                 offre.statut === 'ACCEPTEE' ? 'bg-green-100 text-green-700' : 
                                 offre.statut === 'REJETEE' ? 'bg-red-100 text-red-700' : 
+                                offre.statut === 'ANNULEE' ? 'bg-red-50 text-red-500 border-red-100 italic' :
                                 offre.statut === 'ELIMINEE' ? 'bg-gray-800 text-white' : 'bg-blue-100 text-blue-700'
                               }`}>
                                 {offre.statut}

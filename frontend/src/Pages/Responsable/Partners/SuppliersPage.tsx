@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { 
   Users, Search, Loader, Filter, 
   ExternalLink, ShieldAlert, CheckCircle, 
-  Mail, Phone, Building2, MapPin, X, Info
+  Mail, Phone, Building2, MapPin, X, Info, Plus, User, Loader as LoaderIcon
 } from 'lucide-react';
 import { api } from '../../../services/api';
 import { NotificationContainer } from '../../../components/Notification';
@@ -15,6 +15,9 @@ const FournisseursPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showBlacklistModal, setShowBlacklistModal] = useState({ show: false, supplierId: null as number | null });
   const [selectedProfile, setSelectedProfile] = useState<any>(null);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [newSupplier, setNewSupplier] = useState({ nomSociete: '', email: '', telephone: '', gerant: '', lieu: '', adresse: '', motDePasse: 'pass123' });
+  const [saving, setSaving] = useState(false);
   const [motif, setMotif] = useState('');
 
   useEffect(() => {
@@ -32,6 +35,29 @@ const FournisseursPage = () => {
       showNotification('error', 'Erreur de chargement');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveSupplier = async () => {
+    if (!newSupplier.email || !newSupplier.nomSociete) {
+      showNotification('warning', 'Nom et Email obligatoires');
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await api.createFournisseur(newSupplier);
+      if (res.ok) {
+        showNotification('success', 'Fournisseur enregistré avec succès');
+        setIsAddModalOpen(false);
+        setNewSupplier({ nomSociete: '', email: '', telephone: '', gerant: '', lieu: '', adresse: '', motDePasse: 'pass123' });
+        fetchSuppliers();
+      } else {
+        showNotification('error', 'Erreur lors de l\'enregistrement');
+      }
+    } catch (error) {
+      showNotification('error', 'Erreur technique');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -84,11 +110,32 @@ const FournisseursPage = () => {
                 className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition-all shadow-sm font-medium"
               />
             </div>
+            <button 
+              onClick={() => setIsAddModalOpen(true)}
+              className="p-3 bg-blue-600 text-white border border-blue-700 rounded-xl hover:bg-blue-700 transition-all shadow-md flex items-center gap-2 font-bold text-sm"
+            >
+              <Plus size={20} />
+              <span className="hidden sm:inline">Nouveau Partenaire</span>
+            </button>
             <button className="p-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all text-gray-600 shadow-sm">
               <Filter size={20} />
             </button>
           </div>
         </div>
+
+      {/* Floating Action Button */}
+      <button 
+        onClick={() => setIsAddModalOpen(true)}
+        className="fixed bottom-10 right-10 z-[100] group flex items-center justify-center"
+      >
+        <div className="absolute right-full mr-4 px-4 py-2 bg-gray-900 text-white text-sm font-bold rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap shadow-xl">
+          Ajouter un Fournisseur
+        </div>
+        <div className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-2xl shadow-blue-200 hover:bg-blue-700 hover:scale-110 active:scale-95 transition-all duration-300 animate-in zoom-in slide-in-from-bottom-10">
+          <Plus size={32} />
+        </div>
+        <div className="absolute inset-0 w-16 h-16 bg-blue-600 rounded-full animate-ping opacity-20 -z-10 group-hover:hidden" />
+      </button>
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-32">
@@ -264,6 +311,127 @@ const FournisseursPage = () => {
           </div>
         </div>
       )}
+
+      {/* Add Supplier Modal */}
+      <AddSupplierModal 
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSave={handleSaveSupplier}
+        formData={newSupplier}
+        setFormData={setNewSupplier}
+        saving={saving}
+      />
+    </div>
+  );
+};
+
+const AddSupplierModal = ({ isOpen, onClose, onSave, formData, setFormData, saving }: any) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[110] bg-gray-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white w-full max-w-lg rounded-[2.5rem] p-10 shadow-2xl animate-in zoom-in duration-200">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h2 className="text-2xl font-black text-gray-900">Nouveau Partenaire</h2>
+            <p className="text-gray-500 text-sm font-medium">Enregistrez un nouveau fournisseur dans le système</p>
+          </div>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-all">
+            <X size={24} className="text-gray-400" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="col-span-2 space-y-1.5">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Nom de la Société</label>
+            <div className="relative">
+              <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500" size={18} />
+              <input 
+                required
+                value={formData.nomSociete}
+                onChange={e => setFormData({...formData, nomSociete: e.target.value})}
+                placeholder="ex: Tech Solutions SARL"
+                className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-700"
+              />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Email Professionnel</label>
+            <div className="relative">
+              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+              <input 
+                required
+                type="email"
+                value={formData.email}
+                onChange={e => setFormData({...formData, email: e.target.value})}
+                placeholder="contact@societe.com"
+                className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-700"
+              />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Téléphone</label>
+            <div className="relative">
+              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+              <input 
+                value={formData.telephone}
+                onChange={e => setFormData({...formData, telephone: e.target.value})}
+                placeholder="06..."
+                className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-700"
+              />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Gérant / Contact</label>
+            <div className="relative">
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+              <input 
+                value={formData.gerant}
+                onChange={e => setFormData({...formData, gerant: e.target.value})}
+                placeholder="Nom du responsable"
+                className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-700"
+              />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Ville</label>
+            <div className="relative">
+              <MapPin className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+              <input 
+                value={formData.lieu}
+                onChange={e => setFormData({...formData, lieu: e.target.value})}
+                placeholder="ex: Casablanca"
+                className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-700"
+              />
+            </div>
+          </div>
+          <div className="col-span-2 space-y-1.5">
+            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Adresse Siège</label>
+            <textarea 
+              value={formData.adresse}
+              onChange={e => setFormData({...formData, adresse: e.target.value})}
+              placeholder="Adresse complète..."
+              className="w-full h-24 p-4 bg-gray-50 border border-gray-100 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-700 resize-none"
+            />
+          </div>
+        </div>
+
+        <div className="flex gap-4 mt-10">
+          <button 
+            onClick={onClose}
+            className="flex-1 py-4 bg-gray-100 text-gray-500 rounded-2xl font-black text-sm hover:bg-gray-200 transition-all"
+          >
+            Annuler
+          </button>
+          <button 
+            onClick={onSave}
+            disabled={saving}
+            className="flex-1 py-4 bg-blue-600 text-white rounded-2xl font-black text-sm hover:bg-blue-700 shadow-xl shadow-blue-100 transition-all flex items-center justify-center gap-2"
+          >
+            {saving ? <LoaderIcon className="animate-spin" /> : 'Créer le Partenaire'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 };

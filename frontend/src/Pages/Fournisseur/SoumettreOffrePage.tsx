@@ -220,17 +220,37 @@ const SoumettreOffrePage = () => {
                       {line.variante === 'ORDINATEUR' && (
                         <>
                           <div className="space-y-2">
-                            <label className="text-[10px] font-black text-gray-400 uppercase">CPU / RAM</label>
+                            <label className="text-[10px] font-black text-gray-400 uppercase flex items-center gap-1">
+                              <Cpu size={12} /> CPU / RAM (Requis)
+                            </label>
                             <div className="flex gap-2">
-                              <input placeholder="CPU" value={line.cpu} onChange={e => handleLineChange(index, 'cpu', e.target.value)} className="w-1/2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-purple-500 font-medium text-sm" />
-                              <input placeholder="RAM" value={line.ram} onChange={e => handleLineChange(index, 'ram', e.target.value)} className="w-1/2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-purple-500 font-medium text-sm" />
+                              <input 
+                                readOnly
+                                value={line.cpu} 
+                                className="w-1/2 px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl outline-none text-gray-500 font-bold text-sm cursor-not-allowed" 
+                              />
+                              <input 
+                                readOnly
+                                value={line.ram} 
+                                className="w-1/2 px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl outline-none text-gray-500 font-bold text-sm cursor-not-allowed" 
+                              />
                             </div>
                           </div>
                           <div className="space-y-2">
-                            <label className="text-[10px] font-black text-gray-400 uppercase">Disque / Écran</label>
+                            <label className="text-[10px] font-black text-gray-400 uppercase flex items-center gap-1">
+                              <HardDrive size={12} /> Disque / Écran (Requis)
+                            </label>
                             <div className="flex gap-2">
-                              <input placeholder="Disk" value={line.disqueDur} onChange={e => handleLineChange(index, 'disqueDur', e.target.value)} className="w-1/2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-purple-500 font-medium text-sm" />
-                              <input placeholder="Screen" value={line.ecran} onChange={e => handleLineChange(index, 'ecran', e.target.value)} className="w-1/2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-purple-500 font-medium text-sm" />
+                              <input 
+                                readOnly
+                                value={line.disqueDur} 
+                                className="w-1/2 px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl outline-none text-gray-500 font-bold text-sm cursor-not-allowed" 
+                              />
+                              <input 
+                                readOnly
+                                value={line.ecran} 
+                                className="w-1/2 px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl outline-none text-gray-500 font-bold text-sm cursor-not-allowed" 
+                              />
                             </div>
                           </div>
                         </>
@@ -239,12 +259,24 @@ const SoumettreOffrePage = () => {
                       {line.variante === 'IMPRIMANTE' && (
                         <>
                           <div className="space-y-2">
-                            <label className="text-[10px] font-black text-gray-400 uppercase">Vitesse (ppm)</label>
-                            <input type="number" value={line.vitesseImpression} onChange={e => handleLineChange(index, 'vitesseImpression', parseInt(e.target.value))} className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-purple-500 font-medium" />
+                            <label className="text-[10px] font-black text-gray-400 uppercase flex items-center gap-1">
+                              <Zap size={12} /> Vitesse (Requis)
+                            </label>
+                            <input 
+                              readOnly
+                              value={line.vitesseImpression + " ppm"} 
+                              className="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl outline-none text-gray-500 font-bold cursor-not-allowed" 
+                            />
                           </div>
                           <div className="space-y-2">
-                            <label className="text-[10px] font-black text-gray-400 uppercase">Résolution</label>
-                            <input value={line.resolution} onChange={e => handleLineChange(index, 'resolution', e.target.value)} className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-purple-500 font-medium" />
+                            <label className="text-[10px] font-black text-gray-400 uppercase flex items-center gap-1">
+                              <Monitor size={12} /> Résolution (Requis)
+                            </label>
+                            <input 
+                              readOnly
+                              value={line.resolution} 
+                              className="w-full px-4 py-2.5 bg-gray-100 border border-gray-200 rounded-xl outline-none text-gray-500 font-bold cursor-not-allowed" 
+                            />
                           </div>
                         </>
                       )}

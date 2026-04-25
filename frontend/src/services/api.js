@@ -127,6 +127,17 @@ export const api = {
         body: JSON.stringify(data)
     }),
 
+    updateRessource: (id, data) => fetch(`${API_BASE_URL}/ressources/${id}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(data)
+    }),
+
+    deleteRessource: (id) => fetch(`${API_BASE_URL}/ressources/${id}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+    }),
+
     getRessourcesByOffre: (id) => fetch(`${API_BASE_URL}/ressources/offre/${id}`, {
         headers: getHeaders()
     }),
@@ -206,6 +217,10 @@ export const api = {
 
     rejeterOffre: (id, motif) => fetch(`${API_BASE_URL}/offres/${id}/rejeter?motif=${encodeURIComponent(motif)}`, {
         method: 'PUT',
+        headers: getHeaders()
+    }),
+
+    getRessourcesByOffre: (id) => fetch(`${API_BASE_URL}/ressources/offre/${id}`, {
         headers: getHeaders()
     }),
 

@@ -142,7 +142,7 @@ const TechniciansPage = () => {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50/50">
         <div className="text-center">
-          <Loader className="animate-spin text-green-600 mx-auto mb-4" size={48} />
+          <Loader className="animate-spin text-blue-600 mx-auto mb-4" size={48} />
           <p className="text-gray-500 font-medium">Chargement des techniciens...</p>
         </div>
       </div>
@@ -154,7 +154,7 @@ const TechniciansPage = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-            <Wrench className="text-green-600" size={32} />
+            <Wrench className="text-blue-600" size={32} />
             Équipe Technique
           </h1>
           <p className="text-gray-500 mt-1 ml-11">Gestion de la maintenance et du support</p>
@@ -168,12 +168,12 @@ const TechniciansPage = () => {
               placeholder="Rechercher..."
               value={searchTerm}
               onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all"
+              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
             />
           </div>
           <button
             onClick={() => { setEditingTech(null); setIsModalOpen(true); }}
-            className="fixed bottom-8 right-8 w-12 h-12 bg-green-600 text-white rounded-full shadow-2xl hover:scale-110 transition-all flex items-center justify-center z-[50] group"
+            className="fixed bottom-8 right-8 w-12 h-12 bg-blue-600 text-white rounded-full shadow-2xl hover:scale-110 transition-all flex items-center justify-center z-[50] group"
             title="Nouveau technicien"
           >
             <Plus size={24} />
@@ -201,7 +201,7 @@ const TechniciansPage = () => {
                 <tr key={tech.id} className="hover:bg-gray-50/50 transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center text-green-600 border border-green-100">
+                      <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600 border border-blue-100">
                         <User size={20} />
                       </div>
                       <div>
@@ -224,7 +224,7 @@ const TechniciansPage = () => {
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex flex-col gap-1.5">
-                      <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider w-fit ${tech.disponibilite === 'Occupé' ? 'bg-orange-50 text-orange-600 border border-orange-100' : 'bg-green-50 text-green-600 border border-green-100'}`}>
+                      <span className={`inline-flex items-center justify-center px-2 py-0.5 rounded-lg text-[10px] font-bold uppercase tracking-wider w-fit ${tech.disponibilite === 'Occupé' ? 'bg-blue-50 text-blue-600 border border-blue-100' : 'bg-blue-50 text-blue-600 border border-blue-100'}`}>
                         {tech.disponibilite || 'Disponible'}
                       </span>
                       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-bold w-fit ${tech.actif ? 'bg-blue-50 text-blue-700 border border-blue-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
@@ -244,14 +244,14 @@ const TechniciansPage = () => {
                       <button
                         onClick={() => toggleAccountStatus(tech)}
                         disabled={togglingStatus === tech.id}
-                        className={`p-2 rounded-lg transition-colors ${tech.actif ? 'text-orange-500 hover:bg-orange-50' : 'text-green-600 hover:bg-green-50'}`}
+                        className={`p-2 rounded-lg transition-colors ${tech.actif ? 'text-blue-500 hover:bg-blue-50' : 'text-blue-600 hover:bg-blue-50'}`}
                         title={tech.actif ? 'Désactiver le compte' : 'Activer le compte'}
                       >
                         {togglingStatus === tech.id ? <Loader className="animate-spin" size={18} /> : <Power size={18} />}
                       </button>
                       <button
                         onClick={() => { setEditingTech(tech); setIsModalOpen(true); }}
-                        className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                         title="Modifier"
                       >
                         <Edit size={18} />
@@ -304,7 +304,7 @@ const TechniciansPage = () => {
                 <button
                   key={i + 1}
                   onClick={() => setCurrentPage(i + 1)}
-                  className={`w-10 h-10 rounded-lg font-bold text-sm transition-all ${currentPage === i + 1 ? 'bg-green-600 text-white shadow-lg shadow-blue-100' : 'text-gray-600 hover:bg-gray-50'}`}
+                  className={`w-10 h-10 rounded-lg font-bold text-sm transition-all ${currentPage === i + 1 ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'text-gray-600 hover:bg-gray-50'}`}
                 >
                   {i + 1}
                 </button>
@@ -358,7 +358,7 @@ const TechDetailModal = ({ isOpen, onClose, tech }: any) => {
         </button>
 
         <div className="flex flex-col items-center mb-8">
-          <div className="w-20 h-20 bg-green-50 rounded-2xl flex items-center justify-center text-green-600 mb-4 border border-green-100">
+          <div className="w-20 h-20 bg-green-50 rounded-2xl flex items-center justify-center text-blue-600 mb-4 border border-green-100">
             <Wrench size={40} />
           </div>
           <h2 className="text-2xl font-bold text-gray-900">{tech.nom} {tech.prenom}</h2>
@@ -391,7 +391,7 @@ const TechDetailModal = ({ isOpen, onClose, tech }: any) => {
               </div>
               <div>
                 <p className="text-[10px] text-gray-500 font-bold uppercase">Disponibilité</p>
-                <p className={`text-sm font-bold ${tech.disponibilite === 'Occupé' ? 'text-orange-600' : 'text-green-600'}`}>
+                <p className={`text-sm font-bold ${tech.disponibilite === 'Occupé' ? 'text-blue-600' : 'text-blue-600'}`}>
                   {tech.disponibilite || 'Disponible'}
                 </p>
               </div>
@@ -493,33 +493,33 @@ const TechnicianModal = ({ isOpen, onClose, onSave, technician, saving }: any) =
         <div className="grid grid-cols-2 gap-3 mb-4">
           <div className="col-span-1">
             <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Nom</label>
-            <input type="text" value={formData.nom} onChange={(e) => setFormData({ ...formData, nom: e.target.value })} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all" />
+            <input type="text" value={formData.nom} onChange={(e) => setFormData({ ...formData, nom: e.target.value })} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
           </div>
           <div className="col-span-1">
             <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Prénom</label>
-            <input type="text" value={formData.prenom} onChange={(e) => setFormData({ ...formData, prenom: e.target.value })} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all" />
+            <input type="text" value={formData.prenom} onChange={(e) => setFormData({ ...formData, prenom: e.target.value })} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
           </div>
           <div className="col-span-2">
             <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Email</label>
-            <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all" />
+            <input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
           </div>
           {!technician && (
             <div className="col-span-2">
               <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Mot de passe provisoire</label>
-              <input type="password" value={formData.motDePasse} onChange={(e) => setFormData({ ...formData, motDePasse: e.target.value })} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all" />
+              <input type="password" value={formData.motDePasse} onChange={(e) => setFormData({ ...formData, motDePasse: e.target.value })} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
             </div>
           )}
           <div className="col-span-1">
             <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Matricule</label>
-            <input type="text" value={formData.matricule} onChange={(e) => setFormData({ ...formData, matricule: e.target.value })} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all" />
+            <input type="text" value={formData.matricule} onChange={(e) => setFormData({ ...formData, matricule: e.target.value })} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
           </div>
           <div className="col-span-1">
             <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Spécialité</label>
-            <input type="text" value={formData.specialite} onChange={(e) => setFormData({ ...formData, specialite: e.target.value })} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all" />
+            <input type="text" value={formData.specialite} onChange={(e) => setFormData({ ...formData, specialite: e.target.value })} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" />
           </div>
           <div className="col-span-2">
             <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1">Disponibilité</label>
-            <select value={formData.disponibilite} onChange={(e) => setFormData({ ...formData, disponibilite: e.target.value })} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 outline-none transition-all appearance-none">
+            <select value={formData.disponibilite} onChange={(e) => setFormData({ ...formData, disponibilite: e.target.value })} className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none">
               <option value="Disponible">Disponible</option>
               <option value="Occupé">Occupé</option>
               <option value="En congé">En congé</option>
@@ -534,7 +534,7 @@ const TechnicianModal = ({ isOpen, onClose, onSave, technician, saving }: any) =
           <button
             onClick={() => onSave(formData)}
             disabled={saving}
-            className="flex-1 px-6 py-3 bg-green-600 text-white rounded-2xl font-bold shadow-lg shadow-green-100 hover:bg-green-700 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+            className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
           >
             {saving ? <Loader className="animate-spin" size={20} /> : (technician ? 'Mettre à jour' : 'Enregistrer')}
           </button>

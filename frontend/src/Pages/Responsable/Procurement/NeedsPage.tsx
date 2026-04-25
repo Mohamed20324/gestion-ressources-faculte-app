@@ -187,7 +187,7 @@ const BesoinsGlobalPage = () => {
     const matchesSearch = typeName.toLowerCase().includes(searchTerm.toLowerCase());
     
     if (statusFilter === 'ALL_READY') {
-      return matchesSearch && (b.statut === 'ENVOYE' || b.statut === 'VALIDE');
+      return matchesSearch && (b.statut === 'ENVOYE' || b.statut === 'VALIDE') && !b.appelOffreId;
     }
     if (statusFilter === 'EN_ATTENTE') {
       return matchesSearch && b.statut === 'EN_ATTENTE';
@@ -244,39 +244,20 @@ const BesoinsGlobalPage = () => {
             <div className="h-10 w-[1px] bg-gray-200 mx-2 hidden lg:block"></div>
 
             {selectedNeeds.length > 0 && (
-              <div className="fixed bottom-24 right-8 z-[100] flex flex-col items-center gap-4">
-                {isFabOpen && (
-                  <div className="flex flex-col gap-4 animate-in slide-in-from-bottom-4 fade-in duration-200">
-
-                    <button
-                      onClick={handleOpenAOModal}
-                      className="w-12 h-12 bg-blue-600 text-white rounded-full font-bold hover:bg-blue-700 transition-all shadow-xl flex items-center justify-center group relative"
-                      title="Rattacher"
-                    >
-                      <ShoppingCart size={20} />
-                      {selectedNeeds.length > 0 && (
-                        <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white">
-                          {selectedNeeds.length}
-                        </span>
-                      )}
-                      <span className="absolute right-full mr-3 px-2 py-1 bg-gray-800 text-white text-[10px] rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                        Rattacher ({selectedNeeds.length})
-                      </span>
-                    </button>
-                  </div>
-                )}
-                
+              <div className="fixed bottom-10 right-10 z-[100] group flex items-center justify-center animate-in zoom-in slide-in-from-bottom-10 duration-300">
+                <div className="absolute right-full mr-4 px-4 py-2 bg-gray-900 text-white text-sm font-bold rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap shadow-xl">
+                  Rattacher {selectedNeeds.length} besoin(s) au marché
+                </div>
                 <button
-                  onClick={() => setIsFabOpen(!isFabOpen)}
-                  className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all ${isFabOpen ? 'bg-gray-800 text-white' : 'bg-blue-600 text-white hover:scale-110'}`}
+                  onClick={handleOpenAOModal}
+                  className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-2xl shadow-blue-200 hover:bg-blue-700 hover:scale-110 active:scale-95 transition-all duration-300 relative"
                 >
-                  {isFabOpen ? <ChevronDown size={28} /> : <ChevronUp size={28} />}
-                  {selectedNeeds.length > 0 && !isFabOpen && (
-                    <span className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white">
-                      {selectedNeeds.length}
-                    </span>
-                  )}
+                  <ShoppingCart size={32} />
+                  <span className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+                    {selectedNeeds.length}
+                  </span>
                 </button>
+                <div className="absolute inset-0 w-16 h-16 bg-blue-600 rounded-full animate-ping opacity-20 -z-10 group-hover:hidden" />
               </div>
             )}
           </div>

@@ -80,8 +80,8 @@ public class SignalementController {
     }
 
     @PutMapping("/{id}/resoudre")
-    @PreAuthorize("hasRole('TECHNICIEN')")
-    public ResponseEntity<?> resoudre(@PathVariable Long id, @RequestParam Long technicienId) {
+    @PreAuthorize("hasAnyRole('TECHNICIEN', 'FOURNISSEUR')")
+    public ResponseEntity<?> resoudre(@PathVariable Long id, @RequestParam(required = false) Long technicienId) {
         try {
             return ResponseEntity.ok(signalementService.resoudre(id, technicienId));
         } catch (RuntimeException e) {
@@ -90,7 +90,7 @@ public class SignalementController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ENSEIGNANT')")
+    @PreAuthorize("hasAnyRole('ENSEIGNANT','CHEF_DEPARTEMENT')")
     public ResponseEntity<?> annuler(@PathVariable Long id) {
         try {
             signalementService.annuler(id);

@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -124,6 +125,11 @@ public class OffreServiceImpl implements IOffreService {
         Offre retenue = offreRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Offre introuvable"));
         AppelOffre ao = retenue.getAppelOffre();
+
+        // Vérification : Interdire la ré-acceptation d'une offre déjà annulée par échec de livraison
+        if (Offre.STATUT_ANNULEE.equals(retenue.getStatut())) {
+            throw new RuntimeException("Cette offre a été annulée lors d'une réception infructueuse et ne peut plus être acceptée.");
+        }
 
         // Vérification : Un seul offre acceptée par AO
         boolean dejaAcceptee = offreRepository.findByAppelOffreId(ao.getId()).stream()
@@ -235,30 +241,9 @@ public class OffreServiceImpl implements IOffreService {
     @Override
     @Transactional
     public OffreDTO annulerAcceptation(Long id) {
-        Offre o = offreRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Offre introuvable"));
-        
-        if (!Offre.STATUT_ACCEPTEE.equals(o.getStatut())) {
-            throw new RuntimeException("Seule une offre acceptée peut être annulée.");
-        }
-
-        // Check if resources already created
-        if (!ressourceRepository.findByOffreOrigine_Id(id).isEmpty()) {
-            throw new RuntimeException("Impossible d'annuler l'acceptation : La réception a déjà commencé. Utilisez 'Annuler Réception' à la place.");
-        }
-
-        o.setStatut(Offre.STATUT_SOUMISE);
-        AppelOffre ao = o.getAppelOffre();
-        ao.setStatut(AppelOffre.STATUT_OUVERT); // Re-open for other bids
-        
-        // Revert needs to ENVOYE (as they are still in the AO)
-        for (BesoinRessource b : ao.getBesoins()) {
-            b.setStatut("ENVOYE");
-            besoinRessourceRepository.save(b);
-        }
-
-        appelOffreRepository.save(ao);
-        return versDto(offreRepository.save(o));
+        // L'utilisateur ne veut jamais réouvrir le même appel d'offre.
+        // On utilise donc la logique de relance totale (Nouveau marché) même pour une annulation d'acceptation.
+        return annulerReception(id);
     }
 
     @Override
@@ -267,29 +252,54 @@ public class OffreServiceImpl implements IOffreService {
         Offre o = offreRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Offre introuvable"));
         
-        // 1. Delete Resources
+        AppelOffre oldAo = o.getAppelOffre();
+
+        // 1. Nettoyage des ressources
         ressourceRepository.deleteByOffreOrigine_Id(id);
 
-        // 2. Handle linked needs: Revert to VALIDE (not sent yet) and detach from AO
-        AppelOffre ao = o.getAppelOffre();
-        for (BesoinRessource b : ao.getBesoins()) {
-            b.setStatut("VALIDE");
-            // Important: Needs keep their department/reunion info but are ready for a new AO
+        // 2. Échec de l'offre actuelle
+        o.setStatut(Offre.STATUT_ANNULEE);
+        o.setMotifRejet("Réception annulée pour non-conformité. Ce marché est annulé.");
+
+        // 3. Annulation de l'ancien marché (Historique d'échec)
+        oldAo.setStatut(AppelOffre.STATUT_ANNULE);
+        
+        // 4. Création d'un marché TOTALEMENT NOUVEAU
+        List<BesoinRessource> besoinsToMove = new ArrayList<>(oldAo.getBesoins());
+        // Note: On ne vide pas l'ancien pour garder l'historique des besoins liés à cet échec
+        // oldAo.getBesoins().clear(); 
+
+        AppelOffre newAo = new AppelOffre();
+        // Référence unique et explicite
+        String newRef = "AO-" + oldAo.getReference().replace("AO/", "").replace("/", "-") + "-R" + (System.currentTimeMillis() % 10000);
+        newAo.setReference(newRef);
+        newAo.setDateDebut(LocalDate.now());
+        newAo.setDateFin(LocalDate.now().plusDays(15));
+        newAo.setStatut(AppelOffre.STATUT_OUVERT);
+        newAo.setResponsable(oldAo.getResponsable());
+        newAo.setDateCreation(LocalDate.now());
+        
+        // Copie des besoins
+        newAo.setBesoins(new ArrayList<>(besoinsToMove)); 
+        
+        // 5. Statut des besoins pour le nouveau cycle
+        for (BesoinRessource b : besoinsToMove) {
+            b.setStatut("ENVOYE");
             besoinRessourceRepository.save(b);
         }
-        
-        // Clear needs from AO if we want to "restart" from scratch
-        ao.getBesoins().clear();
 
-        // 3. Reset AO status to OUVERT for new bids (re-opening the market)
-        ao.setStatut(AppelOffre.STATUT_OUVERT);
-        
-        // 4. Mark offer as REJETEE
-        o.setStatut(Offre.STATUT_REJETEE);
-        o.setMotifRejet("Réception annulée : Matériel non conforme ou erreur administrative.");
+        // 6. Sauvegarde et Persistance
+        appelOffreRepository.save(newAo);
+        appelOffreRepository.save(oldAo);
+        offreRepository.save(o);
 
-        appelOffreRepository.save(ao);
-        return versDto(offreRepository.save(o));
+        // 7. Notification (Wording corrigé pour "Nouveau Marché")
+        Long adminId = responsableRepository.findAll().get(0).getId();
+        notificationService.envoyerNotification(o.getFournisseur().getId(), adminId, 
+            "Réception annulée. Un nouveau marché de remplacement a été publié sous la référence " + newRef, 
+            "ERROR");
+
+        return versDto(o);
     }
 
     private OffreDTO versDto(Offre o) {

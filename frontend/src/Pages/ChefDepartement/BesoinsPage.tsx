@@ -47,6 +47,9 @@ const BesoinsPage = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<number | null>(null);
   
+  const [linkModalOpen, setLinkModalOpen] = useState(false);
+  const [linkData, setLinkData] = useState<{besoinId: number | null, reunionId: string}>({besoinId: null, reunionId: ''});
+  
   const [formData, setFormData] = useState({
     typeRessourceId: '',
     quantite: 1,
@@ -127,8 +130,8 @@ const BesoinsPage = () => {
         if (user.role === 'ENSEIGNANT') {
           data = data.filter((b: Besoin) => b.enseignantId === user.id);
         } else if (user.role === 'CHEF_DEPARTEMENT') {
-          // Filter out teacher needs that have no reunion
-          data = data.filter((b: Besoin) => !(b.enseignantId && !b.reunionId));
+          // We keep all needs so the chef can see them even if not linked to a meeting
+          // data = data.filter((b: Besoin) => !(b.enseignantId && !b.reunionId));
           
           // Sort: Needs WITH reunion first, then Teacher needs
           data.sort((a: Besoin, b: Besoin) => {
@@ -200,6 +203,33 @@ const BesoinsPage = () => {
     setIsEditMode(true);
     setEditingId(besoin.id);
     setIsModalOpen(true);
+  };
+
+  const handleQuickLinkSubmit = async () => {
+    if (!linkData.besoinId || !linkData.reunionId) return;
+    const besoin = besoins.find(b => b.id === linkData.besoinId);
+    if (!besoin) return;
+
+    try {
+      setSaving(true);
+      const res = await api.updateBesoin(besoin.id, {
+        ...besoin,
+        reunionId: parseInt(linkData.reunionId)
+      });
+      if (res.ok) {
+        showNotification('success', 'Besoin rattaché à la réunion avec succès');
+        setLinkModalOpen(false);
+        setLinkData({besoinId: null, reunionId: ''});
+        const deptId = userData?.departementId;
+        if (deptId) loadBesoins(deptId);
+      } else {
+        showNotification('error', 'Erreur lors du rattachement');
+      }
+    } catch (e) {
+      showNotification('error', 'Erreur réseau');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleRejectBesoin = async (besoin: Besoin) => {
@@ -447,23 +477,19 @@ const BesoinsPage = () => {
               className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-purple-500 outline-none transition-all shadow-sm"
             />
           </div>
-          <button 
-            onClick={handleOpenModal}
-            className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-2xl font-bold hover:bg-purple-700 transition-all shadow-lg shadow-purple-200"
-          >
-            <Plus size={20} />
-            Nouveau
-          </button>
-          {user.role === 'CHEF_DEPARTEMENT' && (
-            <button 
-              onClick={handleSendToResponsible}
-              disabled={saving || besoins.filter(b => b.statut === 'VALIDE').length === 0}
-              className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 disabled:opacity-50"
-            >
-              <Send size={20} />
-              Transmettre
-            </button>
-          )}
+      {/* Floating Action Button */}
+      <button 
+        onClick={handleOpenModal}
+        className="fixed bottom-10 right-10 z-[100] group flex items-center justify-center"
+      >
+        <div className="absolute right-full mr-4 px-4 py-2 bg-gray-900 text-white text-sm font-bold rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap shadow-xl">
+          Exprimer un besoin
+        </div>
+        <div className="w-16 h-16 bg-purple-600 text-white rounded-full flex items-center justify-center shadow-2xl shadow-purple-200 hover:bg-purple-700 hover:scale-110 active:scale-95 transition-all duration-300 animate-in zoom-in slide-in-from-bottom-10">
+          <Plus size={32} />
+        </div>
+        <div className="absolute inset-0 w-16 h-16 bg-purple-600 rounded-full animate-ping opacity-20 -z-10 group-hover:hidden" />
+      </button>
         </div>
       </div>
 
@@ -544,9 +570,22 @@ const BesoinsPage = () => {
                               <span className="flex items-center gap-1.5 px-2 py-0.5 bg-red-100 text-red-600 text-[9px] font-black uppercase rounded-md tracking-tighter">
                                 <AlertCircle size={10} /> Urgent / Hors Réunion
                               </span>
-                              <span className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-100 text-amber-600 text-[9px] font-black uppercase rounded-md tracking-tighter animate-pulse">
-                                <Link size={10} /> Réunion manquante
-                              </span>
+                              {user.role === 'CHEF_DEPARTEMENT' && (
+                                <button 
+                                  onClick={() => {
+                                    setLinkData({besoinId: besoin.id, reunionId: reunions[0]?.id?.toString() || ''});
+                                    setLinkModalOpen(true);
+                                  }}
+                                  className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-100 text-amber-600 hover:bg-amber-200 text-[9px] font-black uppercase rounded-md tracking-tighter animate-pulse transition-all"
+                                >
+                                  <Link size={10} /> Affecter à une réunion
+                                </button>
+                              )}
+                              {user.role !== 'CHEF_DEPARTEMENT' && (
+                                <span className="flex items-center gap-1.5 px-2 py-0.5 bg-amber-100 text-amber-600 text-[9px] font-black uppercase rounded-md tracking-tighter">
+                                  <Link size={10} /> Réunion manquante
+                                </span>
+                              )}
                             </div>
                           )}
                         </div>
@@ -646,6 +685,59 @@ const BesoinsPage = () => {
           >
             <ChevronRight size={20} />
           </button>
+        </div>
+      )}
+
+      {linkModalOpen && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm">
+          <div className="bg-white rounded-[2rem] w-full max-w-md p-8 shadow-2xl relative animate-in zoom-in duration-200">
+            <button onClick={() => setLinkModalOpen(false)} className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors">
+              <XCircle size={24} />
+            </button>
+            <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-3">
+              <Link size={20} className="text-amber-500" />
+              Affecter à une réunion
+            </h3>
+            
+            <div className="space-y-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Choisir la réunion</label>
+                {reunions.length > 0 ? (
+                  <select 
+                    value={linkData.reunionId} 
+                    onChange={e => setLinkData({...linkData, reunionId: e.target.value})}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-sm font-medium"
+                  >
+                    {reunions.map((r: any) => (
+                      <option key={r.id} value={r.id}>
+                        Réunion #{r.id} - {Array.isArray(r.date) ? `${r.date[2]}/${r.date[1]}/${r.date[0]}` : r.date}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <div className="p-4 bg-amber-50 rounded-xl text-amber-700 text-sm font-medium border border-amber-100">
+                    Aucune réunion planifiée ou en cours n'est disponible.
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button 
+                  onClick={() => setLinkModalOpen(false)}
+                  className="flex-1 py-3 bg-white border border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition-all"
+                >
+                  Annuler
+                </button>
+                <button 
+                  onClick={handleQuickLinkSubmit}
+                  disabled={saving || !linkData.reunionId || reunions.length === 0}
+                  className="flex-1 py-3 bg-amber-500 text-white rounded-xl font-bold hover:bg-amber-600 transition-all shadow-md shadow-amber-200 disabled:opacity-50"
+                >
+                  {saving ? 'Affectation...' : 'Confirmer'}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 

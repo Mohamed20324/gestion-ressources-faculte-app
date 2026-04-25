@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { 
-  Plus, Edit, Trash2, Package, Search, Loader, 
+import {
+  Plus, Edit, Trash2, Package, Search, Loader,
   ChevronLeft, ChevronRight, AlertTriangle, Filter,
   Monitor, Info, MoreHorizontal
 } from 'lucide-react';
@@ -18,6 +18,7 @@ interface Ressource {
   fournisseurNom?: string;
   departementId?: number;
   descriptionTechnique?: string;
+  prix?: number;
 }
 
 interface Affectation {
@@ -32,7 +33,7 @@ interface Affectation {
 const ResourcesPage = () => {
   const { notifications, showNotification, removeNotification } = useNotifications();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
-  
+
   const [resources, setResources] = useState<Ressource[]>([]);
   const [affectations, setAffectations] = useState<Record<number, Affectation>>({});
   const [loading, setLoading] = useState(true);
@@ -50,7 +51,7 @@ const ResourcesPage = () => {
   // Edit Resource Modal
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editData, setEditData] = useState<Partial<Ressource>>({});
-  
+
   // Affectation Modal (used for both Create and Edit)
   const [isAffectModalOpen, setIsAffectModalOpen] = useState(false);
   const [isEditingAffect, setIsEditingAffect] = useState(false);
@@ -75,11 +76,11 @@ const ResourcesPage = () => {
         api.getAllRessources(),
         api.getAllDepartements()
       ]);
-      
+
       if (resResponse.ok) {
         const resData = await resResponse.json();
         setResources(resData);
-        
+
         // Fetch affectations for affected resources
         const affMap: Record<number, Affectation> = {};
         await Promise.all(resData.map(async (r: any) => {
@@ -89,12 +90,12 @@ const ResourcesPage = () => {
               if (affRes.ok) {
                 affMap[r.id] = await affRes.json();
               }
-            } catch (e) {}
+            } catch (e) { }
           }
         }));
         setAffectations(affMap);
       }
-      
+
       if (deptsResponse.ok) {
         setDepartments(await deptsResponse.json());
       }
@@ -130,24 +131,24 @@ const ResourcesPage = () => {
   const handleOpenAffectModal = async (res: Ressource, isEdit = false) => {
     setSelectedRes(res);
     setIsEditingAffect(isEdit);
-    
+
     if (isEdit && affectations[res.id]) {
       const aff = affectations[res.id];
-      setAffectData({ 
-        departementId: aff.departementId, 
-        enseignantId: aff.enseignantId || null, 
-        isCollective: aff.affectationCollective 
+      setAffectData({
+        departementId: aff.departementId,
+        enseignantId: aff.enseignantId || null,
+        isCollective: aff.affectationCollective
       });
       const tRes = await api.getEnseignantsByDepartement(aff.departementId);
       if (tRes.ok) setTeachers(await tRes.json());
     } else {
-      setAffectData({ 
-        departementId: res.departementId || 0, 
-        enseignantId: null, 
-        isCollective: true 
+      setAffectData({
+        departementId: res.departementId || 0,
+        enseignantId: null,
+        isCollective: true
       });
     }
-    
+
     setIsAffectModalOpen(true);
   };
 
@@ -157,10 +158,10 @@ const ResourcesPage = () => {
 
   const handleOpenBulkAffectModal = () => {
     if (selectedIds.length === 0) return;
-    setAffectData({ 
-      departementId: 0, 
-      enseignantId: null, 
-      isCollective: true 
+    setAffectData({
+      departementId: 0,
+      enseignantId: null,
+      isCollective: true
     });
     setIsEditingAffect(false);
     setSelectedRes(null);
@@ -170,9 +171,29 @@ const ResourcesPage = () => {
   const handleCreateAffectation = async () => {
     const idsToProcess = selectedRes ? [selectedRes.id] : selectedIds;
     if (idsToProcess.length === 0 || !affectData.departementId) return;
-    
+
     setAffecting(true);
     try {
+      // 1. Calculate total price to subtract from budget
+      const resourcesToAffect = resources.filter(r => idsToProcess.includes(r.id));
+      const totalCost = resourcesToAffect.reduce((sum, r) => sum + (r.prix || 0), 0);
+
+      // 2. Fetch department to check budget
+      const deptRes = await api.getDepartementById(affectData.departementId);
+      if (deptRes.ok) {
+        const dept = await deptRes.json();
+        if (dept.budget < totalCost) {
+          showNotification('error', `Budget insuffisant ! Coût total: ${totalCost} MAD, Budget disponible: ${dept.budget} MAD`);
+          setAffecting(false);
+          return;
+        }
+
+        // 3. Update department budget
+        const updatedDept = { ...dept, budget: dept.budget - totalCost };
+        await api.updateDepartement(dept.id, updatedDept);
+      }
+
+      // 4. Create affectations
       let successCount = 0;
       await Promise.all(idsToProcess.map(async (id) => {
         const res = await api.createAffectation({
@@ -185,13 +206,13 @@ const ResourcesPage = () => {
         });
         if (res.ok) successCount++;
       }));
-      
-      showNotification('success', `${successCount} ressource(s) affectée(s) avec succès`);
+
+      showNotification('success', `${successCount} ressource(s) affectée(s) avec succès. Budget mis à jour (-${totalCost} MAD)`);
       setIsAffectModalOpen(false);
       setSelectedIds([]);
       loadResources();
     } catch (error) {
-      showNotification('error', 'Erreur technique lors de l\'affectation en masse');
+      showNotification('error', 'Erreur technique lors de l\'affectation');
     } finally {
       setAffecting(false);
     }
@@ -201,7 +222,7 @@ const ResourcesPage = () => {
     const aff = affectations[resId];
     if (!aff) return;
     if (!window.confirm("Voulez-vous libérer cette ressource ? Elle redeviendra disponible pour une autre affectation.")) return;
-    
+
     try {
       const res = await api.deleteAffectation(aff.id);
       if (res.ok) {
@@ -231,11 +252,11 @@ const ResourcesPage = () => {
   };
 
   const filteredResources = resources.filter(res => {
-    const matchesSearch = 
+    const matchesSearch =
       res.numeroInventaire?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       res.marque?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       res.categorie?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+
     if (activeTab === 'AVAILABLE') {
       return matchesSearch && res.statut === 'DISPONIBLE';
     }
@@ -270,32 +291,38 @@ const ResourcesPage = () => {
           <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
             <div className="relative flex-1 min-w-[280px]">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-              <input 
-                type="text" 
-                placeholder="Rechercher par n° inventaire, marque..." 
+              <input
+                type="text"
+                placeholder="Rechercher par n° inventaire, marque..."
                 value={searchTerm}
                 onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                 className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-600 outline-none transition-all shadow-sm font-medium"
               />
             </div>
-            <button className="p-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all text-gray-600 shadow-sm">
-              <Filter size={20} />
-            </button>
-            <button className="px-6 py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition-all shadow-lg flex items-center gap-2">
-              <Plus size={20} />
-              Ajouter
-            </button>
+
+            {/* Floating Action Button 
+       <button 
+        className="fixed bottom-10 right-10 z-[100] group flex items-center justify-center"
+      >
+        <div className="absolute right-full mr-4 px-4 py-2 bg-gray-900 text-white text-sm font-bold rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap shadow-xl">
+          Ajouter une ressource
+        </div>
+        <div className="w-16 h-16 bg-gray-900 text-white rounded-full flex items-center justify-center shadow-2xl shadow-gray-200 hover:bg-black hover:scale-110 active:scale-95 transition-all duration-300 animate-in zoom-in slide-in-from-bottom-10">
+          <Plus size={32} />
+        </div>
+        <div className="absolute inset-0 w-16 h-16 bg-gray-900 rounded-full animate-ping opacity-20 -z-10 group-hover:hidden" />
+      </button>*/}
           </div>
         </div>
         {/* Filter Tabs */}
-        <div className="flex items-center gap-1 bg-white p-1 rounded-2xl border border-gray-200 w-fit mb-8 shadow-sm">
-          <button 
+        <div className="flex items-center gap-1 bg-white p-1 rounded-2xl border border-gray-200 w-fit mb-3 shadow-sm">
+          <button
             onClick={() => setActiveTab('ALL')}
             className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'ALL' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
           >
             Toutes les ressources ({resources.length})
           </button>
-          <button 
+          <button
             onClick={() => setActiveTab('AVAILABLE')}
             className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'AVAILABLE' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
           >
@@ -317,8 +344,8 @@ const ResourcesPage = () => {
                   <thead>
                     <tr className="bg-gray-50/50 border-b border-gray-100">
                       <th className="px-6 py-4 w-10">
-                        <input 
-                          type="checkbox" 
+                        <input
+                          type="checkbox"
                           checked={selectedIds.length === currentItems.filter(r => r.statut === 'DISPONIBLE').length && selectedIds.length > 0}
                           onChange={(e) => {
                             if (e.target.checked) {
@@ -332,6 +359,7 @@ const ResourcesPage = () => {
                       </th>
                       <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Ressource</th>
                       <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Catégorie</th>
+                      <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Valeur (MAD)</th>
                       <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Affectation</th>
                       <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Statut</th>
                       <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest text-right">Actions</th>
@@ -346,7 +374,7 @@ const ResourcesPage = () => {
                         <tr key={res.id} className={`group transition-colors ${isSelected ? 'bg-blue-50/50' : 'hover:bg-gray-50/50'}`}>
                           <td className="px-6 py-4">
                             {res.statut === 'DISPONIBLE' && (
-                              <input 
+                              <input
                                 type="checkbox"
                                 checked={isSelected}
                                 onChange={() => {
@@ -374,6 +402,11 @@ const ResourcesPage = () => {
                             </span>
                           </td>
                           <td className="px-6 py-4">
+                            <span className="text-sm font-bold text-gray-900">
+                              {res.prix?.toLocaleString() || '0'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
                             {res.statut === 'AFFECTEE' ? (
                               <div className="flex flex-col">
                                 <span className="text-xs font-bold text-gray-900">
@@ -396,7 +429,7 @@ const ResourcesPage = () => {
                           <td className="px-6 py-4 text-right">
                             <div className="flex justify-end gap-2">
                               {res.statut === 'DISPONIBLE' ? (
-                                <button 
+                                <button
                                   onClick={() => handleOpenAffectModal(res)}
                                   className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-[10px] font-bold hover:bg-blue-700 transition-all flex items-center gap-1.5 shadow-sm"
                                 >
@@ -404,14 +437,14 @@ const ResourcesPage = () => {
                                 </button>
                               ) : res.statut === 'AFFECTEE' ? (
                                 <div className="flex items-center gap-1">
-                                  <button 
+                                  <button
                                     onClick={() => handleOpenAffectModal(res, true)}
                                     className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                     title="Modifier l'affectation"
                                   >
                                     <Edit size={16} />
                                   </button>
-                                  <button 
+                                  <button
                                     onClick={() => handleRemoveAffectation(res.id)}
                                     className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                     title="Libérer la ressource"
@@ -420,14 +453,14 @@ const ResourcesPage = () => {
                                   </button>
                                 </div>
                               ) : null}
-                              <button 
+                              <button
                                 onClick={() => handleOpenEditModal(res)}
                                 className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                                 title="Modifier les infos ressource"
                               >
                                 <Edit size={18} />
                               </button>
-                              <button 
+                              <button
                                 onClick={() => { setResToDelete(res.id); setIsDeleteModalOpen(true); }}
                                 className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                 title="Supprimer de l'inventaire"
@@ -460,15 +493,15 @@ const ResourcesPage = () => {
                     Page {currentPage} sur {totalPages}
                   </span>
                   <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => setCurrentPage(p => Math.max(1, p-1))}
+                    <button
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                       disabled={currentPage === 1}
                       className="p-2 border border-gray-200 rounded-lg disabled:opacity-30 hover:bg-white transition-all shadow-sm"
                     >
                       <ChevronLeft size={18} />
                     </button>
-                    <button 
-                      onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))}
+                    <button
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                       disabled={currentPage === totalPages}
                       className="p-2 border border-gray-200 rounded-lg disabled:opacity-30 hover:bg-white transition-all shadow-sm"
                     >
@@ -488,11 +521,11 @@ const ResourcesPage = () => {
           <div className="bg-white rounded-2xl w-full max-w-md p-8 shadow-2xl animate-in zoom-in duration-200">
             <h2 className="text-2xl font-bold text-gray-900 mb-2">Affectation Ressource</h2>
             <p className="text-sm font-medium text-blue-600 mb-8">{selectedRes.numeroInventaire} ({selectedRes.marque})</p>
-            
+
             <div className="space-y-6">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Département cible</label>
-                <select 
+                <select
                   value={affectData.departementId}
                   onChange={e => handleDeptChange(parseInt(e.target.value))}
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-blue-500"
@@ -510,13 +543,13 @@ const ResourcesPage = () => {
               </div>
 
               <div className="flex gap-3 pt-4">
-                <button 
+                <button
                   onClick={() => setIsAffectModalOpen(false)}
                   className="flex-1 py-4 border border-gray-200 rounded-xl font-bold text-gray-500 hover:bg-gray-50 transition-all"
                 >
                   Annuler
                 </button>
-                <button 
+                <button
                   onClick={handleCreateAffectation}
                   disabled={affecting || !affectData.departementId || (!affectData.isCollective && !affectData.enseignantId)}
                   className="flex-1 py-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 flex items-center justify-center gap-2 disabled:opacity-50"
@@ -534,29 +567,29 @@ const ResourcesPage = () => {
         <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-[110] p-4">
           <div className="bg-white rounded-2xl w-full max-w-md p-8 shadow-2xl animate-in zoom-in duration-200">
             <h2 className="text-2xl font-bold text-gray-900 mb-6">Modifier la Ressource</h2>
-            
+
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">N° Inventaire</label>
-                <input 
+                <input
                   value={editData.numeroInventaire || ''}
-                  onChange={e => setEditData({...editData, numeroInventaire: e.target.value})}
+                  onChange={e => setEditData({ ...editData, numeroInventaire: e.target.value })}
                   className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl font-semibold outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Marque</label>
-                <input 
+                <input
                   value={editData.marque || ''}
-                  onChange={e => setEditData({...editData, marque: e.target.value})}
+                  onChange={e => setEditData({ ...editData, marque: e.target.value })}
                   className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl font-semibold outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
               <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">État de fonctionnement</label>
-                <select 
+                <select
                   value={editData.statut || ''}
-                  onChange={e => setEditData({...editData, statut: e.target.value})}
+                  onChange={e => setEditData({ ...editData, statut: e.target.value })}
                   className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl font-semibold outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="FONCTIONNELLE">FONCTIONNELLE</option>
@@ -567,13 +600,13 @@ const ResourcesPage = () => {
               </div>
 
               <div className="flex gap-3 pt-6">
-                <button 
+                <button
                   onClick={() => setIsEditModalOpen(false)}
                   className="flex-1 py-3 border border-gray-200 rounded-xl font-bold text-gray-500 hover:bg-gray-50 transition-all"
                 >
                   Annuler
                 </button>
-                <button 
+                <button
                   onClick={handleUpdateResource}
                   className="flex-1 py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition-all shadow-md"
                 >
@@ -600,13 +633,13 @@ const ResourcesPage = () => {
             </div>
             <div className="h-10 w-px bg-gray-800" />
             <div className="flex items-center gap-3">
-              <button 
+              <button
                 onClick={handleOpenBulkAffectModal}
                 className="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold text-sm transition-all flex items-center gap-2"
               >
                 <Info size={16} /> Affecter la sélection
               </button>
-              <button 
+              <button
                 onClick={() => setSelectedIds([])}
                 className="px-6 py-2 bg-transparent hover:bg-gray-800 rounded-xl font-bold text-sm transition-all"
               >
@@ -629,13 +662,13 @@ const ResourcesPage = () => {
               Cette action est irréversible. La ressource sera définitivement retirée de l'inventaire global.
             </p>
             <div className="flex gap-3">
-              <button 
+              <button
                 onClick={() => setIsDeleteModalOpen(false)}
                 className="flex-1 py-3 border border-gray-200 rounded-xl font-bold text-gray-500 hover:bg-gray-50 transition-colors"
               >
                 Annuler
               </button>
-              <button 
+              <button
                 onClick={confirmDelete}
                 disabled={deleting}
                 className="flex-1 py-3 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 shadow-md transition-all flex items-center justify-center gap-2"

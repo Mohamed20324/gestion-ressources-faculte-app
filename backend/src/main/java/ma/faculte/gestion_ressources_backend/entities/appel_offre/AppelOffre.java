@@ -22,6 +22,7 @@ public class AppelOffre {
     public static final String STATUT_OUVERT = "OUVERT";
     public static final String STATUT_CLOTURE = "CLOTURE";
     public static final String STATUT_TRAITE = "TRAITE";
+    public static final String STATUT_ANNULE = "ANNULE";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

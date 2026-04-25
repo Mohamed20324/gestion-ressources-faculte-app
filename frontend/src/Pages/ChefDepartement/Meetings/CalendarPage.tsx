@@ -26,6 +26,7 @@ interface Reunion {
   statut: string;
   departementId?: number;
   chefId?: number;
+  departementNom?: string;
 }
 
 interface Besoin {
@@ -36,6 +37,12 @@ interface Besoin {
   statut: string;
   description?: string;
   enseignantId?: number;
+  cpu?: string;
+  ram?: string;
+  disqueDur?: string;
+  ecran?: string;
+  vitesseImpression?: number;
+  resolution?: string;
 }
 
 const MeetingCalendarPage = () => {
@@ -71,26 +78,40 @@ const MeetingCalendarPage = () => {
     if (!user) return;
     setLoading(true);
     try {
-      const userRes = await fetch(`http://localhost:8081/api/utilisateurs/${user.id}`, {
-        headers: {
-          'Authorization': `Bearer ${user.accessToken}`,
-          'Content-Type': 'application/json'
-        }
-      });
-      
+      // 1. Get user details for department info if any
+      const userRes = await api.getFournisseurById(user.id); // Reusing getFournisseurById as a generic getUserById
+      let depId = null;
       if (userRes.ok) {
         const data = await userRes.json();
         setUserData(data);
-        if (data.departementId) {
-          const [meetingsRes, besoinsRes, typesRes] = await Promise.all([
-            api.getReunionsByDepartement(data.departementId),
-            api.getBesoinsByDepartement(data.departementId),
-            api.getAllTypesRessources()
-          ]);
-          
-          if (meetingsRes.ok) setMeetings(await meetingsRes.json());
-          if (besoinsRes.ok) setBesoins(await besoinsRes.json());
-          if (typesRes.ok) setTypesRessources(await typesRes.json());
+        depId = data.departementId;
+      }
+
+      // 2. Fetch data based on role
+      const isResponsable = user.role === 'RESPONSABLE';
+      
+      const [meetingsRes, besoinsRes, typesRes, deptsRes] = await Promise.all([
+        isResponsable ? api.getAllReunions() : (depId ? api.getReunionsByDepartement(depId) : Promise.resolve({ ok: true, json: () => [] })),
+        isResponsable ? api.getAllBesoins() : (depId ? api.getBesoinsByDepartement(depId) : Promise.resolve({ ok: true, json: () => [] })),
+        api.getAllTypesRessources(),
+        api.getAllDepartements()
+      ]);
+      
+      if (meetingsRes.ok) {
+        const meetingsData = await meetingsRes.json();
+        setMeetings(meetingsData);
+      }
+      if (besoinsRes.ok) setBesoins(await besoinsRes.json());
+      if (typesRes.ok) setTypesRessources(await typesRes.json());
+      
+      if (deptsRes.ok) {
+        const depts = await deptsRes.json();
+        // Add dept names to meetings if missing
+        if (isResponsable) {
+          setMeetings(prev => prev.map(m => ({
+            ...m,
+            departementNom: depts.find((d: any) => d.id === m.departementId)?.nom
+          })));
         }
       }
     } catch (error) {
@@ -217,7 +238,7 @@ const MeetingCalendarPage = () => {
       <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
         <div className="grid grid-cols-7 bg-gray-50/50 border-b border-gray-100">
           {days.map(day => (
-            <div key={day} className="py-4 text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+            <div key={day} className="h-10 py-4 text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest">
               {day}
             </div>
           ))}
@@ -225,7 +246,7 @@ const MeetingCalendarPage = () => {
 
         <div className="grid grid-cols-7">
           {[...Array(firstDay)].map((_, i) => (
-            <div key={`empty-${i}`} className="min-h-[120px] p-2 border-r border-b border-gray-50 bg-gray-50/20" />
+            <div key={`empty-${i}`} className="min-h-[80px] p-2 border-r border-b border-gray-50 bg-gray-50/20" />
           ))}
 
           {[...Array(daysInMonth)].map((_, i) => {
@@ -238,7 +259,7 @@ const MeetingCalendarPage = () => {
                 key={day} 
                 onClick={() => handleDayClick(day)}
                 onDoubleClick={() => handleDayDoubleClick(day)}
-                className={`min-h-[120px] p-2 border-r border-b border-gray-100 last:border-r-0 relative hover:bg-purple-50/20 transition-colors cursor-pointer group ${isToday ? 'bg-purple-50/30' : ''}`}
+                className={`min-h-[80px] p-2 border-r border-b border-gray-100 last:border-r-0 relative hover:bg-purple-50/20 transition-colors cursor-pointer group ${isToday ? 'bg-purple-50/30' : ''}`}
               >
                 <div className="flex justify-between items-start">
                   <span className={`text-xs font-bold ${isToday ? 'bg-purple-600 text-white w-6 h-6 rounded-full flex items-center justify-center' : 'text-gray-400'}`}>
@@ -255,7 +276,7 @@ const MeetingCalendarPage = () => {
                     return (
                       <div key={m.id} className={`${getStatusColor(m.statut)} text-white p-1.5 rounded-lg shadow-sm overflow-hidden relative group/item`}>
                         <div className="flex justify-between items-center">
-                          <p className="text-[9px] font-bold truncate">#{m.id}</p>
+                          <p className="text-[9px] font-bold truncate">#{m.id} {m.departementNom && `- ${m.departementNom}`}</p>
                           {mBesoins.length > 0 && (
                             <div className="flex items-center gap-0.5 bg-white/20 px-1 rounded text-[8px]">
                               <Package size={8} /> {mBesoins.length}
@@ -275,7 +296,7 @@ const MeetingCalendarPage = () => {
           })}
           
           {((firstDay + daysInMonth) % 7 !== 0) && [...Array(7 - ((firstDay + daysInMonth) % 7))].map((_, i) => (
-            <div key={`empty-end-${i}`} className="min-h-[120px] p-2 border-r border-b border-gray-50 bg-gray-50/20 last:border-r-0" />
+            <div key={`empty-end-${i}`} className="min-h-[80px] p-2 border-r border-b border-gray-50 bg-gray-50/20 last:border-r-0" />
           ))}
         </div>
       </div>
@@ -308,13 +329,37 @@ const MeetingCalendarPage = () => {
                     </div>
 
                     {meetingBesoins.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {meetingBesoins.map(b => (
-                          <span key={b.id} className="inline-flex items-center gap-1.5 px-2 py-1 bg-gray-50 text-[10px] font-medium text-gray-600 rounded-md border border-gray-100">
-                            <Package size={10} />
-                            {typesRessources.find(t => t.id === b.typeRessourceId)?.libelle} ({b.quantite})
-                          </span>
-                        ))}
+                      <div className="mt-4 space-y-3">
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Besoins associés</p>
+                        <div className="grid gap-2">
+                          {meetingBesoins.map(b => {
+                            const type = typesRessources.find(t => t.id === b.typeRessourceId);
+                            return (
+                              <div key={b.id} className="p-3 bg-gray-50 rounded-xl border border-gray-100 group/besoin">
+                                <div className="flex justify-between items-center mb-1">
+                                  <span className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                                    <Package size={14} className="text-purple-600" />
+                                    {type?.libelle || "Ressource"}
+                                  </span>
+                                  <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-lg text-[10px] font-black">
+                                    Qté: {b.quantite}
+                                  </span>
+                                </div>
+                                <div className="text-[11px] text-gray-500 font-medium ml-5 space-y-1">
+                                  {b.description && <p className="italic text-gray-400 border-l-2 border-gray-200 pl-2">"{b.description}"</p>}
+                                  <div className="flex flex-wrap gap-x-4 gap-y-1">
+                                    {b.cpu && <span>CPU: <b className="text-gray-700">{b.cpu}</b></span>}
+                                    {b.ram && <span>RAM: <b className="text-gray-700">{b.ram}</b></span>}
+                                    {b.disqueDur && <span>Disque: <b className="text-gray-700">{b.disqueDur}</b></span>}
+                                    {b.ecran && <span>Écran: <b className="text-gray-700">{b.ecran}</b></span>}
+                                    {b.resolution && <span>Résolution: <b className="text-gray-700">{b.resolution}</b></span>}
+                                    {b.vitesseImpression && <span>Vitesse: <b className="text-gray-700">{b.vitesseImpression}</b></span>}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     )}
                   </div>
