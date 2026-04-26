@@ -15,6 +15,8 @@ public class RessourceDTO {
     private String statut;
     private Long departementId;
     private String fournisseurNom;
+    private String departementDemandeurNom;
+    private String enseignantDemandeurNom;
     private LocalDate dateFinGarantie;
 
     /** STANDARD, ORDINATEUR, IMPRIMANTE */
@@ -171,6 +173,22 @@ public class RessourceDTO {
 
     public void setFournisseurNom(String fournisseurNom) {
         this.fournisseurNom = fournisseurNom;
+    }
+
+    public String getDepartementDemandeurNom() {
+        return departementDemandeurNom;
+    }
+
+    public void setDepartementDemandeurNom(String departementDemandeurNom) {
+        this.departementDemandeurNom = departementDemandeurNom;
+    }
+
+    public String getEnseignantDemandeurNom() {
+        return enseignantDemandeurNom;
+    }
+
+    public void setEnseignantDemandeurNom(String enseignantDemandeurNom) {
+        this.enseignantDemandeurNom = enseignantDemandeurNom;
     }
 
     public LocalDate getDateFinGarantie() {

@@ -30,6 +30,9 @@ public class AppelOffreServiceImpl implements IAppelOffreService {
     @Autowired
     private IResponsableRepository responsableRepository;
 
+    @Autowired
+    private ma.faculte.gestion_ressources_backend.repositories.interfaces.IDepartementRepository departementRepository;
+
     @Override
     @Transactional
     public AppelOffreDTO creerAppelOffre(AppelOffreDTO dto) {
@@ -39,12 +42,19 @@ public class AppelOffreServiceImpl implements IAppelOffreService {
         }
         Responsable resp = responsableRepository.findById(dto.getResponsableId())
                 .orElseThrow(() -> new RuntimeException("Responsable introuvable"));
+        
         AppelOffre ao = new AppelOffre();
         ao.setReference(dto.getReference());
         ao.setDateDebut(dto.getDateDebut());
         ao.setDateFin(dto.getDateFin());
-        ao.setStatut(dto.getStatut() != null ? dto.getStatut() : AppelOffre.STATUT_OUVERT);
+        ao.setStatut(dto.getStatut() != null ? dto.getStatut() : AppelOffre.STATUT_BROUILLON);
         ao.setResponsable(resp);
+
+        if (dto.getDepartementId() != null) {
+            ao.setDepartement(departementRepository.findById(dto.getDepartementId())
+                .orElseThrow(() -> new RuntimeException("Département introuvable")));
+        }
+
         ao = appelOffreRepository.save(ao);
         if (dto.getBesoinIds() != null && !dto.getBesoinIds().isEmpty()) {
             ajouterBesoins(ao.getId(), dto.getBesoinIds());
@@ -64,6 +74,14 @@ public class AppelOffreServiceImpl implements IAppelOffreService {
         for (Long bid : besoinIds) {
             BesoinRessource b = besoinRessourceRepository.findById(bid)
                     .orElseThrow(() -> new RuntimeException("Besoin introuvable : " + bid));
+            
+            // Vérification du département
+            if (ao.getDepartement() != null && b.getDepartement() != null) {
+                if (!ao.getDepartement().getId().equals(b.getDepartement().getId())) {
+                    throw new RuntimeException("Le besoin " + bid + " n'appartient pas au département de cet appel d'offres");
+                }
+            }
+
             if (!ao.getBesoins().contains(b)) {
                 ao.getBesoins().add(b);
                 b.getAppelsOffre().add(ao);
@@ -105,13 +123,22 @@ public class AppelOffreServiceImpl implements IAppelOffreService {
                 .collect(Collectors.toList());
     }
 
+    @Autowired
+    private ma.faculte.gestion_ressources_backend.services.interfaces.INotificationService notificationService;
+
     @Override
     @Transactional
     public AppelOffreDTO publierAppelOffre(Long id) {
         AppelOffre ao = appelOffreRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Appel d'offres introuvable"));
         ao.setStatut(AppelOffre.STATUT_OUVERT);
-        return versDto(appelOffreRepository.save(ao));
+        ao = appelOffreRepository.save(ao);
+
+        if (ao.getDepartement() != null) {
+            notificationService.envoyerPublicationAO(ao.getDepartement().getId(), ao.getReference());
+        }
+
+        return versDto(ao);
     }
 
     @Override
@@ -149,6 +176,10 @@ public class AppelOffreServiceImpl implements IAppelOffreService {
         d.setDateFin(ao.getDateFin());
         d.setStatut(ao.getStatut());
         d.setResponsableId(ao.getResponsable().getId());
+        if (ao.getDepartement() != null) {
+            d.setDepartementId(ao.getDepartement().getId());
+            d.setDepartementNom(ao.getDepartement().getNom());
+        }
         d.setBesoinIds(ao.getBesoins().stream().map(BesoinRessource::getId).collect(Collectors.toList()));
         
         // Populate full needs details

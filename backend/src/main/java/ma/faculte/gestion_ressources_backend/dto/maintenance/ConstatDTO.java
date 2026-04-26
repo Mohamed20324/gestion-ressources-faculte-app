@@ -28,6 +28,9 @@ public class ConstatDTO {
     private String ordre;
     private LocalDate dateConstat;
     private boolean envoyeAuResponsable;
+    private String technicienNom;
+    private String ressourceNom;
+    private boolean sousGarantie;
 
     public ConstatDTO() {}
 
@@ -101,5 +104,29 @@ public class ConstatDTO {
 
     public void setEnvoyeAuResponsable(boolean envoyeAuResponsable) {
         this.envoyeAuResponsable = envoyeAuResponsable;
+    }
+
+    public String getTechnicienNom() {
+        return technicienNom;
+    }
+
+    public void setTechnicienNom(String technicienNom) {
+        this.technicienNom = technicienNom;
+    }
+
+    public String getRessourceNom() {
+        return ressourceNom;
+    }
+
+    public void setRessourceNom(String ressourceNom) {
+        this.ressourceNom = ressourceNom;
+    }
+
+    public boolean isSousGarantie() {
+        return sousGarantie;
+    }
+
+    public void setSousGarantie(boolean sousGarantie) {
+        this.sousGarantie = sousGarantie;
     }
 }

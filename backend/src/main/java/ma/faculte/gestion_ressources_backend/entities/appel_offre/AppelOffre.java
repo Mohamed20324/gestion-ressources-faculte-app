@@ -3,6 +3,7 @@ package ma.faculte.gestion_ressources_backend.entities.appel_offre;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import ma.faculte.gestion_ressources_backend.entities.besoins.BesoinRessource;
+import ma.faculte.gestion_ressources_backend.entities.departement.Departement;
 import ma.faculte.gestion_ressources_backend.entities.utilisateurs.Responsable;
 
 import java.time.LocalDate;
@@ -42,6 +43,11 @@ public class AppelOffre {
 
     @Column(nullable = false)
     private LocalDate dateCreation;
+
+    @JsonIgnore
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "departement_id", nullable = true)
+    private Departement departement;
 
     @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -124,6 +130,14 @@ public class AppelOffre {
 
     public void setResponsable(Responsable responsable) {
         this.responsable = responsable;
+    }
+
+    public Departement getDepartement() {
+        return departement;
+    }
+
+    public void setDepartement(Departement departement) {
+        this.departement = departement;
     }
 
     public List<BesoinRessource> getBesoins() {

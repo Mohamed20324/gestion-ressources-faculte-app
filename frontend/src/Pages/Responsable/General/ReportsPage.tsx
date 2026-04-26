@@ -25,9 +25,7 @@ const ReportsPage = () => {
     try {
       const [sigRes, constRes] = await Promise.all([
         api.getAllSignalements(),
-        fetch('http://localhost:8081/api/constats', {
-             headers: { 'Authorization': `Bearer ${JSON.parse(localStorage.getItem('user')!).accessToken}` }
-        })
+        api.getAllConstats()
       ]);
 
       if (sigRes.ok) setSignalements(await sigRes.json());
@@ -121,8 +119,10 @@ const ReportsPage = () => {
                         <Wrench size={20} />
                         </div>
                         <div>
-                        <h3 className="font-bold text-gray-900">Constat #{c.id}</h3>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">{c.technicienNom || 'Technicien'}</p>
+                        <h3 className="font-bold text-gray-900">{c.ressourceNom || `Constat #${c.id}`}</h3>
+                        <p className="text-[10px] text-blue-600 font-bold uppercase tracking-widest flex items-center gap-1">
+                          <Wrench size={10} /> Expert: {c.technicienNom}
+                        </p>
                         </div>
                     </div>
                     <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${c.frequence === 'PERMANENTE' ? 'bg-red-50 text-red-600 border border-red-100' : 'bg-amber-50 text-amber-600 border border-amber-100'}`}>
@@ -167,8 +167,10 @@ const ReportsPage = () => {
           <div className="bg-white w-full max-w-2xl rounded-[2.5rem] p-10 shadow-2xl animate-in zoom-in-95 duration-200 overflow-y-auto max-h-[90vh]">
             <div className="flex justify-between items-start mb-8">
               <div>
-                <h3 className="text-2xl font-bold text-gray-900">Décision sur Constat</h3>
-                <p className="text-sm text-gray-500">Expertise de {selectedConstat.technicienNom}</p>
+                <h3 className="text-2xl font-bold text-gray-900">{selectedConstat.ressourceNom}</h3>
+                <p className="text-sm text-blue-600 font-bold flex items-center gap-1">
+                  <Wrench size={14} /> Expertise de {selectedConstat.technicienNom}
+                </p>
               </div>
               <button onClick={() => setSelectedConstat(null)} className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-400">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>

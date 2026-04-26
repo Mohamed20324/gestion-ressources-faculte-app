@@ -46,6 +46,16 @@ public class ConstatController {
             return ResponseEntity.status(400).body(erreur(e.getMessage()));
         }
     }
+    
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('TECHNICIEN')")
+    public ResponseEntity<?> modifier(@PathVariable Long id, @Valid @RequestBody ConstatDTO dto) {
+        try {
+            return ResponseEntity.ok(constatService.modifier(id, dto));
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body(erreur(e.getMessage()));
+        }
+    }
 
     @GetMapping
     public ResponseEntity<?> getAll() {

@@ -258,6 +258,19 @@ public class SignalementServiceImpl implements ISignalementService {
         d.setStatut(s.getStatut());
         d.setDateLivraisonEchange(s.getDateLivraisonEchange());
         d.setStatutEchange(s.getStatutEchange());
+        
+        if (s.getEnseignant() != null) {
+            d.setEnseignantNom(s.getEnseignant().getNom() + " " + s.getEnseignant().getPrenom());
+        }
+        
+        if (s.getTechnicien() != null) {
+            d.setTechnicienNom(s.getTechnicien().getNom() + " " + s.getTechnicien().getPrenom());
+        }
+
+        if (s.getRessource() != null && s.getRessource().getTypeRessource() != null) {
+            d.setRessourceType(s.getRessource().getTypeRessource().getLibelle());
+        }
+        
         return d;
     }
 }

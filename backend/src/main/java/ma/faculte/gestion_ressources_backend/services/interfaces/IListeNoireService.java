@@ -11,4 +11,5 @@ public interface IListeNoireService {
     boolean estListeNoire(Long fournisseurId);
 
     List<ListeNoireDTO> getAll();
+    void supprimerFournisseur(Long id);
 }

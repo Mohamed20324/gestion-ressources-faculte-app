@@ -112,6 +112,31 @@ public class NotificationServiceImpl implements INotificationService {
         envoyerNotification(responsableId, fournisseurId, msg, Notification.TYPE_REPONSE_FOURNISSEUR);
     }
 
+    @Autowired
+    private ma.faculte.gestion_ressources_backend.repositories.interfaces.IChefDepartementRepository chefRepository;
+    @Autowired
+    private ma.faculte.gestion_ressources_backend.repositories.interfaces.IDepartementRepository departementRepository;
+
+    @Override
+    @Transactional
+    public void envoyerPublicationAO(Long departementId, String referenceAO) {
+        Responsable exp = responsableRepository.findAll().get(0);
+        ma.faculte.gestion_ressources_backend.entities.departement.Departement dept = departementRepository.findById(departementId)
+                .orElseThrow(() -> new RuntimeException("Département introuvable"));
+
+        String msg = "Un nouvel appel d'offres (" + referenceAO + ") a été ouvert pour votre département.";
+
+        // 1. Notification au Chef
+        chefRepository.findByDepartementGereId(departementId).ifPresent(chef -> {
+            envoyerNotification(chef.getId(), exp.getId(), msg, Notification.TYPE_INFO);
+        });
+
+        // 2. Notification aux Enseignants
+        for (ma.faculte.gestion_ressources_backend.entities.utilisateurs.Enseignant ens : dept.getEnseignants()) {
+            envoyerNotification(ens.getId(), exp.getId(), msg, Notification.TYPE_INFO);
+        }
+    }
+
     private NotificationDTO versDto(Notification n) {
         NotificationDTO d = new NotificationDTO();
         d.setId(n.getId());

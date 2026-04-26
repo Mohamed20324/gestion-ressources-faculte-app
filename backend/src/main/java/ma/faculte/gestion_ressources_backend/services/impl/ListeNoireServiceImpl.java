@@ -75,6 +75,24 @@ public class ListeNoireServiceImpl implements IListeNoireService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional
+    public void supprimerFournisseur(Long id) {
+        ListeNoire ln = listeNoireRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Entrée de liste noire introuvable"));
+        
+        Fournisseur f = ln.getFournisseur();
+        f.setEstListeNoire(false);
+        fournisseurRepository.save(f);
+        
+        listeNoireRepository.delete(ln);
+        
+        notificationService.envoyerNotification(f.getId(),
+                premierResponsable().getId(),
+                "Votre entreprise a été réhabilitée et retirée de la liste noire.",
+                Notification.TYPE_INFO);
+    }
+
     private ListeNoireDTO versDto(ListeNoire ln) {
         ListeNoireDTO d = new ListeNoireDTO();
         d.setId(ln.getId());

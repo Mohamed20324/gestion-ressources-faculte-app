@@ -30,6 +30,7 @@ interface Ressource {
   typeRessourceId: number;
   departementId?: number;
   dateReception: string;
+  enseignantDemandeurNom?: string;
 }
 
 interface Affectation {
@@ -322,6 +323,7 @@ const ChefInventoryPage: React.FC = () => {
                 <tr className="bg-gray-50 border-b border-gray-100">
                   <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Ressource</th>
                   <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Catégorie</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Demandé par</th>
                   <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Affectation</th>
                   <th className="px-6 py-4 text-[10px] font-bold text-gray-500 uppercase tracking-widest">Statut</th>
                   <th className="px-6 py-4 text-right text-[10px] font-bold text-gray-500 uppercase tracking-widest">Actions</th>
@@ -347,6 +349,16 @@ const ChefInventoryPage: React.FC = () => {
                         <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-[10px] font-bold uppercase tracking-wider">
                           {res.categorie}
                         </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        {res.enseignantDemandeurNom ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                            <span className="text-xs font-bold text-gray-700">{res.enseignantDemandeurNom}</span>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-gray-300 italic">Aucune demande</span>
+                        )}
                       </td>
                       <td className="px-6 py-4">
                         {aff ? (

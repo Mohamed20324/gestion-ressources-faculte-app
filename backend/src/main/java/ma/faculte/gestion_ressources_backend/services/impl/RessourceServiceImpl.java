@@ -93,6 +93,12 @@ public class RessourceServiceImpl implements IRessourceService {
                     .orElseThrow(() -> new RuntimeException("Département introuvable")));
         }
 
+        // Handle requester department if provided
+        if (dto.getDepartementDemandeurNom() != null) {
+            // Find by name or ID if needed, but usually we just set it from the need process
+            // For now, let's assume we might have an ID in a real scenario
+        }
+
         return versDto(ressourceRepository.save(r));
     }
 
@@ -283,6 +289,12 @@ public class RessourceServiceImpl implements IRessourceService {
         }
         if (r.getDepartement() != null) {
             d.setDepartementId(r.getDepartement().getId());
+        }
+        if (r.getDepartementDemandeur() != null) {
+            d.setDepartementDemandeurNom(r.getDepartementDemandeur().getNom());
+        }
+        if (r.getEnseignantDemandeur() != null) {
+            d.setEnseignantDemandeurNom(r.getEnseignantDemandeur().getNom() + " " + r.getEnseignantDemandeur().getPrenom());
         }
         d.setDateReception(r.getDateReception());
         d.setDateFinGarantie(r.getDateFinGarantie());

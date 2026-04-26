@@ -7,7 +7,7 @@ import {
   X, CheckCircle, Package, ArrowRight,
   Info, MoreHorizontal, LayoutGrid, List as ListIcon,
   Archive, FileCheck, Eye, User,
-  ShieldAlert, Award, ChevronDown, ChevronUp, XCircle
+  ShieldAlert, Award, ChevronDown, ChevronUp, XCircle, Building2
 } from 'lucide-react';
 import { api } from '../../../services/api';
 import { useAuth } from '../../../hooks/useAuth';
@@ -23,6 +23,8 @@ interface AppelOffre {
   besoinIds: number[];
   besoins: any[];
   offresCount: number;
+  departementId?: number;
+  departementNom?: string;
 }
 
 const AppelsOffresPage = () => {
@@ -33,6 +35,7 @@ const AppelsOffresPage = () => {
   const [appels, setAppels] = useState<AppelOffre[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatut, setFilterStatut] = useState('ALL');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
 
@@ -46,7 +49,8 @@ const AppelsOffresPage = () => {
   const [newAO, setNewAO] = useState({ 
     reference: '', 
     dateDebut: new Date().toISOString().split('T')[0], 
-    dateFin: '' 
+    dateFin: '',
+    departementId: ''
   });
   const [saving, setSaving] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
@@ -113,7 +117,7 @@ const AppelsOffresPage = () => {
       });
       if (res.ok) {
         setIsCreateModalOpen(false);
-        setNewAO({ reference: '', dateDebut: new Date().toISOString().split('T')[0], dateFin: '' });
+        setNewAO({ reference: '', dateDebut: new Date().toISOString().split('T')[0], dateFin: '', departementId: '' });
         showNotification('success', 'Brouillon créé avec succès');
         loadData();
       }
@@ -232,7 +236,10 @@ const AppelsOffresPage = () => {
       const res = await api.getBesoinsByStatut('VALIDE');
       if (res.ok) {
         const availableBesoins = await res.json();
-        const unlinked = availableBesoins.filter((b: any) => !b.appelOffreId);
+        // Filtrer par département de l'AO si défini
+        const unlinked = availableBesoins.filter((b: any) => 
+          !b.appelOffreId && (!selectedAO.departementId || b.departementId === selectedAO.departementId)
+        );
         
         if (unlinked.length === 0) {
           showNotification('info', 'Aucun besoin validé disponible pour le moment');
@@ -290,10 +297,17 @@ const AppelsOffresPage = () => {
     } catch (e) { return dateStr; }
   };
 
-  const filteredAppels = appels.filter(a => 
-    a.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    a.statut.toLowerCase().includes(searchTerm.toLowerCase())
-  ).sort((a, b) => {
+  const filteredAppels = appels.filter(a => {
+    const matchesSearch = a.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         a.statut.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    let matchesStatut = false;
+    if (filterStatut === 'ALL') matchesStatut = true;
+    else if (filterStatut === 'COMPLETED') matchesStatut = ['CLOTURE', 'TRAITE'].includes(a.statut);
+    else matchesStatut = a.statut === filterStatut;
+
+    return matchesSearch && matchesStatut;
+  }).sort((a, b) => {
     const aHasOffers = a.offresCount > 0;
     const bHasOffers = b.offresCount > 0;
     
@@ -311,7 +325,8 @@ const AppelsOffresPage = () => {
     switch (status) {
       case 'OUVERT': return 'bg-emerald-50 text-emerald-700 border-emerald-100';
       case 'BROUILLON': return 'bg-amber-50 text-amber-700 border-amber-100';
-      case 'CLOTURE': return 'bg-slate-50 text-slate-700 border-slate-100';
+      case 'CLOTURE': 
+      case 'TRAITE': return 'bg-slate-50 text-slate-700 border-slate-100';
       case 'ANNULE': return 'bg-red-50 text-red-700 border-red-100 italic';
       default: return 'bg-gray-50 text-gray-600 border-gray-100';
     }
@@ -342,20 +357,35 @@ const AppelsOffresPage = () => {
                 className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-600 font-medium transition-all shadow-sm"
               />
             </div>
-      {/* Floating Action Button */}
-      <button 
-        onClick={() => setIsCreateModalOpen(true)}
-        className="fixed bottom-10 right-10 z-[100] group flex items-center justify-center"
-      >
-        <div className="absolute right-full mr-4 px-4 py-2 bg-gray-900 text-white text-sm font-bold rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap shadow-xl">
-          Lancer un Appel d'Offres
-        </div>
-        <div className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-2xl shadow-blue-200 hover:bg-blue-700 hover:scale-110 active:scale-95 transition-all duration-300 animate-in zoom-in slide-in-from-bottom-10">
-          <Plus size={32} />
-        </div>
-        <div className="absolute inset-0 w-16 h-16 bg-blue-600 rounded-full animate-ping opacity-20 -z-10 group-hover:hidden" />
-      </button>
           </div>
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="flex flex-wrap items-center gap-2 mb-8 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm w-fit">
+          <button
+            onClick={() => { setFilterStatut('ALL'); setCurrentPage(1); }}
+            className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${filterStatut === 'ALL' ? 'bg-gray-900 text-white shadow-lg' : 'text-gray-500 hover:bg-gray-50'}`}
+          >
+            Tous les marchés ({appels.length})
+          </button>
+          <button
+            onClick={() => { setFilterStatut('BROUILLON'); setCurrentPage(1); }}
+            className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${filterStatut === 'BROUILLON' ? 'bg-amber-600 text-white shadow-lg' : 'text-gray-500 hover:bg-gray-50'}`}
+          >
+            Brouillons ({appels.filter(a => a.statut === 'BROUILLON').length})
+          </button>
+          <button
+            onClick={() => { setFilterStatut('OUVERT'); setCurrentPage(1); }}
+            className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${filterStatut === 'OUVERT' ? 'bg-emerald-600 text-white shadow-lg' : 'text-gray-500 hover:bg-gray-50'}`}
+          >
+            Ouverts ({appels.filter(a => a.statut === 'OUVERT').length})
+          </button>
+          <button
+            onClick={() => { setFilterStatut('COMPLETED'); setCurrentPage(1); }}
+            className={`px-5 py-2.5 rounded-xl font-bold text-sm transition-all ${filterStatut === 'COMPLETED' ? 'bg-slate-600 text-white shadow-lg' : 'text-gray-500 hover:bg-gray-50'}`}
+          >
+            Traités & Clôturés ({appels.filter(a => ['CLOTURE', 'TRAITE'].includes(a.statut)).length})
+          </button>
         </div>
 
 
@@ -393,6 +423,12 @@ const AppelsOffresPage = () => {
                         <Package size={14} className="text-gray-400" />
                         <span>{appel.besoinIds?.length || 0} besoins rattachés</span>
                       </div>
+                      {appel.departementNom && (
+                        <div className="flex items-center gap-1.5 text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100">
+                          <Building2 size={12} />
+                          <span>Département {appel.departementNom}</span>
+                        </div>
+                      )}
                       {appel.statut === 'OUVERT' && appel.offresCount > 0 && (
                         <div className="flex items-center gap-1.5 text-xs font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-lg border border-blue-100">
                           <DollarSign size={12} />
@@ -491,6 +527,20 @@ const AppelsOffresPage = () => {
             </div>
             <form onSubmit={handleCreateAO} className="space-y-6">
               <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Département Concerné</label>
+                <select 
+                  required
+                  value={newAO.departementId}
+                  onChange={e => setNewAO({...newAO, departementId: e.target.value})}
+                  className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-700 transition-all"
+                >
+                  <option value="">Sélectionner un département...</option>
+                  {departments.map(d => (
+                    <option key={d.id} value={d.id}>{d.nom}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1.5">
                 <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Référence Dossier</label>
                 <input 
                   required
@@ -513,23 +563,26 @@ const AppelsOffresPage = () => {
                     title="La date de lancement est fixée automatiquement à aujourd'hui."
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Échéance</label>
-                  <input 
-                    required 
-                    type="date" 
-                    min={newAO.dateDebut}
-                    value={newAO.dateFin} 
-                    onChange={e => setNewAO({...newAO, dateFin: e.target.value})} 
-                    onClick={(e) => {
-                      try {
-                        // Ouvre le calendrier natif au clic (supporté par les navigateurs modernes)
-                        (e.target as HTMLInputElement).showPicker();
-                      } catch (err) {}
-                    }}
-                    className="w-full px-4 py-3.5 bg-white border border-gray-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer hover:bg-gray-50" 
-                  />
-                </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Échéance</label>
+                    <div 
+                      className="relative cursor-pointer"
+                      onClick={(e) => {
+                        const input = e.currentTarget.querySelector('input');
+                        if (input) try { (input as any).showPicker(); } catch (err) {}
+                      }}
+                    >
+                      <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500 pointer-events-none" size={18} />
+                      <input 
+                        required 
+                        type="date" 
+                        min={newAO.dateDebut}
+                        value={newAO.dateFin} 
+                        onChange={e => setNewAO({...newAO, dateFin: e.target.value})} 
+                        className="w-full pl-11 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl font-bold outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer hover:bg-gray-50 block" 
+                      />
+                    </div>
+                  </div>
               </div>
               <button type="submit" disabled={saving} className="w-full py-4 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100 flex items-center justify-center gap-2">
                 {saving ? <Loader className="animate-spin" size={24} /> : 'Créer le Brouillon'}
@@ -810,6 +863,19 @@ const AppelsOffresPage = () => {
       )}
 
       {/* Success Notification is already handled by showNotification */}
+      {/* Floating Action Button */}
+      <button 
+        onClick={() => setIsCreateModalOpen(true)}
+        className="fixed bottom-10 right-10 z-[100] group flex items-center justify-center"
+      >
+        <div className="absolute right-full mr-4 px-4 py-2 bg-gray-900 text-white text-sm font-bold rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap shadow-xl">
+          Lancer un Appel d'Offres
+        </div>
+        <div className="w-16 h-16 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-2xl shadow-blue-200 hover:bg-blue-700 hover:scale-110 active:scale-95 transition-all duration-300 animate-in zoom-in slide-in-from-bottom-10">
+          <Plus size={32} />
+        </div>
+        <div className="absolute inset-0 w-16 h-16 bg-blue-600 rounded-full animate-ping opacity-20 -z-10 group-hover:hidden" />
+      </button>
     </div>
   );
 };

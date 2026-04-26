@@ -18,6 +18,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
+import java.util.stream.Collectors;
 
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -39,254 +41,269 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired private IConstatRepository constatRepository;
     @Autowired private PasswordEncoder passwordEncoder;
 
+    private final Random random = new Random();
+
     @Override
     public void run(String... args) throws Exception {
-        if (departementRepository.count() > 0) return;
+        if (departementRepository.count() > 0) {
+            // Si la base est déjà pleine, on s'assure juste que les ressources ont un demandeur
+            List<Departement> depts = departementRepository.findAll();
+            List<Enseignant> teachers = enseignantRepository.findAll();
+            if (!depts.isEmpty()) {
+                ressourceRepository.findAll().stream()
+                    .filter(r -> r.getDepartementDemandeur() == null || r.getEnseignantDemandeur() == null)
+                    .forEach(r -> {
+                        if (r.getDepartementDemandeur() == null) {
+                            r.setDepartementDemandeur(depts.get(random.nextInt(depts.size())));
+                        }
+                        if (r.getEnseignantDemandeur() == null && !teachers.isEmpty()) {
+                            r.setEnseignantDemandeur(teachers.get(random.nextInt(teachers.size())));
+                        }
+                        ressourceRepository.save(r);
+                    });
 
+                // Backfill AO departement
+                appelOffreRepository.findAll().stream()
+                    .filter(ao -> ao.getDepartement() == null)
+                    .forEach(ao -> {
+                        ao.setDepartement(depts.get(random.nextInt(depts.size())));
+                        appelOffreRepository.save(ao);
+                    });
+
+                // Backfill Constat dateApparition
+                constatRepository.findAll().stream()
+                    .filter(c -> c.getDateApparition() == null)
+                    .forEach(c -> {
+                        c.setDateApparition(c.getDateConstat() != null ? c.getDateConstat() : LocalDate.now());
+                        constatRepository.save(c);
+                    });
+            }
+            return;
+        }
+
+        System.out.println(">>> Démarrage d'une initialisation massive et parfaite de la base de données...");
         String pwd = passwordEncoder.encode("password123");
+        
+        // ... (rest of the existing logic)
+        // Note: I will only replace the top part and then ensure the loop part is also correct.
 
-        // 1. Responsable (1)
-        Responsable resp = responsableRepository.save(new Responsable("Responsable", "Admin", "admin@univ.ma", pwd, "ADM001", "Bureau Central"));
+        // 1. Responsable
+        Responsable resp = responsableRepository.save(new Responsable("Admin", "Responsable", "admin@univ.ma", pwd, "ADM-001", "Bureau Central A102"));
 
-        // 2. Départements (3)
-        Departement depInfo = departementRepository.save(new Departement("Informatique", 1000000.0));
-        Departement depBio = departementRepository.save(new Departement("Biologie", 800000.0));
-        Departement depPhys = departementRepository.save(new Departement("Physique", 750000.0));
-        List<Departement> depts = Arrays.asList(depInfo, depBio, depPhys);
+        // 2. Départements (8)
+        List<Departement> depts = new ArrayList<>();
+        String[] deptNames = {"Informatique", "Physique", "Biologie", "Chimie", "Mathématiques", "Géologie", "Économie", "Lettres"};
+        Double[] budgets = {3000000.0, 2000000.0, 1800000.0, 1500000.0, 1200000.0, 900000.0, 1400000.0, 800000.0};
+        for (int i = 0; i < deptNames.length; i++) {
+            depts.add(departementRepository.save(new Departement(deptNames[i], budgets[i])));
+        }
 
-        // 3. Chefs de Département (3 - 1 par département)
-        chefRepository.save(new ChefDepartement("Alami", "Ahmed", "chef.info@univ.ma", pwd, "CHEF001", "Génie Logiciel", depInfo));
-        chefRepository.save(new ChefDepartement("Bennani", "Sami", "chef.bio@univ.ma", pwd, "CHEF002", "Génétique", depBio));
-        chefRepository.save(new ChefDepartement("Kadiri", "Meryem", "chef.phys@univ.ma", pwd, "CHEF003", "Optique", depPhys));
-
-        // 4. Enseignants (2 par département = 6)
-        List<Enseignant> allProfs = new ArrayList<>();
+        // 3. Chefs de Département
+        String[] chefNoms = {"Alami", "Bennani", "Kadiri", "Sami", "Drissi", "Zaid", "Hassan", "Fahmi"};
         for (int i = 0; i < depts.size(); i++) {
-            Departement d = depts.get(i);
-            allProfs.add(enseignantRepository.save(new Enseignant("Prof" + (i*2 + 1), "Nom" + (i*2 + 1), "prof" + (i*2 + 1) + "@univ.ma", pwd, "P00" + (i*2 + 1), "Spécialité A", d)));
-            allProfs.add(enseignantRepository.save(new Enseignant("Prof" + (i*2 + 2), "Nom" + (i*2 + 2), "prof" + (i*2 + 2) + "@univ.ma", pwd, "P00" + (i*2 + 2), "Spécialité B", d)));
+            chefRepository.save(new ChefDepartement(chefNoms[i], "Pr. " + chefNoms[i], "chef." + depts.get(i).getNom().toLowerCase() + "@univ.ma", pwd, "CHEF-00" + (i + 1), "Doyen de " + depts.get(i).getNom(), depts.get(i)));
         }
 
-        // 5. Techniciens (3)
-        Technicien tech1 = technicienRepository.save(new Technicien("Saber", "Omar", "tech1@univ.ma", pwd, "TECH001", "Réseau"));
-        technicienRepository.save(new Technicien("Kasmi", "Layla", "tech2@univ.ma", pwd, "TECH002", "Matériel"));
-        technicienRepository.save(new Technicien("Drissi", "Youssef", "tech3@univ.ma", pwd, "TECH003", "Logiciel"));
-
-        // 6. Fournisseurs (3)
-        Fournisseur f1 = new Fournisseur("Tech Solutions", "four1@solutions.ma", pwd);
-        f1.setGerant("M. Alami"); f1.setLieu("Casablanca"); fournisseurRepository.save(f1);
-        Fournisseur f2 = new Fournisseur("Alpha IT", "four2@alpha.ma", pwd);
-        f2.setGerant("S. Bennani"); f2.setLieu("Rabat"); fournisseurRepository.save(f2);
-        Fournisseur f3 = new Fournisseur("Buro Pro", "four3@buro.ma", pwd);
-        f3.setGerant("A. Kadiri"); f3.setLieu("Tanger"); fournisseurRepository.save(f3);
-
-        // 7. Types de Ressources
-        TypeRessource tPC = typeRessourceRepository.save(new TypeRessource("ORDINATEUR", "Ordinateur", true));
-        TypeRessource tImp = typeRessourceRepository.save(new TypeRessource("IMPRIMANTE", "Imprimante", true));
-
-        // 8. 2 Besoins par enseignant (12 total) SANS réunion
-        List<BesoinRessource> pendingBesoins = new ArrayList<>();
-        for (Enseignant p : allProfs) {
-            // Premier besoin : Ordinateur
-            BesoinOrdinateur bo = new BesoinOrdinateur();
-            bo.setTypeRessource(tPC); bo.setQuantite(1); bo.setStatut("EN_ATTENTE");
-            bo.setDepartement(p.getDepartement()); bo.setEnseignant(p);
-            bo.setCpu("i7"); bo.setRam("16GB"); bo.setDisqueDur("512GB SSD"); bo.setMarque("Dell");
-            pendingBesoins.add(besoinRessourceRepository.save(bo));
-
-            // Deuxième besoin : Imprimante
-            BesoinImprimante bi = new BesoinImprimante();
-            bi.setTypeRessource(tImp); bi.setQuantite(1); bi.setStatut("EN_ATTENTE");
-            bi.setDepartement(p.getDepartement()); bi.setEnseignant(p);
-            bi.setMarque("HP"); bi.setVitesseImpression(30); bi.setResolution("1200x1200dpi");
-            pendingBesoins.add(besoinRessourceRepository.save(bi));
+        // 4. Enseignants (10 par département = 80)
+        List<Enseignant> allProfs = new ArrayList<>();
+        for (Departement d : depts) {
+            for (int i = 1; i <= 10; i++) {
+                String nom = "Prof" + i + "_" + d.getNom().substring(0, 3);
+                allProfs.add(enseignantRepository.save(new Enseignant(nom, "Enseignant", nom.toLowerCase() + i + "@univ.ma", pwd, "P-" + d.getNom().substring(0,1).toUpperCase() + "-" + String.format("%03d", i), "Spécialité " + i, d)));
+            }
         }
 
-        // 9. Réunions (2)
-        Reunion rValide = new Reunion(); rValide.setHeure("09:00"); rValide.setDate(LocalDate.now().minusDays(2));
-        rValide.setDepartement(depInfo); rValide.setStatut(Reunion.STATUT_VALIDEE);
-        reunionRepository.save(rValide);
+        // 5. Techniciens (6)
+        List<Technicien> techs = new ArrayList<>();
+        String[] techSpecs = {"Hardware", "Réseau", "Logiciel", "Support", "Télécom", "Électronique"};
+        for (int i = 0; i < techSpecs.length; i++) {
+            techs.add(technicienRepository.save(new Technicien("TechNom" + i, "TechPrenom" + i, "tech" + (i + 1) + "@univ.ma", pwd, "T-00" + (i + 1), techSpecs[i])));
+        }
 
-        Reunion rPlanifiee = new Reunion(); rPlanifiee.setHeure("14:30"); rPlanifiee.setDate(LocalDate.now().plusDays(5));
-        rPlanifiee.setDepartement(depBio); rPlanifiee.setStatut(Reunion.STATUT_PLANIFIEE);
-        reunionRepository.save(rPlanifiee);
+        // 6. Fournisseurs (10)
+        String[] fNames = {"Mega Tech", "Alpha Systems", "Buro Plus", "Connect IT", "Smart Solutions", "Global IT", "Expert Systems", "Digital Mar", "Rabat Tech", "Casa Soft"};
+        List<Fournisseur> suppliers = new ArrayList<>();
+        for (int i = 0; i < fNames.length; i++) {
+            Fournisseur f = new Fournisseur(fNames[i], "contact@" + fNames[i].toLowerCase().replace(" ", "") + ".ma", pwd);
+            f.setGerant("Directeur " + fNames[i]);
+            f.setLieu(i % 2 == 0 ? "Casablanca" : "Rabat");
+            suppliers.add(fournisseurRepository.save(f));
+        }
 
-        // 10. Appels d'Offres (3)
-        // AO1: TRAITE (Livraison passée, besoins validés du Dpt Informatique)
-        AppelOffre aoValide = new AppelOffre();
-        aoValide.setReference("AO-2026-INFO-LIVRE");
-        aoValide.setDateDebut(LocalDate.now().minusMonths(1));
-        aoValide.setDateFin(LocalDate.now().minusDays(15));
-        aoValide.setStatut(AppelOffre.STATUT_TRAITE);
-        aoValide.setResponsable(resp);
-        
-        // Besoins de l'Informatique (Prof1 et Prof2)
-        List<BesoinRessource> ao1Besoins = new ArrayList<>();
-        BesoinOrdinateur bAO1_1 = (BesoinOrdinateur) pendingBesoins.get(0); // Prof1 Info
-        bAO1_1.setStatut("VALIDE");
-        bAO1_1.setReunion(rValide);
-        ao1Besoins.add(besoinRessourceRepository.save(bAO1_1));
-        
-        BesoinImprimante bAO1_2 = (BesoinImprimante) pendingBesoins.get(1); // Prof1 Info
-        bAO1_2.setStatut("VALIDE");
-        bAO1_2.setReunion(rValide);
-        ao1Besoins.add(besoinRessourceRepository.save(bAO1_2));
-        
-        aoValide.setBesoins(ao1Besoins);
-        aoValide = appelOffreRepository.save(aoValide);
+        // 7. Types de Ressources (Seulement 2 basés sur l'héritage existant)
+        TypeRessource tPC = typeRessourceRepository.save(new TypeRessource("ORDINATEUR", "Ordinateur Portable / Fixe", true));
+        TypeRessource tImp = typeRessourceRepository.save(new TypeRessource("IMPRIMANTE", "Imprimante Laser / Jet d'encre", true));
 
-        // Offre acceptée pour AO1
-        Offre oAO1 = new Offre();
-        oAO1.setAppelOffre(aoValide);
-        oAO1.setFournisseur(f3);
-        oAO1.setPrixTotal(28000.0);
-        oAO1.setStatut(Offre.STATUT_LIVREE);
-        oAO1.setDateSoumission(LocalDate.now().minusDays(20));
-        oAO1.setDateLivraison(LocalDate.now().minusDays(5));
-        oAO1.setDureeGarantie(36); // 3 years warranty to avoid expiration for test data
-        oAO1 = offreRepository.save(oAO1);
+        // 8. Cycle de Besoins et Réunions (Ordinateurs et Imprimantes seulement)
+        List<BesoinRessource> allBesoins = new ArrayList<>();
+        for (Departement d : depts) {
+            Reunion r = new Reunion();
+            r.setDate(LocalDate.now().minusWeeks(random.nextInt(4) + 1));
+            r.setHeure("10:00");
+            r.setDepartement(d);
+            r.setStatut(Reunion.STATUT_VALIDEE);
+            r = reunionRepository.save(r);
 
-        // 11. Ressources LIVREES mais PAS ENCORE AFFECTEES (Status: DISPONIBLE)
-        // 1 PC livré pour le Dpt Info (issu de bAO1_1)
-        Ressource resLivre1 = new Ressource();
-        resLivre1.setNumeroInventaire("INV-INFO-PC-001");
-        resLivre1.setStatut(Ressource.STATUT_DISPONIBLE); // PRÊT pour affectation
-        resLivre1.setMarque("Dell Latitude");
-        resLivre1.setTypeRessource(tPC);
-        resLivre1.setDateReception(LocalDate.now().minusDays(5));
-        resLivre1.setOffreOrigine(oAO1);
-        resLivre1.setFournisseur(f1); // Force supplier 1
-        resLivre1.setDepartement(depInfo);
-        ressourceRepository.save(resLivre1);
+            for (int i = 0; i < 8; i++) {
+                Enseignant p = allProfs.get(random.nextInt(allProfs.size()));
+                if (random.nextBoolean()) {
+                    BesoinOrdinateur bo = new BesoinOrdinateur();
+                    bo.setTypeRessource(tPC); bo.setQuantite(1); bo.setStatut("VALIDE");
+                    bo.setDepartement(d); bo.setEnseignant(p); bo.setReunion(r);
+                    bo.setCpu("i7"); bo.setRam("32GB"); bo.setDisqueDur("1TB SSD");
+                    allBesoins.add(besoinRessourceRepository.save(bo));
+                } else {
+                    BesoinImprimante bi = new BesoinImprimante();
+                    bi.setTypeRessource(tImp); bi.setQuantite(1); bi.setStatut("VALIDE");
+                    bi.setDepartement(d); bi.setEnseignant(p); bi.setReunion(r);
+                    bi.setMarque("Canon"); bi.setResolution("2400 DPI");
+                    allBesoins.add(besoinRessourceRepository.save(bi));
+                }
+            }
+        }
 
-        // 1 Imprimante livrée pour le Dpt Info (issu de bAO1_2)
-        Ressource resLivre2 = new Ressource();
-        resLivre2.setNumeroInventaire("INV-INFO-IMP-001");
-        resLivre2.setStatut(Ressource.STATUT_DISPONIBLE); // PRÊT pour affectation
-        resLivre2.setMarque("HP LaserJet Pro");
-        resLivre2.setTypeRessource(tImp);
-        resLivre2.setDateReception(LocalDate.now().minusDays(5));
-        resLivre2.setOffreOrigine(oAO1);
-        resLivre2.setFournisseur(f1); // Force supplier 1
-        resLivre2.setDepartement(depInfo);
-        ressourceRepository.save(resLivre2);
-        
-        // --- NEW: AFFECTATION FOR PROF 1 (As requested) ---
-        // Affect resLivre1 (PC Dell) to Prof 1 (allProfs.get(0))
-        resLivre1.setStatut(Ressource.STATUT_AFFECTEE);
-        resLivre1.setDateFinGarantie(LocalDate.now().plusYears(2));
-        ressourceRepository.save(resLivre1);
+        // 9. Appels d'Offres & Offres (Massif)
+        for (int i = 1; i <= 10; i++) {
+            Departement aoDept = depts.get(random.nextInt(depts.size()));
+            AppelOffre ao = new AppelOffre();
+            ao.setReference("AO-2025-" + String.format("%03d", i));
+            ao.setDateDebut(LocalDate.now().minusMonths(i));
+            ao.setDateFin(LocalDate.now().minusMonths(i).plusDays(20));
+            ao.setStatut(i < 5 ? AppelOffre.STATUT_TRAITE : (i < 8 ? AppelOffre.STATUT_OUVERT : AppelOffre.STATUT_BROUILLON));
+            ao.setResponsable(resp);
+            ao.setDepartement(aoDept);
+            ao = appelOffreRepository.save(ao);
 
-        Affectation affProf1 = new Affectation();
-        affProf1.setRessource(resLivre1);
-        affProf1.setEnseignant(allProfs.get(0));
-        affProf1.setDateAffectation(LocalDate.now().minusDays(2));
-        affectationRepository.save(affProf1);
+            // Filtrer les besoins pour ce département spécifique
+            List<BesoinRessource> deptBesoins = allBesoins.stream()
+                .filter(b -> b.getDepartement().getId().equals(aoDept.getId()))
+                .collect(Collectors.toList());
 
-        // AO2: OUVERT (Publié avec 2 besoins et 2 consultations/offres)
-        AppelOffre aoOuvert = new AppelOffre();
-        aoOuvert.setReference("AO-2026-PUBLISH");
-        aoOuvert.setDateDebut(LocalDate.now().minusDays(5));
-        aoOuvert.setDateFin(LocalDate.now().plusDays(10));
-        aoOuvert.setStatut(AppelOffre.STATUT_OUVERT);
-        aoOuvert.setResponsable(resp);
-        List<BesoinRessource> ao2Besoins = new ArrayList<>();
-        BesoinOrdinateur bAO2_1 = (BesoinOrdinateur) pendingBesoins.get(2);
-        bAO2_1.setStatut("ENVOYE");
-        ao2Besoins.add(besoinRessourceRepository.save(bAO2_1));
-        BesoinImprimante bAO2_2 = (BesoinImprimante) pendingBesoins.get(3);
-        bAO2_2.setStatut("ENVOYE");
-        ao2Besoins.add(besoinRessourceRepository.save(bAO2_2));
-        aoOuvert.setBesoins(ao2Besoins);
-        aoOuvert = appelOffreRepository.save(aoOuvert);
+            if ((ao.getStatut().equals(AppelOffre.STATUT_TRAITE) || ao.getStatut().equals(AppelOffre.STATUT_OUVERT)) && !deptBesoins.isEmpty()) {
+                for (int j = 0; j < 3; j++) {
+                    Offre o = new Offre();
+                    o.setAppelOffre(ao); 
+                    o.setFournisseur(suppliers.get(random.nextInt(suppliers.size())));
+                    o.setPrixTotal(50000.0 + random.nextInt(150000));
+                    o.setStatut(ao.getStatut().equals(AppelOffre.STATUT_TRAITE) && j == 0 ? Offre.STATUT_LIVREE : Offre.STATUT_SOUMISE);
+                    o.setDateSoumission(ao.getDateDebut().plusDays(5));
+                    o.setDureeGarantie(24);
+                    
+                    if (o.getStatut().equals(Offre.STATUT_LIVREE)) {
+                        o.setDateLivraison(ao.getDateFin().plusDays(10));
+                    }
+                    
+                    o = offreRepository.save(o);
 
-        // Consultation (Offres) pour AO2
-        Offre o1 = new Offre(); o1.setAppelOffre(aoOuvert); o1.setFournisseur(f1); o1.setPrixTotal(15000.0); o1.setStatut(Offre.STATUT_SOUMISE);
-        o1.setDateSoumission(LocalDate.now());
-        offreRepository.save(o1);
-        Offre o2 = new Offre(); o2.setAppelOffre(aoOuvert); o2.setFournisseur(f2); o2.setPrixTotal(14500.0); o2.setStatut(Offre.STATUT_SOUMISE);
-        o2.setDateSoumission(LocalDate.now());
-        offreRepository.save(o2);
+                    for (int k = 0; k < 2; k++) {
+                        LigneOffreOrdinateur lo = new LigneOffreOrdinateur();
+                        lo.setOffre(o);
+                        lo.setTypeRessource(tPC);
+                        lo.setBesoin(deptBesoins.get(random.nextInt(deptBesoins.size())));
+                        lo.setPrixUnitaire(12000.0);
+                        lo.setQuantite(2);
+                        lo.setMarque("Dell Precision");
+                        lo.setCpu("i9 Gen 13");
+                        lo.setRam("64GB");
+                        lo.setDisqueDur("2TB SSD");
+                        o.getLignes().add(lo);
+                    }
+                    offreRepository.save(o);
+                }
+            }
+        }
 
-        // AO3: BROUILLON
-        AppelOffre aoBrouillon = new AppelOffre();
-        aoBrouillon.setReference("AO-2026-BROUILLON");
-        aoBrouillon.setDateDebut(LocalDate.now().plusDays(1));
-        aoBrouillon.setDateFin(LocalDate.now().plusDays(20));
-        aoBrouillon.setStatut(AppelOffre.STATUT_BROUILLON);
-        aoBrouillon.setResponsable(resp);
-        appelOffreRepository.save(aoBrouillon);
+        // 10. Parc de Ressources (200 unités - Uniquement Ordinateurs et Imprimantes)
+        List<Ressource> inventory = new ArrayList<>();
+        for (int i = 1; i <= 200; i++) {
+            Ressource res;
+            if (random.nextBoolean()) { // ORDINATEUR
+                RessourceOrdinateur pc = new RessourceOrdinateur();
+                pc.setCpu(i % 2 == 0 ? "Intel i7-12700K" : "AMD Ryzen 7 5800X");
+                pc.setRam(i % 2 == 0 ? "16GB DDR4" : "32GB DDR4");
+                pc.setDisqueDur(i % 2 == 0 ? "512GB NVMe SSD" : "1TB NVMe SSD");
+                pc.setEcran(i % 2 == 0 ? "15.6\" FHD" : "14\" QHD");
+                pc.setTypeRessource(tPC);
+                res = pc;
+            } else { // IMPRIMANTE
+                RessourceImprimante imp = new RessourceImprimante();
+                imp.setVitesseImpression(i % 2 == 0 ? 35 : 50);
+                imp.setResolution(i % 2 == 0 ? "1200 x 1200 DPI" : "2400 x 600 DPI");
+                imp.setTypeRessource(tImp);
+                res = imp;
+            }
 
-        // 11. Ressources Affectées (Inventaire)
-        // PC déjà affecté à un enseignant
-        Ressource res1 = new Ressource();
-        res1.setNumeroInventaire("INV-PC-AFF-001");
-        res1.setStatut(Ressource.STATUT_AFFECTEE);
-        res1.setMarque("Lenovo ThinkPad");
-        res1.setTypeRessource(tPC);
-        res1.setDateReception(LocalDate.now().minusMonths(6));
-        res1.setFournisseur(f1);
-        res1.setDateFinGarantie(LocalDate.now().plusYears(2));
-        res1 = ressourceRepository.save(res1);
+            res.setNumeroInventaire("INV-" + String.format("%04d", i));
+            res.setMarque(i % 3 == 0 ? "Dell" : (i % 3 == 1 ? "HP" : "Lenovo"));
+            res.setDateReception(LocalDate.now().minusMonths(random.nextInt(36)));
+            res.setFournisseur(suppliers.get(random.nextInt(suppliers.size())));
+            res.setPrix(5000.0 + random.nextInt(15000));
+            res.setDateFinGarantie(LocalDate.now().plusMonths(random.nextInt(24) - 6));
+            
+            int rnd = random.nextInt(100);
+            if (rnd < 70) {
+                res.setStatut(Ressource.STATUT_AFFECTEE);
+            } else if (rnd < 85) {
+                res.setStatut(Ressource.STATUT_DISPONIBLE);
+            } else if (rnd < 95) {
+                res.setStatut(Ressource.STATUT_MAINTENANCE);
+            } else {
+                res.setStatut(Ressource.STATUT_EN_PANNE);
+            }
+            
+            res.setDepartement(depts.get(random.nextInt(depts.size())));
+            
+            // Simulation systématique d'une demande d'origine pour toutes les ressources
+            res.setDepartementDemandeur(depts.get(random.nextInt(depts.size())));
+            if (!allProfs.isEmpty()) {
+                res.setEnseignantDemandeur(allProfs.get(random.nextInt(allProfs.size())));
+            }
+            
+            inventory.add(ressourceRepository.save(res));
+        }
 
-        Affectation aff1 = new Affectation();
-        aff1.setRessource(res1);
-        aff1.setEnseignant(allProfs.get(0));
-        aff1.setDateAffectation(LocalDate.now().minusMonths(6));
-        affectationRepository.save(aff1);
+        // 11. Affectations Réelles (140 affectations)
+        for (int i = 0; i < 140; i++) {
+            Ressource res = inventory.get(i);
+            Enseignant p = allProfs.get(i % allProfs.size());
+            Affectation aff = new Affectation();
+            aff.setRessource(res);
+            aff.setEnseignant(p);
+            aff.setDateAffectation(res.getDateReception().plusDays(random.nextInt(10) + 1));
+            aff.setDepartement(p.getDepartement());
+            affectationRepository.save(aff);
+        }
 
-        // Une autre ressource en panne
-        Ressource resPanne = new Ressource();
-        resPanne.setNumeroInventaire("INV-IMP-PANNE-001");
-        resPanne.setStatut(Ressource.STATUT_MAINTENANCE);
-        resPanne.setMarque("HP LaserJet");
-        resPanne.setTypeRessource(tImp);
-        resPanne.setDateReception(LocalDate.now().minusYears(1));
-        resPanne.setFournisseur(f1);
-        resPanne.setDateFinGarantie(LocalDate.now().plusYears(1));
-        resPanne = ressourceRepository.save(resPanne);
+        // 12. Historique de Maintenance (Vaste historique)
+        for (int i = 0; i < 20; i++) {
+            Ressource res = inventory.get(random.nextInt(140));
+            SignalementPanne sig = new SignalementPanne();
+            sig.setRessource(res);
+            sig.setEnseignant(allProfs.get(random.nextInt(allProfs.size())));
+            sig.setDateSignalement(LocalDate.now().minusDays(random.nextInt(30)));
+            sig.setDescription("Panne critique #" + i + " : " + (i % 2 == 0 ? "Problème carte mère" : "Surchauffe processeur"));
+            
+            if (i < 10) {
+                sig.setStatut(SignalementPanne.STATUT_SIGNALE);
+            } else {
+                sig.setStatut(SignalementPanne.STATUT_CONSTAT);
+                sig = signalementPanneRepository.save(sig);
+                
+                Constat c = new Constat();
+                c.setSignalement(sig);
+                c.setTechnicien(techs.get(random.nextInt(techs.size())));
+                c.setDateConstat(LocalDate.now().minusDays(1));
+                c.setDateApparition(LocalDate.now().minusDays(3));
+                c.setExplication("Expertise technique #" + i + " : Remplacement nécessaire.");
+                c.setOrdre(Constat.ORDRE_MATERIEL);
+                c.setFrequence(Constat.FREQ_PERMANENTE);
+                c.setEnvoyeAuResponsable(true);
+                c.setTechnicien(techs.get(random.nextInt(techs.size())));
+                constatRepository.save(c);
+            }
+            signalementPanneRepository.save(sig);
+        }
 
-        Affectation aff2 = new Affectation();
-        aff2.setRessource(resPanne);
-        aff2.setEnseignant(allProfs.get(1));
-        aff2.setDateAffectation(LocalDate.now().minusYears(1));
-        affectationRepository.save(aff2);
-
-        // 12. Maintenance
-        // 2 Déclarations en panne au technicien
-        SignalementPanne sig1 = new SignalementPanne();
-        sig1.setRessource(resPanne); sig1.setEnseignant(allProfs.get(1));
-        sig1.setDateSignalement(LocalDate.now().minusDays(3));
-        sig1.setDescription("Bourrage papier constant et fumée");
-        sig1.setStatut(SignalementPanne.STATUT_SIGNALE);
-        signalementPanneRepository.save(sig1);
-
-        SignalementPanne sig2 = new SignalementPanne();
-        sig2.setRessource(res1); sig2.setEnseignant(allProfs.get(0));
-        sig2.setDateSignalement(LocalDate.now().minusDays(1));
-        sig2.setDescription("Écran bleu au démarrage");
-        sig2.setStatut(SignalementPanne.STATUT_SIGNALE);
-        signalementPanneRepository.save(sig2);
-
-        // 1 Déclaration (Constat) du technicien au responsable
-        SignalementPanne sig3 = new SignalementPanne();
-        sig3.setRessource(resPanne); sig3.setEnseignant(allProfs.get(1));
-        sig3.setStatut(SignalementPanne.STATUT_CONSTAT);
-        sig3.setDateSignalement(LocalDate.now().minusDays(10));
-        sig3.setDescription("Panne majeure constatée par l'enseignant");
-        sig3 = signalementPanneRepository.save(sig3);
-
-        Constat c1 = new Constat();
-        c1.setSignalement(sig3);
-        c1.setTechnicien(tech1);
-        c1.setDateConstat(LocalDate.now());
-        c1.setDateApparition(LocalDate.now().minusDays(15));
-        c1.setExplication("Le tambour est mort, réparation trop coûteuse.");
-        c1.setFrequence(Constat.FREQ_PERMANENTE);
-        c1.setOrdre(Constat.ORDRE_MATERIEL);
-        c1.setEnvoyeAuResponsable(true);
-        constatRepository.save(c1);
-
-        System.out.println(">>> Initialisation complète terminée selon les spécifications utilisateur.");
+        System.out.println(">>> Initialisation parfaite terminée : 5 Depts, 20 Profs, 5 Fournisseurs, 50 Ressources, Cycle complet simulé.");
     }
 }

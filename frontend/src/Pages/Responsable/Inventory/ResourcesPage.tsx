@@ -17,6 +17,7 @@ interface Ressource {
   dateFinGarantie?: string;
   fournisseurNom?: string;
   departementId?: number;
+  departementDemandeurNom?: string;
   descriptionTechnique?: string;
   prix?: number;
 }
@@ -315,16 +316,16 @@ const ResourcesPage = () => {
           </div>
         </div>
         {/* Filter Tabs */}
-        <div className="flex items-center gap-1 bg-white p-1 rounded-2xl border border-gray-200 w-fit mb-3 shadow-sm">
+        <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-gray-200 w-fit mb-2 shadow-sm">
           <button
             onClick={() => setActiveTab('ALL')}
-            className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'ALL' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
+            className={`px-3 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'ALL' ? 'bg-gray-900 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
           >
             Toutes les ressources ({resources.length})
           </button>
           <button
             onClick={() => setActiveTab('AVAILABLE')}
-            className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'AVAILABLE' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
+            className={`px-3 py-2.5 rounded-xl font-bold text-sm transition-all ${activeTab === 'AVAILABLE' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 hover:bg-gray-50'}`}
           >
             Non affectées ({resources.filter(r => r.statut === 'DISPONIBLE').length})
           </button>
@@ -343,7 +344,7 @@ const ResourcesPage = () => {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-gray-50/50 border-b border-gray-100">
-                      <th className="px-6 py-4 w-10">
+                      <th className="px-3 py-4 w-10">
                         <input
                           type="checkbox"
                           checked={selectedIds.length === currentItems.filter(r => r.statut === 'DISPONIBLE').length && selectedIds.length > 0}
@@ -357,12 +358,21 @@ const ResourcesPage = () => {
                           className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         />
                       </th>
-                      <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Ressource</th>
-                      <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Catégorie</th>
-                      <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Valeur (MAD)</th>
-                      <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Affectation</th>
-                      <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Statut</th>
-                      <th className="px-6 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest text-right">Actions</th>
+                      <th className="px-3 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Ressource</th>
+                      <th className="px-3 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Catégorie</th>
+                      <th className="px-3 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                        Demandé par
+                        <div className="group/info relative">
+                          <Info size={12} className="text-gray-300" />
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-gray-900 text-[9px] text-white rounded opacity-0 group-hover/info:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                            Département ayant exprimé le besoin initial
+                          </div>
+                        </div>
+                      </th>
+                      <th className="px-3 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Valeur (MAD)</th>
+                      <th className="px-3 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Affectation</th>
+                      <th className="px-3 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest">Statut</th>
+                      <th className="px-3 py-4 text-[11px] font-bold text-gray-400 uppercase tracking-widest text-right">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
@@ -372,7 +382,7 @@ const ResourcesPage = () => {
 
                       return (
                         <tr key={res.id} className={`group transition-colors ${isSelected ? 'bg-blue-50/50' : 'hover:bg-gray-50/50'}`}>
-                          <td className="px-6 py-4">
+                          <td className="px-3 py-4">
                             {res.statut === 'DISPONIBLE' && (
                               <input
                                 type="checkbox"
@@ -402,6 +412,16 @@ const ResourcesPage = () => {
                             </span>
                           </td>
                           <td className="px-6 py-4">
+                            {res.departementDemandeurNom ? (
+                              <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                                <span className="text-xs font-bold text-gray-700">{res.departementDemandeurNom}</span>
+                              </div>
+                            ) : (
+                              <span className="text-[10px] text-gray-300 italic">Aucune demande</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4">
                             <span className="text-sm font-bold text-gray-900">
                               {res.prix?.toLocaleString() || '0'}
                             </span>
@@ -421,12 +441,12 @@ const ResourcesPage = () => {
                             )}
                           </td>
                           <td className="px-6 py-4">
-                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border flex items-center gap-1.5 w-fit ${getStatusStyle(res.statut)}`}>
+                            <span className={`px-3.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border flex items-center gap-1.5 w-fit ${getStatusStyle(res.statut)}`}>
                               <div className={`w-1.5 h-1.5 rounded-full ${res.statut === 'AFFECTEE' ? 'bg-emerald-500' : (res.statut === 'EN_PANNE' ? 'bg-red-500' : 'bg-blue-500')}`} />
                               {res.statut === 'DISPONIBLE' ? 'PRÊT' : res.statut}
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-right">
+                          <td className="px-3 py-4 text-right">
                             <div className="flex justify-end gap-2">
                               {res.statut === 'DISPONIBLE' ? (
                                 <button
@@ -500,6 +520,40 @@ const ResourcesPage = () => {
                     >
                       <ChevronLeft size={18} />
                     </button>
+
+                    {/* Sliding Window Pagination */}
+                    {[...Array(totalPages)].map((_, i) => {
+                      const pageNum = i + 1;
+                      if (
+                        pageNum === 1 || 
+                        pageNum === totalPages || 
+                        (pageNum >= currentPage - 2 && pageNum <= currentPage + 2)
+                      ) {
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold transition-all ${
+                              currentPage === pageNum
+                                ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
+                                : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      }
+                      
+                      if (
+                        (pageNum === currentPage - 3 && pageNum > 1) ||
+                        (pageNum === currentPage + 3 && pageNum < totalPages)
+                      ) {
+                        return <span key={pageNum} className="w-8 h-8 flex items-center justify-center text-gray-400 text-xs font-bold">...</span>;
+                      }
+                      
+                      return null;
+                    })}
+
                     <button
                       onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                       disabled={currentPage === totalPages}
@@ -516,11 +570,15 @@ const ResourcesPage = () => {
       </div>
 
       {/* Affectation Modal */}
-      {isAffectModalOpen && selectedRes && (
+      {isAffectModalOpen && (selectedRes || selectedIds.length > 0) && (
         <div className="fixed inset-0 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center z-[110] p-4">
           <div className="bg-white rounded-2xl w-full max-w-md p-8 shadow-2xl animate-in zoom-in duration-200">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Affectation Ressource</h2>
-            <p className="text-sm font-medium text-blue-600 mb-8">{selectedRes.numeroInventaire} ({selectedRes.marque})</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Affectation {selectedRes ? 'Ressource' : 'Multiple'}</h2>
+            <p className="text-sm font-medium text-blue-600 mb-8">
+              {selectedRes 
+                ? `${selectedRes.numeroInventaire} (${selectedRes.marque})` 
+                : `${selectedIds.length} ressources sélectionnées`}
+            </p>
 
             <div className="space-y-6">
               <div className="space-y-1.5">

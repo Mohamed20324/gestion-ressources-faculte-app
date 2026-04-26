@@ -379,50 +379,50 @@ const HeadDetailModal = ({ isOpen, onClose, head }: any) => {
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
-            <div className="bg-white rounded-3xl w-full max-w-md p-8 relative shadow-2xl animate-in fade-in zoom-in duration-200">
-                <button onClick={onClose} className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors">
-                    <X size={24} />
+            <div className="bg-white rounded-3xl w-full max-w-md p-6 relative shadow-2xl animate-in fade-in zoom-in duration-200">
+                <button onClick={onClose} className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors">
+                    <X size={20} />
                 </button>
 
-                <div className="flex flex-col items-center mb-8">
-                    <div className="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 mb-4 border border-blue-100">
-                        <Crown size={40} />
+                <div className="flex flex-col items-center mb-4">
+                    <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 mb-3 border border-blue-100">
+                        <Crown size={28} />
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-900">{head.nom} {head.prenom}</h2>
-                    <span className={`mt-2 px-3 py-1 rounded-full text-xs font-bold ${head.actif ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
+                    <h2 className="text-xl font-bold text-gray-900">{head.nom} {head.prenom}</h2>
+                    <span className={`mt-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${head.actif ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
                         {head.actif ? 'Compte Actif' : 'Compte Inactif'}
                     </span>
                 </div>
 
-                <div className="space-y-4">
-                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                        <p className="text-xs font-bold text-gray-400 uppercase mb-2">Informations de compte</p>
+                <div className="space-y-3">
+                    <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Compte</p>
                         <div className="flex items-center gap-3 text-gray-700 mb-2">
-                            <Mail size={16} className="text-gray-400" />
-                            <span className="text-sm font-medium">{head.email}</span>
+                            <Mail size={14} className="text-gray-400" />
+                            <span className="text-xs font-medium">{head.email}</span>
                         </div>
                         <div className="flex items-center gap-3 text-gray-700">
-                            <ShieldCheck size={16} className="text-gray-400" />
-                            <span className="text-xs font-mono bg-white px-2 py-1 rounded border border-gray-200 break-all w-full">
+                            <ShieldCheck size={14} className="text-gray-400" />
+                            <span className="text-[10px] font-mono bg-white px-2 py-1 rounded border border-gray-200 break-all w-full">
                                 {head.motDePasse || 'N/A'}
                             </span>
                         </div>
                     </div>
 
-                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                        <p className="text-xs font-bold text-gray-400 uppercase mb-2">Détails de fonction</p>
+                    <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Fonction</p>
                         <div className="grid grid-cols-1 gap-3">
                             <div>
-                                <p className="text-[10px] text-gray-500 font-bold uppercase">Département Géré</p>
-                                <p className="text-sm font-bold text-gray-800 flex items-center gap-2">
-                                    <Building2 size={14} className="text-blue-500" />
+                                <p className="text-[9px] text-gray-500 font-bold uppercase">Département Géré</p>
+                                <p className="text-xs font-bold text-gray-800 flex items-center gap-2">
+                                    <Building2 size={12} className="text-blue-500" />
                                     {head.departementNom || 'Non assigné'}
                                 </p>
                             </div>
                             {head.matricule && (
                                 <div>
-                                    <p className="text-[10px] text-gray-500 font-bold uppercase">Matricule</p>
-                                    <p className="text-sm font-bold text-gray-800 font-mono">{head.matricule}</p>
+                                    <p className="text-[9px] text-gray-500 font-bold uppercase">Matricule</p>
+                                    <p className="text-xs font-bold text-gray-800 font-mono">{head.matricule}</p>
                                 </div>
                             )}
                         </div>
@@ -431,7 +431,7 @@ const HeadDetailModal = ({ isOpen, onClose, head }: any) => {
 
                 <button 
                     onClick={onClose}
-                    className="w-full mt-8 py-3.5 bg-gray-900 text-white rounded-2xl font-bold hover:bg-black transition-all"
+                    className="w-full mt-6 py-3 bg-gray-900 text-white rounded-2xl font-bold hover:bg-black transition-all text-sm"
                 >
                     Fermer
                 </button>

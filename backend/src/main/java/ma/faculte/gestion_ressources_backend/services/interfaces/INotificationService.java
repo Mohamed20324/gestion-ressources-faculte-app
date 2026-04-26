@@ -23,4 +23,6 @@ public interface INotificationService {
     void envoyerAffectation(Long destinataireId, Long expediteurId, String ressourceMarque);
 
     void envoyerReponseRetard(Long responsableId, Long fournisseurId, String message);
+
+    void envoyerPublicationAO(Long departementId, String referenceAO);
 }

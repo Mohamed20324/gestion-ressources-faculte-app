@@ -3,7 +3,7 @@ import {
   Search, Loader, ClipboardList,
   CheckCircle, X, FileText, ShoppingCart, Filter,
   ArrowRight, ChevronLeft, ChevronRight, Package, Tag, Info,
-  Plus, ChevronUp, ChevronDown
+  Plus, ChevronUp, ChevronDown, Calendar
 } from 'lucide-react';
 import { api } from '../../../services/api';
 import { useAuth } from '../../../hooks/useAuth';
@@ -468,13 +468,22 @@ const BesoinsGlobalPage = () => {
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Date d'échéance</label>
-                    <input 
-                      required
-                      type="date"
-                      value={aoData.dateFin}
-                      onChange={e => setAoData({...aoData, dateFin: e.target.value})}
-                      className="w-full px-5 py-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-700"
-                    />
+                    <div 
+                      className="relative cursor-pointer"
+                      onClick={(e) => {
+                        const input = e.currentTarget.querySelector('input');
+                        if (input) try { (input as any).showPicker(); } catch (err) {}
+                      }}
+                    >
+                      <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500 pointer-events-none" size={18} />
+                      <input 
+                        required
+                        type="date"
+                        value={aoData.dateFin}
+                        onChange={e => setAoData({...aoData, dateFin: e.target.value})}
+                        className="w-full pl-11 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500 font-bold text-gray-700 block cursor-pointer"
+                      />
+                    </div>
                   </div>
                 </div>
               )}

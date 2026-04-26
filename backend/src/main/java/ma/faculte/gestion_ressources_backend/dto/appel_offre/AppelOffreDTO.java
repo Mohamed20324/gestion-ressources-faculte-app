@@ -14,6 +14,8 @@ public class AppelOffreDTO {
     private LocalDate dateFin;
     private String statut;
     private Long responsableId;
+    private Long departementId;
+    private String departementNom;
     private List<Long> besoinIds = new ArrayList<>();
     private List<BesoinRessourceDTO> besoins = new ArrayList<>();
 
@@ -65,6 +67,22 @@ public class AppelOffreDTO {
 
     public void setResponsableId(Long responsableId) {
         this.responsableId = responsableId;
+    }
+
+    public Long getDepartementId() {
+        return departementId;
+    }
+
+    public void setDepartementId(Long departementId) {
+        this.departementId = departementId;
+    }
+
+    public String getDepartementNom() {
+        return departementNom;
+    }
+
+    public void setDepartementNom(String departementNom) {
+        this.departementNom = departementNom;
     }
 
     public List<Long> getBesoinIds() {

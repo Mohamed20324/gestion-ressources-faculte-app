@@ -160,6 +160,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
   const [unsubmittedAoCount, setUnsubmittedAoCount] = useState(0);
   const [processedSubmissionsCount, setProcessedSubmissionsCount] = useState(0);
   const [pendingSavCount, setPendingSavCount] = useState(0);
+  const [myTasksCount, setMyTasksCount] = useState(0);
 
   const getBaseUrl = () => {
     switch (role) {
@@ -197,9 +198,15 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
     if (role === 'Technicien') {
       gestionItems.push({
         icon: <Wrench size={16} />,
-        text: "Interventions",
+        text: "Interventions (Global)",
         path: `${baseUrl}/interventions`,
         badge: pendingPannesCount > 0 ? pendingPannesCount : undefined
+      });
+      gestionItems.push({
+        icon: <ClipboardList size={16} />,
+        text: "Mes Interventions",
+        path: `${baseUrl}/mes-interventions`,
+        badge: myTasksCount > 0 ? myTasksCount : undefined
       });
     }
 
@@ -394,6 +401,7 @@ const Sidebar: React.FC<SidebarProps> = ({ role }) => {
           if (pannesRes.ok) {
             const data = await pannesRes.json();
             setPendingPannesCount(data.filter((s: any) => s.statut === 'SIGNALE').length);
+            setMyTasksCount(data.filter((s: any) => s.technicienId === user?.id && s.statut !== 'RESOLU').length);
           }
         }
 

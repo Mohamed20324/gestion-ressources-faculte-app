@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import ma.faculte.gestion_ressources_backend.entities.appel_offre.Offre;
 import ma.faculte.gestion_ressources_backend.entities.departement.Departement;
 import ma.faculte.gestion_ressources_backend.entities.referentiel.TypeRessource;
+import ma.faculte.gestion_ressources_backend.entities.utilisateurs.Enseignant;
 import ma.faculte.gestion_ressources_backend.entities.utilisateurs.Fournisseur;
 
 import java.time.LocalDate;
@@ -18,6 +19,7 @@ public class Ressource {
     public static final String STATUT_AFFECTEE = "AFFECTEE";
     public static final String STATUT_MAINTENANCE = "MAINTENANCE";
     public static final String STATUT_REFORME = "REFORME";
+    public static final String STATUT_EN_PANNE = "EN_PANNE";
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -50,6 +52,14 @@ public class Ressource {
     @JoinColumn(name = "departement_id", nullable = true)
     private Departement departement;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "departement_demandeur_id", nullable = true)
+    private Departement departementDemandeur;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "enseignant_demandeur_id", nullable = true)
+    private Enseignant enseignantDemandeur;
+
     @Column(nullable = false)
     private LocalDate dateReception;
 
@@ -58,6 +68,9 @@ public class Ressource {
 
     @Column(nullable = true)
     private LocalDate dateFinGarantie;
+
+    @Column(nullable = true)
+    private Double prix;
 
     public Ressource() {}
 
@@ -147,5 +160,29 @@ public class Ressource {
 
     public void setDepartement(Departement departement) {
         this.departement = departement;
+    }
+
+    public Departement getDepartementDemandeur() {
+        return departementDemandeur;
+    }
+
+    public void setDepartementDemandeur(Departement departementDemandeur) {
+        this.departementDemandeur = departementDemandeur;
+    }
+
+    public Enseignant getEnseignantDemandeur() {
+        return enseignantDemandeur;
+    }
+
+    public void setEnseignantDemandeur(Enseignant enseignantDemandeur) {
+        this.enseignantDemandeur = enseignantDemandeur;
+    }
+
+    public Double getPrix() {
+        return prix;
+    }
+
+    public void setPrix(Double prix) {
+        this.prix = prix;
     }
 }

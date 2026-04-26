@@ -36,11 +36,16 @@ const BlacklistPage = () => {
   const handleRemove = async (id: number) => {
     if (!window.confirm("Souhaitez-vous réhabiliter ce fournisseur ? Il pourra de nouveau soumissionner aux appels d'offres.")) return;
     try {
-      // Logic for rehabilitation would go here
-      showNotification('success', 'Fournisseur réhabilité avec succès');
-      fetchBlacklist();
+      const res = await api.removeFromBlacklist(id);
+      if (res.ok) {
+        showNotification('success', 'Fournisseur réhabilité avec succès');
+        fetchBlacklist();
+      } else {
+        const err = await res.json();
+        showNotification('error', err.message || 'Erreur technique');
+      }
     } catch (error) {
-      showNotification('error', 'Erreur technique');
+      showNotification('error', 'Erreur de connexion au serveur');
     }
   };
 

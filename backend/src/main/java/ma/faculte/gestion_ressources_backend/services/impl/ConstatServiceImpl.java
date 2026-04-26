@@ -58,6 +58,7 @@ public class ConstatServiceImpl implements IConstatService {
         c.setEnvoyeAuResponsable(dto.isEnvoyeAuResponsable());
 
         s.setStatut(SignalementPanne.STATUT_CONSTAT);
+        s.setTechnicien(t);
         signalementRepository.save(s);
 
         Constat sauve = constatRepository.save(c);
@@ -74,6 +75,30 @@ public class ConstatServiceImpl implements IConstatService {
         }
 
         return versDto(sauve);
+    }
+
+    @Override
+    @Transactional
+    public ConstatDTO modifier(Long id, ConstatDTO dto) {
+        Constat c = constatRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Constat introuvable"));
+        
+        c.setExplication(dto.getExplication());
+        c.setDateApparition(dto.getDateApparition());
+        c.setFrequence(dto.getFrequence());
+        c.setOrdre(dto.getOrdre());
+        c.setEnvoyeAuResponsable(dto.isEnvoyeAuResponsable());
+
+        if (dto.isEnvoyeAuResponsable()) {
+            Responsable resp = responsableRepository.findAll().stream()
+                    .findFirst()
+                    .orElseThrow(() -> new RuntimeException("Aucun responsable enregistré"));
+            String msg = "Mise à jour du constat de panne (signalement #" + c.getSignalement().getId() + ") : "
+                    + truncate(dto.getExplication(), 200);
+            notificationService.envoyerNotification(resp.getId(), c.getTechnicien().getId(), msg, Notification.TYPE_INFO);
+        }
+
+        return versDto(constatRepository.save(c));
     }
 
     @Override
@@ -110,6 +135,18 @@ public class ConstatServiceImpl implements IConstatService {
         d.setOrdre(c.getOrdre());
         d.setDateConstat(c.getDateConstat());
         d.setEnvoyeAuResponsable(c.isEnvoyeAuResponsable());
+        
+        // Enrichissement du DTO pour l'affichage Responsable
+        if (c.getTechnicien() != null) {
+            d.setTechnicienNom(c.getTechnicien().getNom() + " " + c.getTechnicien().getPrenom());
+        }
+        
+        if (c.getSignalement() != null && c.getSignalement().getRessource() != null) {
+            var res = c.getSignalement().getRessource();
+            d.setRessourceNom(res.getMarque() + " (Inv: " + res.getNumeroInventaire() + ")");
+            d.setSousGarantie(res.getDateFinGarantie() != null && res.getDateFinGarantie().isAfter(LocalDate.now()));
+        }
+        
         return d;
     }
     @Override

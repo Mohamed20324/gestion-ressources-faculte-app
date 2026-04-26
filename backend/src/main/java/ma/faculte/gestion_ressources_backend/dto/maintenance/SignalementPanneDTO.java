@@ -22,6 +22,9 @@ public class SignalementPanneDTO {
     private String statut;
     private LocalDate dateLivraisonEchange;
     private String statutEchange;
+    private String enseignantNom;
+    private String technicienNom;
+    private String ressourceType;
 
     public SignalementPanneDTO() {}
 
@@ -95,5 +98,29 @@ public class SignalementPanneDTO {
 
     public void setStatutEchange(String statutEchange) {
         this.statutEchange = statutEchange;
+    }
+
+    public String getEnseignantNom() {
+        return enseignantNom;
+    }
+
+    public void setEnseignantNom(String enseignantNom) {
+        this.enseignantNom = enseignantNom;
+    }
+
+    public String getTechnicienNom() {
+        return technicienNom;
+    }
+
+    public void setTechnicienNom(String technicienNom) {
+        this.technicienNom = technicienNom;
+    }
+
+    public String getRessourceType() {
+        return ressourceType;
+    }
+
+    public void setRessourceType(String ressourceType) {
+        this.ressourceType = ressourceType;
     }
 }

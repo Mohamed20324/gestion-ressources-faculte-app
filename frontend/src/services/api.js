@@ -260,6 +260,11 @@ export const api = {
         headers: getHeaders() 
     }),
 
+    removeFromBlacklist: (id) => fetch(`${API_BASE_URL}/liste-noire/${id}`, { 
+        method: 'DELETE', 
+        headers: getHeaders() 
+    }),
+
     // Réunions
     getAllReunions: () => fetch(`${API_BASE_URL}/reunion`, { headers: getHeaders() }),
 
@@ -280,10 +285,13 @@ export const api = {
 
     getAllSignalements: () => fetch(`${API_BASE_URL}/signalements`, { headers: getHeaders() }),
 
-    resoudreSignalement: (id, technicienId) => fetch(`${API_BASE_URL}/signalements/${id}/resoudre?technicienId=${technicienId}`, {
-        method: 'PUT',
-        headers: getHeaders()
-    }),
+    resoudreSignalement: (id, technicienId) => {
+        const tid = (technicienId !== undefined && technicienId !== null) ? technicienId : '';
+        return fetch(`${API_BASE_URL}/signalements/${id}/resoudre?technicienId=${tid}`, {
+            method: 'PUT',
+            headers: getHeaders()
+        });
+    },
 
     annulerSignalement: (id) => fetch(`${API_BASE_URL}/signalements/${id}`, {
         method: 'DELETE',
@@ -308,8 +316,18 @@ export const api = {
         body: JSON.stringify(data)
     }),
 
+    updateConstat: (id, data) => fetch(`${API_BASE_URL}/constats/${id}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(data)
+    }),
+
     getAllConstats: () => fetch(`${API_BASE_URL}/constats`, { 
         headers: getHeaders() 
+    }),
+    
+    getConstatBySignalement: (id) => fetch(`${API_BASE_URL}/constats/signalement/${id}`, {
+        headers: getHeaders()
     }),
 
     envoyerAuFournisseur: (id) => fetch(`${API_BASE_URL}/constats/${id}/envoyer-fournisseur`, {

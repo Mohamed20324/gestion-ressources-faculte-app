@@ -43,6 +43,17 @@ public class ListeNoireController {
     public ResponseEntity<List<ListeNoireDTO>> getAll() {
         return ResponseEntity.ok(listeNoireService.getAll());
     }
+    
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('RESPONSABLE')")
+    public ResponseEntity<?> supprimer(@PathVariable Long id) {
+        try {
+            listeNoireService.supprimerFournisseur(id);
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body(erreur(e.getMessage()));
+        }
+    }
 
     private Map<String, String> erreur(String message) {
         Map<String, String> m = new HashMap<>();

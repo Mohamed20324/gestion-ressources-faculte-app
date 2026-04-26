@@ -39,7 +39,7 @@ const TeachersPage = () => {
   // Pagination & Search
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 3;
+  const itemsPerPage = 8;
 
   const [formData, setFormData] = useState({
     nom: '',
@@ -383,15 +383,42 @@ const TeachersPage = () => {
               >
                 <ChevronLeft size={20} />
               </button>
-              {[...Array(totalPages)].map((_, i) => (
-                <button
-                  key={i + 1}
-                  onClick={() => setCurrentPage(i + 1)}
-                  className={`w-10 h-10 rounded-lg font-bold text-sm transition-all ${currentPage === i + 1 ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'text-gray-600 hover:bg-gray-50'}`}
-                >
-                  {i + 1}
-                </button>
-              ))}
+              
+              {/* Sliding Window Pagination */}
+              {[...Array(totalPages)].map((_, i) => {
+                const pageNum = i + 1;
+                // Only show page 1, totalPages, and current +/- 2
+                if (
+                  pageNum === 1 || 
+                  pageNum === totalPages || 
+                  (pageNum >= currentPage - 2 && pageNum <= currentPage + 2)
+                ) {
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setCurrentPage(pageNum)}
+                      className={`w-10 h-10 rounded-lg font-bold text-sm transition-all ${
+                        currentPage === pageNum 
+                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' 
+                          : 'text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                }
+                
+                // Show ellipsis if there's a gap
+                if (
+                  (pageNum === currentPage - 3 && pageNum > 1) ||
+                  (pageNum === currentPage + 3 && pageNum < totalPages)
+                ) {
+                  return <span key={pageNum} className="w-10 h-10 flex items-center justify-center text-gray-400 text-sm font-bold">...</span>;
+                }
+                
+                return null;
+              })}
+
               <button 
                 onClick={() => setCurrentPage(p => Math.min(totalPages, p+1))}
                 disabled={currentPage === totalPages}
@@ -438,52 +465,51 @@ const TeacherDetailModal = ({ isOpen, onClose, teacher }: any) => {
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
-            <div className="bg-white rounded-3xl w-full max-w-md p-8 relative shadow-2xl animate-in fade-in zoom-in duration-200">
-                <button onClick={onClose} className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors">
-                    <X size={24} />
+            <div className="bg-white rounded-3xl w-full max-w-md p-6 relative shadow-2xl animate-in fade-in zoom-in duration-200">
+                <button onClick={onClose} className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors">
+                    <X size={20} />
                 </button>
 
-                <div className="flex flex-col items-center mb-8">
-                    <div className="w-20 h-20 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 mb-4 border border-blue-100">
-                        <User size={40} />
+                <div className="flex flex-col items-center mb-4">
+                    <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 mb-3 border border-blue-100">
+                        <User size={28} />
                     </div>
-                    <h2 className="text-2xl font-bold text-gray-900">{teacher.nom} {teacher.prenom}</h2>
-                    <span className={`mt-2 px-3 py-1 rounded-full text-xs font-bold ${teacher.actif ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
+                    <h2 className="text-xl font-bold text-gray-900">{teacher.nom} {teacher.prenom}</h2>
+                    <span className={`mt-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${teacher.actif ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
                         {teacher.actif ? 'Compte Actif' : 'Compte Inactif'}
                     </span>
                 </div>
 
-                <div className="space-y-4">
-                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                        <p className="text-xs font-bold text-gray-400 uppercase mb-2">Informations de compte</p>
+                <div className="space-y-3">
+                    <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Compte</p>
                         <div className="flex items-center gap-3 text-gray-700 mb-2">
-                            <Mail size={16} className="text-gray-400" />
-                            <span className="text-sm font-medium">{teacher.email}</span>
+                            <Mail size={14} className="text-gray-400" />
+                            <span className="text-xs font-medium">{teacher.email}</span>
                         </div>
                         <div className="flex items-center gap-3 text-gray-700">
-                            <ShieldCheck size={16} className="text-gray-400" />
-                            <span className="text-xs font-mono bg-white px-2 py-1 rounded border border-gray-200 break-all w-full">
+                            <ShieldCheck size={14} className="text-gray-400" />
+                            <span className="text-[10px] font-mono bg-white px-2 py-1 rounded border border-gray-200 break-all w-full">
                                 {teacher.motDePasse || 'N/A'}
                             </span>
                         </div>
-                        <p className="text-[10px] text-gray-400 mt-2 italic">Note: Le mot de passe peut être crypté (BCrypt)</p>
                     </div>
 
-                    <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                        <p className="text-xs font-bold text-gray-400 uppercase mb-2">Détails Académiques</p>
-                        <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
+                        <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Détails</p>
+                        <div className="grid grid-cols-2 gap-3">
                             <div>
-                                <p className="text-[10px] text-gray-500 font-bold uppercase">Matricule</p>
-                                <p className="text-sm font-bold text-gray-800 font-mono">{teacher.matricule || 'N/A'}</p>
+                                <p className="text-[9px] text-gray-500 font-bold uppercase">Matricule</p>
+                                <p className="text-xs font-bold text-gray-800 font-mono">{teacher.matricule || 'N/A'}</p>
                             </div>
                             <div>
-                                <p className="text-[10px] text-gray-500 font-bold uppercase">Spécialité</p>
-                                <p className="text-sm font-bold text-gray-800">{teacher.specialite || 'N/A'}</p>
+                                <p className="text-[9px] text-gray-500 font-bold uppercase">Spécialité</p>
+                                <p className="text-xs font-bold text-gray-800">{teacher.specialite || 'N/A'}</p>
                             </div>
                             <div className="col-span-2">
-                                <p className="text-[10px] text-gray-500 font-bold uppercase">Département</p>
-                                <p className="text-sm font-bold text-gray-800 flex items-center gap-2">
-                                    <Building2 size={14} className="text-blue-500" />
+                                <p className="text-[9px] text-gray-500 font-bold uppercase">Département</p>
+                                <p className="text-xs font-bold text-gray-800 flex items-center gap-2">
+                                    <Building2 size={12} className="text-blue-500" />
                                     {teacher.departementNom || 'Non assigné'}
                                 </p>
                             </div>
@@ -493,7 +519,7 @@ const TeacherDetailModal = ({ isOpen, onClose, teacher }: any) => {
 
                 <button 
                     onClick={onClose}
-                    className="w-full mt-8 py-3.5 bg-gray-900 text-white rounded-2xl font-bold hover:bg-black transition-all"
+                    className="w-full mt-6 py-3 bg-gray-900 text-white rounded-2xl font-bold hover:bg-black transition-all text-sm"
                 >
                     Fermer
                 </button>

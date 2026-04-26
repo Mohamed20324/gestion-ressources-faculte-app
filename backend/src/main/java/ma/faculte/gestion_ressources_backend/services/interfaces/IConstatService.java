@@ -6,6 +6,7 @@ import java.util.List;
 public interface IConstatService {
 
     ConstatDTO rediger(ConstatDTO dto);
+    ConstatDTO modifier(Long id, ConstatDTO dto);
 
     ConstatDTO getById(Long id);
 

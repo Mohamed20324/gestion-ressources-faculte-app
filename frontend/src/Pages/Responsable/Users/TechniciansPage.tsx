@@ -352,52 +352,52 @@ const TechDetailModal = ({ isOpen, onClose, tech }: any) => {
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
-      <div className="bg-white rounded-3xl w-full max-w-md p-8 relative shadow-2xl animate-in fade-in zoom-in duration-200">
-        <button onClick={onClose} className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors">
-          <X size={24} />
+      <div className="bg-white rounded-3xl w-full max-w-md p-6 relative shadow-2xl animate-in fade-in zoom-in duration-200">
+        <button onClick={onClose} className="absolute top-5 right-5 text-gray-400 hover:text-gray-600 transition-colors">
+          <X size={20} />
         </button>
 
-        <div className="flex flex-col items-center mb-8">
-          <div className="w-20 h-20 bg-green-50 rounded-2xl flex items-center justify-center text-blue-600 mb-4 border border-green-100">
-            <Wrench size={40} />
+        <div className="flex flex-col items-center mb-4">
+          <div className="w-14 h-14 bg-green-50 rounded-2xl flex items-center justify-center text-blue-600 mb-3 border border-green-100">
+            <Wrench size={28} />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">{tech.nom} {tech.prenom}</h2>
-          <span className={`mt-2 px-3 py-1 rounded-full text-xs font-bold ${tech.actif ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
+          <h2 className="text-xl font-bold text-gray-900">{tech.nom} {tech.prenom}</h2>
+          <span className={`mt-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${tech.actif ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}`}>
             {tech.actif ? 'Compte Actif' : 'Compte Inactif'}
           </span>
         </div>
 
-        <div className="space-y-4">
-          <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-            <p className="text-xs font-bold text-gray-400 uppercase mb-2">Informations de compte</p>
+        <div className="space-y-3">
+          <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
+            <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Compte</p>
             <div className="flex items-center gap-3 text-gray-700 mb-2">
-              <Mail size={16} className="text-gray-400" />
-              <span className="text-sm font-medium">{tech.email}</span>
+              <Mail size={14} className="text-gray-400" />
+              <span className="text-xs font-medium">{tech.email}</span>
             </div>
             <div className="flex items-center gap-3 text-gray-700">
-              <ShieldCheck size={16} className="text-gray-400" />
-              <span className="text-xs font-mono bg-white px-2 py-1 rounded border border-gray-200 break-all w-full">
+              <ShieldCheck size={14} className="text-gray-400" />
+              <span className="text-[10px] font-mono bg-white px-2 py-1 rounded border border-gray-200 break-all w-full">
                 {tech.motDePasse || 'N/A'}
               </span>
             </div>
           </div>
 
-          <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-            <p className="text-xs font-bold text-gray-400 uppercase mb-2">Détails Techniques</p>
-            <div className="grid grid-cols-2 gap-4">
+          <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100">
+            <p className="text-[10px] font-bold text-gray-400 uppercase mb-2">Technique</p>
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <p className="text-[10px] text-gray-500 font-bold uppercase">Spécialité</p>
-                <p className="text-sm font-bold text-gray-800">{tech.specialite || 'Générale'}</p>
+                <p className="text-[9px] text-gray-500 font-bold uppercase">Spécialité</p>
+                <p className="text-xs font-bold text-gray-800">{tech.specialite || 'Générale'}</p>
               </div>
               <div>
-                <p className="text-[10px] text-gray-500 font-bold uppercase">Disponibilité</p>
-                <p className={`text-sm font-bold ${tech.disponibilite === 'Occupé' ? 'text-blue-600' : 'text-blue-600'}`}>
+                <p className="text-[9px] text-gray-500 font-bold uppercase">Disponibilité</p>
+                <p className="text-xs font-bold text-blue-600">
                   {tech.disponibilite || 'Disponible'}
                 </p>
               </div>
-              <div>
-                <p className="text-[10px] text-gray-500 font-bold uppercase">Matricule</p>
-                <p className="text-sm font-bold text-gray-800 font-mono">{tech.matricule || 'N/A'}</p>
+              <div className="col-span-2">
+                <p className="text-[9px] text-gray-500 font-bold uppercase">Matricule</p>
+                <p className="text-xs font-bold text-gray-800 font-mono">{tech.matricule || 'N/A'}</p>
               </div>
             </div>
           </div>
@@ -405,7 +405,7 @@ const TechDetailModal = ({ isOpen, onClose, tech }: any) => {
 
         <button
           onClick={onClose}
-          className="w-full mt-8 py-3.5 bg-gray-900 text-white rounded-2xl font-bold hover:bg-black transition-all"
+          className="w-full mt-6 py-3 bg-gray-900 text-white rounded-2xl font-bold hover:bg-black transition-all text-sm"
         >
           Fermer
         </button>
