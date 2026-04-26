@@ -385,7 +385,7 @@ const ChefInventoryPage: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2">
+                        <div className="flex justify-end items-center gap-2">
                           <button 
                             onClick={() => handleOpenModal(res)}
                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -393,13 +393,19 @@ const ChefInventoryPage: React.FC = () => {
                           >
                             <Edit size={16} />
                           </button>
-                          <button 
-                            onClick={() => setSignalementModal({ show: true, resId: res.id })}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                            title="Signaler une panne"
-                          >
-                            <AlertTriangle size={16} />
-                          </button>
+                          {res.statut === 'EN_PANNE' ? (
+                            <div className="flex items-center gap-1.5 px-2 py-1.5 bg-red-50 text-red-600 rounded-lg border border-red-100 animate-pulse" title="Panne déjà signalée">
+                              <AlertTriangle size={14} />
+                            </div>
+                          ) : (
+                            <button 
+                              onClick={() => setSignalementModal({ show: true, resId: res.id })}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Signaler une panne"
+                            >
+                              <AlertTriangle size={16} />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

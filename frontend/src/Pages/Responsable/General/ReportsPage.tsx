@@ -77,7 +77,7 @@ const ReportsPage = () => {
               Signalements Récents
             </h2>
             <div className="space-y-4">
-                {signalements.filter(s => s.statut === 'SIGNALE').map((s) => (
+                {signalements.filter(s => ['SIGNALE', 'EN_COURS'].includes(s.statut)).map((s) => (
                 <div key={s.id} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex justify-between items-center group hover:shadow-md transition-all">
                     <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-purple-50 text-purple-600 rounded-lg flex items-center justify-center">
@@ -86,7 +86,14 @@ const ReportsPage = () => {
                         <div>
                             <h4 className="font-bold text-gray-900">Panne RESS-{s.ressourceId}</h4>
                             <p className="text-sm text-gray-500 italic mt-0.5 line-clamp-1">"{s.description}"</p>
-                            <p className="text-[10px] font-bold text-purple-600 mt-2 uppercase tracking-widest">{s.enseignantNom}</p>
+                            <div className="flex items-center gap-2 mt-2">
+                                <p className="text-[10px] font-bold text-purple-600 uppercase tracking-widest">{s.enseignantNom}</p>
+                                {s.statut === 'EN_COURS' && (
+                                    <span className="text-[9px] bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full font-bold border border-blue-100">
+                                        PRIS PAR TECH
+                                    </span>
+                                )}
+                            </div>
                         </div>
                     </div>
                     <div className="flex items-center gap-1 text-red-600 font-bold text-[10px] uppercase bg-red-50 px-2 py-1 rounded-full border border-red-100">
@@ -94,7 +101,7 @@ const ReportsPage = () => {
                     </div>
                 </div>
                 ))}
-                {signalements.filter(s => s.statut === 'SIGNALE').length === 0 && (
+                {signalements.filter(s => ['SIGNALE', 'EN_COURS'].includes(s.statut)).length === 0 && (
                 <div className="p-12 bg-white rounded-2xl border border-dashed border-gray-200 text-center">
                     <div className="w-12 h-12 bg-gray-50 text-gray-300 rounded-full flex items-center justify-center mx-auto mb-4">
                         <CheckCircle size={24} />
