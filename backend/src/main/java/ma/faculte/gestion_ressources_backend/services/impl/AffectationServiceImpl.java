@@ -174,6 +174,7 @@ public class AffectationServiceImpl implements IAffectationService {
                 d.setRessourceCategorie(a.getRessource().getTypeRessource().getLibelle());
             }
             d.setRessourceNumeroInventaire(a.getRessource().getNumeroInventaire());
+            d.setRessourceStatut(a.getRessource().getStatut());
         }
         
         return d;

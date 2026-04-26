@@ -93,9 +93,9 @@ const InventoryDashboard = () => {
       
       setStats({
         totalResources: resources.length,
-        operational: resources.filter((r: any) => r.statut === 'FONCTIONNELLE').length,
+        operational: resources.filter((r: any) => ['DISPONIBLE', 'AFFECTEE'].includes(r.statut)).length,
         broken: resources.filter((r: any) => r.statut === 'EN_PANNE').length,
-        underMaintenance: resources.filter((r: any) => r.statut === 'EN_MAINTENANCE').length,
+        underMaintenance: resources.filter((r: any) => r.statut === 'MAINTENANCE').length,
         inDelivery: inDeliveryCount,
         delayedDeliveries: delayCount
       });
@@ -172,7 +172,7 @@ const InventoryDashboard = () => {
         {/* Health Chart */}
         <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm flex flex-col items-center">
           <h3 className="font-bold text-gray-900 mb-8 w-full text-left">Santé du Parc</h3>
-          <div className="h-[250px] w-full relative">
+          <div className="h-[250px] w-full relative" style={{ minHeight: '250px' }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie

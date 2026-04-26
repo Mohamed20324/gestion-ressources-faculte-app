@@ -59,7 +59,7 @@ public class SignalementServiceImpl implements ISignalementService {
             s.setTechnicien(t);
             s.setStatut(SignalementPanne.STATUT_EN_COURS);
         }
-        r.setStatut(Ressource.STATUT_MAINTENANCE);
+        r.setStatut(Ressource.STATUT_EN_PANNE);
         ressourceRepository.save(r);
         
         SignalementPanne saved = signalementRepository.save(s);

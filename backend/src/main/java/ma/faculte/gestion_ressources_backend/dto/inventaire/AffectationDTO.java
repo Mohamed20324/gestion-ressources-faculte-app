@@ -22,6 +22,7 @@ public class AffectationDTO {
     private String ressourceMarque;
     private String ressourceCategorie;
     private String ressourceNumeroInventaire;
+    private String ressourceStatut;
 
     public AffectationDTO() {}
 
@@ -103,5 +104,13 @@ public class AffectationDTO {
 
     public void setRessourceNumeroInventaire(String ressourceNumeroInventaire) {
         this.ressourceNumeroInventaire = ressourceNumeroInventaire;
+    }
+
+    public String getRessourceStatut() {
+        return ressourceStatut;
+    }
+
+    public void setRessourceStatut(String ressourceStatut) {
+        this.ressourceStatut = ressourceStatut;
     }
 }

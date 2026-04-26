@@ -49,7 +49,7 @@ const SignalementsPage = () => {
   const getStatusBadge = (statut: string) => {
     switch (statut) {
       case 'SIGNALE':
-        return <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-xl text-xs font-black uppercase flex items-center gap-1 w-fit"><Clock size={14} /> En attente</span>;
+        return <span className="px-3 py-1 bg-red-100 text-red-700 rounded-xl text-xs font-black uppercase flex items-center gap-1 w-fit"><AlertTriangle size={14} /> EN PANNE</span>;
       case 'EN_COURS':
       case 'CONSTAT':
         return <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-xl text-xs font-black uppercase flex items-center gap-1 w-fit"><AlertTriangle size={14} /> En cours de traitement</span>;

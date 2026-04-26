@@ -196,19 +196,26 @@ const AffectationsPage = () => {
                       </div>
                     </td>
                     <td className="px-8 py-6 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button 
-                          onClick={() => setSignalementModal({ show: true, resId: aff.ressourceId })}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all flex items-center gap-1 text-xs font-bold"
-                          title="Signaler une panne"
-                        >
-                          <AlertTriangle size={16} />
-                          Signaler
-                        </button>
-                        <button className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-all">
-                          <ChevronRight size={20} />
-                        </button>
-                      </div>
+                        <div className="flex items-center gap-2">
+                          {aff.ressourceStatut === 'EN_PANNE' ? (
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg border border-red-100 animate-pulse">
+                              <AlertTriangle size={14} />
+                              <span className="text-[10px] font-black uppercase">En Panne</span>
+                            </div>
+                          ) : (
+                            <button 
+                              onClick={() => setSignalementModal({ show: true, resId: aff.ressourceId })}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-all flex items-center gap-1 text-xs font-bold"
+                              title="Signaler une panne"
+                            >
+                              <AlertTriangle size={16} />
+                              Signaler
+                            </button>
+                          )}
+                          <button className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-all">
+                            <ChevronRight size={20} />
+                          </button>
+                        </div>
                     </td>
                   </tr>
                 ))}

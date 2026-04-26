@@ -89,8 +89,8 @@ const ReportsPage = () => {
                             <p className="text-[10px] font-bold text-purple-600 mt-2 uppercase tracking-widest">{s.enseignantNom}</p>
                         </div>
                     </div>
-                    <div className="flex items-center gap-1 text-amber-600 font-bold text-[10px] uppercase bg-amber-50 px-2 py-1 rounded-full">
-                    <Clock size={12} /> Attente Tech
+                    <div className="flex items-center gap-1 text-red-600 font-bold text-[10px] uppercase bg-red-50 px-2 py-1 rounded-full border border-red-100">
+                    <AlertTriangle size={12} /> EN PANNE
                     </div>
                 </div>
                 ))}
